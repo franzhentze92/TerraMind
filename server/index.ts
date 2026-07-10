@@ -8,6 +8,7 @@ import { handlePreflight } from './http/cors.js'
 import { jsonResponse } from './http/json.js'
 import { handleFireRoutes } from './routes/fires.js'
 import { handleClimateRoutes } from './routes/climate.js'
+import { handleBiodiversityRoutes } from './routes/biodiversity.js'
 
 config({ path: resolve(process.cwd(), '.env') })
 
@@ -21,6 +22,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 
   if (await handleFireRoutes(req, res, pathname, url.searchParams)) return
   if (await handleClimateRoutes(req, res, pathname, url.searchParams)) return
+  if (await handleBiodiversityRoutes(req, res, pathname, url.searchParams)) return
 
   if (pathname === '/api/health' && req.method === 'GET') {
     jsonResponse(req, res, { status: 'ok', service: 'terramind-pipeline' })

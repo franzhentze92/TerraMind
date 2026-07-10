@@ -12,6 +12,7 @@ import { TrendsPage } from '@/modules/trends/pages/TrendsPage'
 import { ReportsPage } from '@/modules/reports/pages/ReportsPage'
 import { SettingsPage } from '@/modules/settings/pages/SettingsPage'
 import { FireAnalysisPage } from '@/modules/fires/pages/FireAnalysisPage'
+import { BiodiversityAnalysisPage } from '@/modules/biodiversity/pages/BiodiversityAnalysisPage'
 
 export const router = createBrowserRouter([
   {
@@ -22,6 +23,7 @@ export const router = createBrowserRouter([
       { path: 'situacion', element: <NationalSituationPage /> },
       { path: 'incendios', element: <FireAnalysisPage /> },
       { path: 'incendios/:eventId', element: <FireAnalysisPage /> },
+      { path: 'biodiversidad', element: <BiodiversityAnalysisPage /> },
       { path: 'copilot', element: <CopilotPage /> },
       { path: 'hallazgos', element: <FindingsPage /> },
       { path: 'prioridades', element: <PrioritiesPage /> },

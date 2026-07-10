@@ -1,16 +1,16 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import {
-  parseBiodiversitySearchQuery,
-  parseBiodiversityTaxonResolveQuery,
-} from '@/modules/biodiversity/biodiversity.dto'
-import { toInternalSearchQuery } from '@/modules/biodiversity/biodiversity.dto'
+import { getBiodiversityDashboardService } from '@/modules/biodiversity/biodiversity-dashboard.service'
 import { getBiodiversityService } from '@/modules/biodiversity/biodiversity.service'
+import { parseBiodiversityDashboardFilters } from '@/modules/biodiversity/dto/biodiversity-dashboard.dto'
 import { rejectIfUnauthenticated } from '../middleware/auth.js'
+import { rejectIfRateLimited } from '../middleware/rate-limit.js'
 import { jsonError, jsonResponse } from '../http/json.js'
 
+const ZONE_CODE_RE = /^[a-z][a-z0-9-]*$/
+
 /**
- * Rutas de biodiversidad preparadas pero NO montadas en server/index.ts
- * hasta revisar seguridad y rate limiting.
+ * Rutas agregadas de biodiversidad para dashboard y Situación Nacional.
+ * No expone ocurrencias individuales ni búsquedas arbitrarias por coordenadas.
  */
 export async function handleBiodiversityRoutes(
   req: IncomingMessage,
@@ -24,38 +24,53 @@ export async function handleBiodiversityRoutes(
     return true
   }
   if (rejectIfUnauthenticated(req, res)) return true
+  if (rejectIfRateLimited(req, res, { maxRequests: 60, windowMs: 60_000 })) return true
 
-  const service = getBiodiversityService()
+  const dashboard = getBiodiversityDashboardService()
+  const biodiversity = getBiodiversityService()
 
   try {
-    if (pathname === '/api/environment/biodiversity/search') {
-      const parsed = parseBiodiversitySearchQuery(searchParams)
+    if (pathname === '/api/environment/biodiversity/dashboard-summary') {
+      const parsed = parseBiodiversityDashboardFilters(searchParams)
       if (!parsed.ok) {
         jsonError(req, res, parsed.error, 400)
         return true
       }
-      const result = await service.searchOccurrencesPublic(toInternalSearchQuery(parsed.data))
-      jsonResponse(req, res, result)
+      const summary = await dashboard.getDashboardSummary(parsed.data)
+      jsonResponse(req, res, summary)
       return true
     }
 
-    if (pathname === '/api/environment/biodiversity/taxa/resolve') {
-      const parsed = parseBiodiversityTaxonResolveQuery(searchParams)
+    if (pathname === '/api/environment/biodiversity/zones') {
+      jsonResponse(req, res, dashboard.listZones())
+      return true
+    }
+
+    const zoneSummaryMatch = pathname.match(
+      /^\/api\/environment\/biodiversity\/zones\/([^/]+)\/summary$/,
+    )
+    if (zoneSummaryMatch) {
+      const zoneCode = zoneSummaryMatch[1]
+      if (!ZONE_CODE_RE.test(zoneCode)) {
+        jsonError(req, res, 'Código de zona inválido', 400)
+        return true
+      }
+      const parsed = parseBiodiversityDashboardFilters(searchParams)
       if (!parsed.ok) {
         jsonError(req, res, parsed.error, 400)
         return true
       }
-      const taxon = await service.resolveTaxon({
-        scientificName: parsed.data.name,
-        taxonId: parsed.data.taxon_id,
-        provider: parsed.data.provider,
-      })
-      jsonResponse(req, res, { taxon, generated_at: new Date().toISOString() })
+      const summary = await dashboard.getZoneSummary(zoneCode, parsed.data)
+      if (!summary) {
+        jsonError(req, res, 'Zona no encontrada', 404)
+        return true
+      }
+      jsonResponse(req, res, summary)
       return true
     }
 
     if (pathname === '/api/environment/biodiversity/health') {
-      const health = await service.getSystemHealth()
+      const health = await biodiversity.getSystemHealth()
       jsonResponse(req, res, health)
       return true
     }
@@ -63,7 +78,8 @@ export async function handleBiodiversityRoutes(
     jsonError(req, res, 'Not found', 404)
     return true
   } catch (err) {
-    jsonError(req, res, err instanceof Error ? err.message : 'Error interno', 500)
+    const message = err instanceof Error ? err.message : 'Error interno'
+    jsonError(req, res, message, 500)
     return true
   }
 }
