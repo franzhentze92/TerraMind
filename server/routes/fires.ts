@@ -11,11 +11,9 @@ import {
 } from '../services/fire-event-detail.service.js'
 import { getFirePipelineHealth } from '../services/fire-pipeline-health.service.js'
 import { getFireSummary } from '../services/fire-summary.service.js'
-import { rejectIfUnauthenticated } from '../middleware/auth.js'
+import { runOperationalGuard } from '../middleware/operational-guard.js'
+import { rejectInvalidUuid } from '../http/route-utils.js'
 import { jsonError, jsonResponse } from '../http/json.js'
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export async function handleFireRoutes(
   req: IncomingMessage,
@@ -28,20 +26,31 @@ export async function handleFireRoutes(
     jsonError(req, res, 'Method not allowed', 405)
     return true
   }
-  if (await rejectIfUnauthenticated(req, res)) return true
 
   try {
     if (pathname === '/api/environment/fires/summary') {
       const windowHours = Number(searchParams.get('window_hours') ?? 48)
       const hours = Number.isFinite(windowHours) && windowHours > 0 ? windowHours : 48
-      const summary = await getFireSummary(hours)
-      jsonResponse(req, res, summary)
+      const result = await runOperationalGuard(
+        req,
+        res,
+        { permission: 'incidents.view', rateLimit: 'default_read' },
+        async () => getFireSummary(hours),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, result)
       return true
     }
 
     if (pathname === '/api/environment/fires/departments') {
-      const departments = await listFireDepartments()
-      jsonResponse(req, res, { items: departments, generated_at: new Date().toISOString() })
+      const result = await runOperationalGuard(
+        req,
+        res,
+        { permission: 'incidents.view', rateLimit: 'default_read' },
+        async () => ({ items: await listFireDepartments(), generated_at: new Date().toISOString() }),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, result)
       return true
     }
 
@@ -51,8 +60,14 @@ export async function handleFireRoutes(
         jsonError(req, res, parsed.error, 400)
         return true
       }
-      const events = await listFireEvents(parsed.data)
-      jsonResponse(req, res, events)
+      const result = await runOperationalGuard(
+        req,
+        res,
+        { permission: 'incidents.view', rateLimit: 'default_read' },
+        async () => listFireEvents(parsed.data),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, result)
       return true
     }
 
@@ -62,8 +77,14 @@ export async function handleFireRoutes(
         jsonError(req, res, parsed.error, 400)
         return true
       }
-      const geo = await getFireEventsGeoJson({ ...parsed.data, offset: 0, limit: 100 })
-      jsonResponse(req, res, geo)
+      const result = await runOperationalGuard(
+        req,
+        res,
+        { permission: 'incidents.view', rateLimit: 'default_read' },
+        async () => getFireEventsGeoJson({ ...parsed.data, offset: 0, limit: 100 }),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, result)
       return true
     }
 
@@ -73,39 +94,51 @@ export async function handleFireRoutes(
         jsonError(req, res, parsed.error, 400)
         return true
       }
-      const geo = await getFireDetectionsGeoJson({ ...parsed.data, offset: 0, limit: 100 })
-      jsonResponse(req, res, geo)
+      const result = await runOperationalGuard(
+        req,
+        res,
+        { permission: 'incidents.view', rateLimit: 'default_read' },
+        async () => getFireDetectionsGeoJson({ ...parsed.data, offset: 0, limit: 100 }),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, result)
       return true
     }
 
     if (pathname === '/api/environment/fires/pipeline/health') {
-      const health = await getFirePipelineHealth()
-      jsonResponse(req, res, health)
+      const result = await runOperationalGuard(
+        req,
+        res,
+        { permission: 'incidents.view', rateLimit: 'default_read' },
+        async () => getFirePipelineHealth(),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, result)
       return true
     }
 
     const detailMatch = pathname.match(/^\/api\/environment\/fires\/events\/([^/]+)$/)
     if (detailMatch) {
-      const eventId = detailMatch[1]
-      if (!UUID_RE.test(eventId)) {
-        jsonError(req, res, 'ID de evento inválido', 400)
-        return true
-      }
-      const detail = await getFireEventDetail(eventId)
-      if (!detail) {
+      const id = detailMatch[1]
+      if (rejectInvalidUuid(req, res, id, 'ID de evento')) return true
+      const result = await runOperationalGuard(
+        req,
+        res,
+        { permission: 'incidents.view', rateLimit: 'default_read' },
+        async () => getFireEventDetail(id),
+      )
+      if (result === null) return true
+      if (!result) {
         jsonError(req, res, 'Evento no encontrado', 404)
         return true
       }
-      jsonResponse(req, res, detail)
+      jsonResponse(req, res, result)
       return true
     }
 
-    jsonError(req, res, 'Not found', 404)
-    return true
+    return false
   } catch (err) {
-    const message = err instanceof Error ? err.message : 'Error interno'
-    jsonResponse(req, res, { error: 'No se pudo obtener información de incendios' }, 500)
-    console.error('[fires-api]', message)
+    jsonError(req, res, err instanceof Error ? err.message : 'Error interno', 500)
     return true
   }
 }

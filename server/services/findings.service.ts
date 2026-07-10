@@ -1,3 +1,4 @@
+import type { RequestAuthContext } from '@/core/auth/permissions'
 import type { CompositeFinding } from '@/modules/findings/findings.types'
 import {
   getCompositeFindingById,
@@ -5,6 +6,7 @@ import {
   mapFindingRowToDto,
   type CompositeFindingRow,
 } from '@/pipeline/stores/composite-findings.store'
+import { filterRowsByActiveOrganization } from '../auth/tenant-list-scope.js'
 
 export interface FindingListItemDto {
   id: string
@@ -50,7 +52,8 @@ function toDetail(row: CompositeFindingRow): FindingDetailDto {
   }
 }
 
-export async function listFindings(filters: {
+export async function listFindings(
+  filters: {
   status?: string
   finding_type?: string
   entity_type?: string
@@ -59,9 +62,14 @@ export async function listFindings(filters: {
   confidence?: string
   limit?: number
   offset?: number
-}): Promise<{ items: FindingListItemDto[]; generated_at: string }> {
+  },
+  auth?: RequestAuthContext,
+): Promise<{ items: FindingListItemDto[]; generated_at: string }> {
   const rows = await listCompositeFindings(filters)
-  let items = rows.map(toListItem)
+  const scoped = auth
+    ? filterRowsByActiveOrganization(auth, rows as Array<{ organization_id?: string | null }>)
+    : rows
+  let items = scoped.map(toListItem)
   if (filters.confidence) {
     items = items.filter((i) => i.confidence_level === filters.confidence)
   }

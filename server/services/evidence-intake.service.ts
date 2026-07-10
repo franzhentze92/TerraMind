@@ -1,3 +1,4 @@
+import type { RequestAuthContext } from '@/core/auth/permissions'
 import {
   evaluateConfirmUpload,
   evaluateCreateSubmission,
@@ -59,6 +60,17 @@ function mapRequirements(rows: Array<Record<string, unknown>>) {
   }))
 }
 
+function resolveActorId(auth: RequestAuthContext | null | undefined, actorId?: string | null): string {
+  const resolved = auth?.userId ?? actorId
+  if (!resolved) throw new Error('actor_authentication_required')
+  return resolved
+}
+
+function actorPermissions(auth: RequestAuthContext | null | undefined) {
+  if (!auth) return defaultPermissions()
+  return ALL_EVIDENCE_PERMISSIONS.filter((p) => auth.permissions.includes(p as never))
+}
+
 export async function createEvidenceSubmission(
   missionId: string,
   input: Omit<EvidenceSubmissionInput, 'mission_id' | 'actor'> & {
@@ -67,6 +79,7 @@ export async function createEvidenceSubmission(
     supersedes_submission_id?: string | null
     supersede_reason?: string | null
   },
+  auth?: RequestAuthContext | null,
 ) {
   const mission = await getMissionById(missionId)
   if (!mission) throw new Error('Misión no encontrada')
@@ -76,8 +89,8 @@ export async function createEvidenceSubmission(
     mission_id: missionId,
     actor: {
       actor_type: 'user',
-      actor_id: input.actor_id ?? 'system-operator',
-      permissions: input.actor_permissions ?? defaultPermissions(),
+      actor_id: resolveActorId(auth, input.actor_id),
+      permissions: input.actor_permissions ?? actorPermissions(auth),
     },
   }
 

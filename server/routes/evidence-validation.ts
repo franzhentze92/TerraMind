@@ -1,7 +1,13 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { rejectIfUnauthenticated } from '../middleware/auth.js'
 import { readJsonBody } from '../http/body.js'
+import { rejectInvalidUuid } from '../http/route-utils.js'
 import { jsonError, jsonResponse } from '../http/json.js'
+import {
+  authorizeEvidenceSubmissionRead,
+  authorizeEvidenceValidation,
+  authorizeMissionAccess,
+} from '../services/authorization/index.js'
+import { runOperationalGuard } from '../middleware/operational-guard.js'
 import {
   getMissionEvidenceQualitySummary,
   getMissionEvidenceValidations,
@@ -9,9 +15,6 @@ import {
   getSubmissionValidationHistory,
   revalidateEvidenceSubmission,
 } from '../services/evidence-validation.service.js'
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export async function handleEvidenceValidationRoutes(
   req: IncomingMessage,
@@ -34,63 +37,101 @@ export async function handleEvidenceValidationRoutes(
   const isRoute =
     validationMatch || revalidateMatch || missionValidationsMatch || missionQualityMatch
   if (!isRoute) return false
-  if (await rejectIfUnauthenticated(req, res)) return true
 
   try {
     if (revalidateMatch && req.method === 'POST') {
       const id = revalidateMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID inválido', 400)
-        return true
-      }
+      if (rejectInvalidUuid(req, res, id, 'ID')) return true
       const body = await readJsonBody<Record<string, unknown>>(req)
-      jsonResponse(
+      const result = await runOperationalGuard(
         req,
         res,
-        await revalidateEvidenceSubmission(id, {
-          actor_id: body.actor_id ? String(body.actor_id) : null,
-          idempotency_key: body.idempotency_key ? String(body.idempotency_key) : null,
-        }),
+        {
+          permission: 'evidence.revalidate',
+          rateLimit: 'validation',
+          authorize: (auth) => authorizeEvidenceValidation(auth, id),
+        },
+        async (auth) =>
+          revalidateEvidenceSubmission(id, {
+            actor_id: auth.userId,
+            idempotency_key: body.idempotency_key ? String(body.idempotency_key) : null,
+          }),
       )
+      if (result === null) return true
+      jsonResponse(req, res, result)
       return true
     }
 
     if (validationMatch && req.method === 'GET') {
       const id = validationMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID inválido', 400)
-        return true
-      }
+      if (rejectInvalidUuid(req, res, id, 'ID')) return true
       if (pathname.endsWith('/validation-history')) {
-        jsonResponse(req, res, await getSubmissionValidationHistory(id))
+        const result = await runOperationalGuard(
+          req,
+          res,
+          {
+            permission: 'evidence.view',
+            rateLimit: 'default_read',
+            authorize: (auth) => authorizeEvidenceSubmissionRead(auth, id),
+          },
+          async () => getSubmissionValidationHistory(id),
+        )
+        if (result === null) return true
+        jsonResponse(req, res, result)
         return true
       }
-      const detail = await getSubmissionValidation(id)
-      if (!detail) {
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'evidence.view',
+          rateLimit: 'default_read',
+          authorize: (auth) => authorizeEvidenceSubmissionRead(auth, id),
+        },
+        async () => getSubmissionValidation(id),
+      )
+      if (result === null) return true
+      if (!result) {
         jsonError(req, res, 'Validación no encontrada', 404)
         return true
       }
-      jsonResponse(req, res, detail)
+      jsonResponse(req, res, result)
       return true
     }
 
     if (missionValidationsMatch && req.method === 'GET') {
       const id = missionValidationsMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID de misión inválido', 400)
-        return true
-      }
-      jsonResponse(req, res, await getMissionEvidenceValidations(id))
+      if (rejectInvalidUuid(req, res, id, 'ID de misión')) return true
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'evidence.view',
+          rateLimit: 'default_read',
+          authorize: (auth) => authorizeMissionAccess(auth, id),
+        },
+        async () => getMissionEvidenceValidations(id),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, result)
       return true
     }
 
     if (missionQualityMatch && req.method === 'GET') {
       const id = missionQualityMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID de misión inválido', 400)
-        return true
-      }
-      jsonResponse(req, res, await getMissionEvidenceQualitySummary(id))
+      if (rejectInvalidUuid(req, res, id, 'ID de misión')) return true
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'evidence.view',
+          rateLimit: 'default_read',
+          authorize: (auth) => authorizeMissionAccess(auth, id),
+        },
+        async () => getMissionEvidenceQualitySummary(id),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, result)
       return true
     }
 

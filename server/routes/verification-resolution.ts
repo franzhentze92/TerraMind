@@ -1,7 +1,14 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { rejectIfUnauthenticated } from '../middleware/auth.js'
 import { readJsonBody } from '../http/body.js'
+import { rejectInvalidUuid } from '../http/route-utils.js'
 import { jsonError, jsonResponse } from '../http/json.js'
+import {
+  authorizeIncidentAccess,
+  authorizeMissionAccess,
+  authorizeVerificationNeedAccess,
+  authorizeVerificationPlanAccess,
+} from '../services/authorization/index.js'
+import { runOperationalGuard } from '../middleware/operational-guard.js'
 import {
   getIncidentVerificationResolution,
   getMissionResolutionContributions,
@@ -10,9 +17,6 @@ import {
   getPlanResolutionSummary,
   reEvaluateVerificationNeed,
 } from '../services/verification-resolution.service.js'
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export async function handleVerificationResolutionRoutes(
   req: IncomingMessage,
@@ -42,82 +46,127 @@ export async function handleVerificationResolutionRoutes(
     incidentResolutionMatch ||
     missionContributionsMatch
   if (!isRoute) return false
-  if (await rejectIfUnauthenticated(req, res)) return true
 
   try {
     if (needReEvaluateMatch && req.method === 'POST') {
       const id = needReEvaluateMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID inválido', 400)
-        return true
-      }
+      if (rejectInvalidUuid(req, res, id, 'ID')) return true
       const body = await readJsonBody<Record<string, unknown>>(req)
       if (!body.idempotency_key) {
         jsonError(req, res, 'idempotency_key es requerido', 400)
         return true
       }
-      jsonResponse(
+      const result = await runOperationalGuard(
         req,
         res,
-        await reEvaluateVerificationNeed(id, {
-          actor_id: body.actor_id ? String(body.actor_id) : null,
-          idempotency_key: String(body.idempotency_key),
-        }),
+        {
+          permission: 'verification_plans.view',
+          rateLimit: 'reevaluation',
+          authorize: (auth) => authorizeVerificationNeedAccess(auth, id),
+        },
+        async (auth) =>
+          reEvaluateVerificationNeed(id, {
+            actor_id: auth.userId,
+            idempotency_key: String(body.idempotency_key),
+          }),
       )
+      if (result === null) return true
+      jsonResponse(req, res, result)
       return true
     }
 
     if (needResolutionMatch && req.method === 'GET') {
       const id = needResolutionMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID inválido', 400)
-        return true
-      }
+      if (rejectInvalidUuid(req, res, id, 'ID')) return true
       if (pathname.endsWith('/resolution-history')) {
-        jsonResponse(req, res, await getNeedResolutionHistory(id))
+        const result = await runOperationalGuard(
+          req,
+          res,
+          {
+            permission: 'verification_plans.view',
+            rateLimit: 'default_read',
+            authorize: (auth) => authorizeVerificationNeedAccess(auth, id),
+          },
+          async () => getNeedResolutionHistory(id),
+        )
+        if (result === null) return true
+        jsonResponse(req, res, result)
         return true
       }
-      const detail = await getNeedResolution(id)
-      if (!detail) {
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'verification_plans.view',
+          rateLimit: 'default_read',
+          authorize: (auth) => authorizeVerificationNeedAccess(auth, id),
+        },
+        async () => getNeedResolution(id),
+      )
+      if (result === null) return true
+      if (!result) {
         jsonError(req, res, 'Resolución no encontrada', 404)
         return true
       }
-      jsonResponse(req, res, detail)
+      jsonResponse(req, res, result)
       return true
     }
 
     if (planSummaryMatch && req.method === 'GET') {
       const id = planSummaryMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID de plan inválido', 400)
-        return true
-      }
-      const summary = await getPlanResolutionSummary(id)
-      if (!summary) {
+      if (rejectInvalidUuid(req, res, id, 'ID de plan')) return true
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'verification_plans.view',
+          rateLimit: 'default_read',
+          authorize: (auth) => authorizeVerificationPlanAccess(auth, id),
+        },
+        async () => getPlanResolutionSummary(id),
+      )
+      if (result === null) return true
+      if (!result) {
         jsonError(req, res, 'Plan no encontrado', 404)
         return true
       }
-      jsonResponse(req, res, summary)
+      jsonResponse(req, res, result)
       return true
     }
 
     if (incidentResolutionMatch && req.method === 'GET') {
       const id = incidentResolutionMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID de incidente inválido', 400)
-        return true
-      }
-      jsonResponse(req, res, await getIncidentVerificationResolution(id))
+      if (rejectInvalidUuid(req, res, id, 'ID de incidente')) return true
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'verification_plans.view',
+          rateLimit: 'default_read',
+          authorize: (auth) => authorizeIncidentAccess(auth, id),
+        },
+        async () => getIncidentVerificationResolution(id),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, result)
       return true
     }
 
     if (missionContributionsMatch && req.method === 'GET') {
       const id = missionContributionsMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID de misión inválido', 400)
-        return true
-      }
-      jsonResponse(req, res, await getMissionResolutionContributions(id))
+      if (rejectInvalidUuid(req, res, id, 'ID de misión')) return true
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'verification_plans.view',
+          rateLimit: 'default_read',
+          authorize: (auth) => authorizeMissionAccess(auth, id),
+        },
+        async () => getMissionResolutionContributions(id),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, result)
       return true
     }
 

@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 
 import { rejectIfUnauthenticated, requireRequestAuth } from '../middleware/auth.js'
+import { rejectIfRateLimited } from '../middleware/rate-limit.js'
 import { readJsonBody } from '../http/body.js'
 import { jsonError, jsonResponse } from '../http/json.js'
 import { recordAuthAuditEvent } from '../services/auth-audit.service.js'
@@ -14,14 +15,13 @@ export async function handleAuthRoutes(
   if (pathname === '/api/auth/me' && req.method === 'GET') {
     if (await rejectIfUnauthenticated(req, res)) return true
     const ctx = requireRequestAuth(req)
-    jsonResponse(req, res, {
-      context: ctx,
-    })
+    jsonResponse(req, res, { context: ctx })
     return true
   }
 
   if (pathname === '/api/auth/active-organization' && req.method === 'POST') {
     if (await rejectIfUnauthenticated(req, res)) return true
+    if (rejectIfRateLimited(req, res, 'org_switch')) return true
     const current = requireRequestAuth(req)
     const body = await readJsonBody<{ organization_id?: string }>(req)
     const organizationId = body.organization_id?.trim()

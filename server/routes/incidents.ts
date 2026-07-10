@@ -6,11 +6,10 @@ import {
   getIncidentHistory,
   listIncidentsDto,
 } from '../services/incidents.service.js'
-import { rejectIfUnauthenticated } from '../middleware/auth.js'
+import { authorizeIncidentAccess } from '../services/authorization/index.js'
+import { runOperationalGuard } from '../middleware/operational-guard.js'
+import { rejectInvalidUuid, UUID_RE } from '../http/route-utils.js'
 import { jsonError, jsonResponse } from '../http/json.js'
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export async function handleIncidentsRoutes(
   req: IncomingMessage,
@@ -23,7 +22,6 @@ export async function handleIncidentsRoutes(
     jsonError(req, res, 'Method not allowed', 405)
     return true
   }
-  if (await rejectIfUnauthenticated(req, res)) return true
 
   try {
     const historyMatch = pathname.match(/^\/api\/intelligence\/incidents\/([^/]+)\/history$/)
@@ -32,53 +30,84 @@ export async function handleIncidentsRoutes(
 
     if (historyMatch) {
       const id = historyMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID de incidente inválido', 400)
-        return true
-      }
-      const history = await getIncidentHistory(id)
-      jsonResponse(req, res, history)
+      if (rejectInvalidUuid(req, res, id, 'ID de incidente')) return true
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'incidents.view',
+          rateLimit: 'default_read',
+          authorize: (auth) => authorizeIncidentAccess(auth, id),
+        },
+        async () => getIncidentHistory(id),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, result)
       return true
     }
 
     if (eventsMatch) {
       const id = eventsMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID de incidente inválido', 400)
-        return true
-      }
-      const events = await getIncidentEvents(id)
-      if (!events) {
+      if (rejectInvalidUuid(req, res, id, 'ID de incidente')) return true
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'incidents.view',
+          rateLimit: 'default_read',
+          authorize: (auth) => authorizeIncidentAccess(auth, id),
+        },
+        async () => getIncidentEvents(id),
+      )
+      if (result === null) return true
+      if (!result) {
         jsonError(req, res, 'Incidente no encontrado', 404)
         return true
       }
-      jsonResponse(req, res, events)
+      jsonResponse(req, res, result)
       return true
     }
 
     if (detailMatch) {
       const id = detailMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID de incidente inválido', 400)
-        return true
-      }
-      const detail = await getIncidentDetail(id)
-      if (!detail) {
+      if (rejectInvalidUuid(req, res, id, 'ID de incidente')) return true
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'incidents.view',
+          rateLimit: 'default_read',
+          authorize: (auth) => authorizeIncidentAccess(auth, id),
+        },
+        async () => getIncidentDetail(id),
+      )
+      if (result === null) return true
+      if (!result) {
         jsonError(req, res, 'Incidente no encontrado', 404)
         return true
       }
-      jsonResponse(req, res, detail)
+      jsonResponse(req, res, result)
       return true
     }
 
     if (pathname === '/api/intelligence/incidents') {
-      const result = await listIncidentsDto({
-        status: searchParams.get('status') ?? undefined,
-        attention_level: searchParams.get('attention_level') ?? undefined,
-        verification_level: searchParams.get('verification_level') ?? undefined,
-        domain: searchParams.get('domain') ?? undefined,
-        limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : undefined,
-      })
+      const result = await runOperationalGuard(
+        req,
+        res,
+        { permission: 'incidents.view', rateLimit: 'default_read' },
+        async (auth) =>
+          listIncidentsDto(
+            {
+              status: searchParams.get('status') ?? undefined,
+              attention_level: searchParams.get('attention_level') ?? undefined,
+              verification_level: searchParams.get('verification_level') ?? undefined,
+              domain: searchParams.get('domain') ?? undefined,
+              limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : undefined,
+            },
+            auth,
+          ),
+      )
+      if (result === null) return true
       jsonResponse(req, res, result)
       return true
     }
@@ -101,7 +130,6 @@ export async function handleFireEventIncidentRoute(
     jsonError(req, res, 'Method not allowed', 405)
     return true
   }
-  if (await rejectIfUnauthenticated(req, res)) return true
 
   const eventId = match[1]
   if (!UUID_RE.test(eventId)) {
@@ -110,7 +138,13 @@ export async function handleFireEventIncidentRoute(
   }
 
   try {
-    const result = await getFireEventIncident(eventId)
+    const result = await runOperationalGuard(
+      req,
+      res,
+      { permission: 'incidents.view', rateLimit: 'default_read' },
+      async () => getFireEventIncident(eventId),
+    )
+    if (result === null) return true
     if (!result) {
       jsonResponse(req, res, { incident: null, recent_evaluations: [], generated_at: new Date().toISOString() })
       return true

@@ -12,12 +12,18 @@ import {
   getAssigneeMissionsDto,
   getMissionAssignmentsDto,
 } from '../services/mission-workflow.service.js'
-import { rejectIfUnauthenticated } from '../middleware/auth.js'
+import {
+  authorizeAssigneeListAccess,
+  authorizeIncidentAccess,
+  authorizeMissionAccess,
+  authorizeMissionWorkflowAction,
+  authorizeVerificationPlanAccess,
+} from '../services/authorization/index.js'
+import { assertBodyOrganizationMatchesActive } from '../auth/payload-tenant-guard.js'
+import { runOperationalGuard } from '../middleware/operational-guard.js'
 import { readJsonBody } from '../http/body.js'
+import { rejectInvalidUuid } from '../http/route-utils.js'
 import { jsonError, jsonResponse } from '../http/json.js'
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 const WORKFLOW_ACTIONS = [
   'assign',
@@ -31,36 +37,54 @@ const WORKFLOW_ACTIONS = [
   'cancel',
 ] as const
 
+type WorkflowAssigneeType = 'user' | 'team' | 'organization' | 'external_actor'
+
 async function handleWorkflowPost(
   req: IncomingMessage,
   res: ServerResponse,
   missionId: string,
   action: (typeof WORKFLOW_ACTIONS)[number],
-): Promise<void> {
+): Promise<boolean> {
   const body = await readJsonBody<Record<string, unknown>>(req)
-  try {
-    const result = await executeMissionWorkflow(missionId, {
-      action,
-      assignee_type: body.assignee_type as WorkflowAssigneeType | undefined,
-      assignee_id: body.assignee_id ? String(body.assignee_id) : undefined,
-      organization_id: body.organization_id ? String(body.organization_id) : undefined,
-      reason: body.reason ? String(body.reason) : undefined,
-      idempotency_key: body.idempotency_key ? String(body.idempotency_key) : undefined,
-      override_compatibility: Boolean(body.override_compatibility),
-      explicit_inconclusive: Boolean(body.explicit_inconclusive),
-      actor_id: body.actor_id ? String(body.actor_id) : undefined,
-    })
-    if (!result.ok) {
-      jsonError(req, res, result.reasons.join('; '), 400)
-      return
-    }
-    jsonResponse(req, res, result)
-  } catch (err) {
-    jsonError(req, res, err instanceof Error ? err.message : 'Error de workflow', 400)
+  const result = await runOperationalGuard(
+    req,
+    res,
+    {
+      permission: 'missions.view',
+      authorize: (auth) => authorizeMissionWorkflowAction(auth, missionId, action),
+      auditType: `mission_${action}`,
+      resourceType: 'mission',
+      resourceId: missionId,
+    },
+    async (auth) => {
+      await assertBodyOrganizationMatchesActive(
+        auth,
+        body.organization_id ? String(body.organization_id) : null,
+      )
+      return executeMissionWorkflow(
+        missionId,
+        {
+          action,
+          assignee_type: body.assignee_type as WorkflowAssigneeType | undefined,
+          assignee_id: body.assignee_id ? String(body.assignee_id) : undefined,
+          organization_id: auth.activeOrganizationId,
+          reason: body.reason ? String(body.reason) : undefined,
+          idempotency_key: body.idempotency_key ? String(body.idempotency_key) : undefined,
+          override_compatibility: Boolean(body.override_compatibility),
+          explicit_inconclusive: Boolean(body.explicit_inconclusive),
+        },
+        auth,
+      )
+    },
+  )
+  if (result === null) return true
+  if (!result.ok) {
+    jsonError(req, res, result.reasons.join('; '), 400)
+    return true
   }
+  jsonResponse(req, res, result)
+  return true
 }
-
-type WorkflowAssigneeType = 'user' | 'team' | 'organization' | 'external_actor'
 
 export async function handleMissionsRoutes(
   req: IncomingMessage,
@@ -83,7 +107,6 @@ export async function handleMissionsRoutes(
   if (!isOperationsMissions && !incidentMissionsMatch && !planMissionsMatch && !isOperationsAssignees) {
     return false
   }
-  if (await rejectIfUnauthenticated(req, res)) return true
 
   try {
     for (const action of WORKFLOW_ACTIONS) {
@@ -94,12 +117,8 @@ export async function handleMissionsRoutes(
           return true
         }
         const id = match[1]
-        if (!UUID_RE.test(id)) {
-          jsonError(req, res, 'ID de misión inválido', 400)
-          return true
-        }
-        await handleWorkflowPost(req, res, id, action)
-        return true
+        if (rejectInvalidUuid(req, res, id, 'ID de misión')) return true
+        return handleWorkflowPost(req, res, id, action)
       }
     }
 
@@ -110,11 +129,19 @@ export async function handleMissionsRoutes(
         return true
       }
       const id = assignmentsMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID de misión inválido', 400)
-        return true
-      }
-      jsonResponse(req, res, await getMissionAssignmentsDto(id))
+      if (rejectInvalidUuid(req, res, id, 'ID de misión')) return true
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'missions.view',
+          rateLimit: 'default_read',
+          authorize: (auth) => authorizeMissionAccess(auth, id),
+        },
+        async () => getMissionAssignmentsDto(id),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, result)
       return true
     }
 
@@ -124,7 +151,18 @@ export async function handleMissionsRoutes(
         return true
       }
       const [, type, id] = assigneeMissionsMatch
-      jsonResponse(req, res, await getAssigneeMissionsDto(type, id))
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'missions.view',
+          rateLimit: 'default_read',
+          authorize: (auth) => authorizeAssigneeListAccess(auth, type, id),
+        },
+        async () => getAssigneeMissionsDto(type, id),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, result)
       return true
     }
 
@@ -135,21 +173,37 @@ export async function handleMissionsRoutes(
 
     if (incidentMissionsMatch) {
       const id = incidentMissionsMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID de incidente inválido', 400)
-        return true
-      }
-      jsonResponse(req, res, await getIncidentMissions(id))
+      if (rejectInvalidUuid(req, res, id, 'ID de incidente')) return true
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'missions.view',
+          rateLimit: 'default_read',
+          authorize: (auth) => authorizeIncidentAccess(auth, id),
+        },
+        async (auth) => getIncidentMissions(id, auth),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, result)
       return true
     }
 
     if (planMissionsMatch) {
       const id = planMissionsMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID de plan inválido', 400)
-        return true
-      }
-      jsonResponse(req, res, await getVerificationPlanMissions(id))
+      if (rejectInvalidUuid(req, res, id, 'ID de plan')) return true
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'missions.view',
+          rateLimit: 'default_read',
+          authorize: (auth) => authorizeVerificationPlanAccess(auth, id),
+        },
+        async (auth) => getVerificationPlanMissions(id, auth),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, result)
       return true
     }
 
@@ -161,55 +215,86 @@ export async function handleMissionsRoutes(
 
     if (tasksMatch) {
       const id = tasksMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID de misión inválido', 400)
-        return true
-      }
-      const tasks = await getMissionTasksDto(id)
-      if (!tasks) {
+      if (rejectInvalidUuid(req, res, id, 'ID de misión')) return true
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'missions.view',
+          rateLimit: 'default_read',
+          authorize: (auth) => authorizeMissionAccess(auth, id),
+        },
+        async () => getMissionTasksDto(id),
+      )
+      if (result === null) return true
+      if (!result) {
         jsonError(req, res, 'Misión no encontrada', 404)
         return true
       }
-      jsonResponse(req, res, tasks)
+      jsonResponse(req, res, result)
       return true
     }
 
     if (evidenceMatch) {
       const id = evidenceMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID de misión inválido', 400)
-        return true
-      }
-      const evidence = await getMissionEvidenceDto(id)
-      if (!evidence) {
+      if (rejectInvalidUuid(req, res, id, 'ID de misión')) return true
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'evidence.view',
+          rateLimit: 'default_read',
+          authorize: (auth) => authorizeMissionAccess(auth, id),
+        },
+        async () => getMissionEvidenceDto(id),
+      )
+      if (result === null) return true
+      if (!result) {
         jsonError(req, res, 'Misión no encontrada', 404)
         return true
       }
-      jsonResponse(req, res, evidence)
+      jsonResponse(req, res, result)
       return true
     }
 
     if (detailMatch) {
       const id = detailMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID de misión inválido', 400)
-        return true
-      }
-      const detail = await getMissionDetail(id)
-      if (!detail) {
+      if (rejectInvalidUuid(req, res, id, 'ID de misión')) return true
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'missions.view',
+          rateLimit: 'default_read',
+          authorize: (auth) => authorizeMissionAccess(auth, id),
+        },
+        async () => getMissionDetail(id),
+      )
+      if (result === null) return true
+      if (!result) {
         jsonError(req, res, 'Misión no encontrada', 404)
         return true
       }
-      jsonResponse(req, res, detail)
+      jsonResponse(req, res, result)
       return true
     }
 
     if (pathname === '/api/operations/missions') {
-      const result = await listMissionsDto({
-        status: searchParams.get('status') ?? undefined,
-        incident_id: searchParams.get('incident_id') ?? undefined,
-        limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : undefined,
-      })
+      const result = await runOperationalGuard(
+        req,
+        res,
+        { permission: 'missions.view', rateLimit: 'default_read' },
+        async (auth) =>
+          listMissionsDto(
+            {
+              status: searchParams.get('status') ?? undefined,
+              incident_id: searchParams.get('incident_id') ?? undefined,
+              limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : undefined,
+            },
+            auth,
+          ),
+      )
+      if (result === null) return true
       jsonResponse(req, res, result)
       return true
     }

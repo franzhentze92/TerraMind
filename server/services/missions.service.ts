@@ -1,3 +1,4 @@
+import type { RequestAuthContext } from '@/core/auth/permissions'
 import {
   getMissionById,
   listMissionEvidenceRequirements,
@@ -11,16 +12,21 @@ import {
   listAssignmentHistory,
   listAssignmentsForMission,
 } from '@/pipeline/stores/mission-assignments.store'
+import { filterRowsByActiveOrganization } from '../auth/tenant-list-scope.js'
 
-export async function listMissionsDto(filters: {
+export async function listMissionsDto(
+  filters: {
   status?: string
   incident_id?: string
   verification_plan_id?: string
   limit?: number
-}) {
+  },
+  auth?: RequestAuthContext,
+) {
   const rows = await listMissions(filters)
+  const scoped = auth ? filterRowsByActiveOrganization(auth, rows as Array<{ organization_id?: string | null }>) : rows
   const items = []
-  for (const m of rows) {
+  for (const m of scoped) {
     const tasks = await listMissionTasks(m.id)
     const evidence = await listMissionEvidenceRequirements(m.id)
     const incident = await getIncidentById(m.incident_id)
@@ -82,10 +88,10 @@ export async function getMissionEvidenceDto(id: string) {
   return { items: evidence, generated_at: new Date().toISOString() }
 }
 
-export async function getIncidentMissions(incidentId: string) {
-  return listMissionsDto({ incident_id: incidentId, limit: 50 })
+export async function getIncidentMissions(incidentId: string, auth?: RequestAuthContext) {
+  return listMissionsDto({ incident_id: incidentId, limit: 50 }, auth)
 }
 
-export async function getVerificationPlanMissions(planId: string) {
-  return listMissionsDto({ verification_plan_id: planId, limit: 50 })
+export async function getVerificationPlanMissions(planId: string, auth?: RequestAuthContext) {
+  return listMissionsDto({ verification_plan_id: planId, limit: 50 }, auth)
 }

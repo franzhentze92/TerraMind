@@ -4,11 +4,10 @@ import {
   getPriorityForFireEvent,
   listPriorities,
 } from '../services/priorities.service.js'
-import { rejectIfUnauthenticated } from '../middleware/auth.js'
+import { authorizePriorityAccess } from '../services/authorization/index.js'
+import { runOperationalGuard } from '../middleware/operational-guard.js'
+import { rejectInvalidUuid } from '../http/route-utils.js'
 import { jsonError, jsonResponse } from '../http/json.js'
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export async function handlePrioritiesRoutes(
   req: IncomingMessage,
@@ -21,35 +20,51 @@ export async function handlePrioritiesRoutes(
     jsonError(req, res, 'Method not allowed', 405)
     return true
   }
-  if (await rejectIfUnauthenticated(req, res)) return true
 
   try {
     const detailMatch = pathname.match(/^\/api\/intelligence\/priorities\/([^/]+)$/)
     if (detailMatch) {
       const id = detailMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID de evaluación inválido', 400)
-        return true
-      }
-      const detail = await getPriorityDetail(id)
-      if (!detail) {
+      if (rejectInvalidUuid(req, res, id, 'ID de evaluación')) return true
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'priorities.view',
+          rateLimit: 'default_read',
+          authorize: (auth) => authorizePriorityAccess(auth, id),
+        },
+        async () => getPriorityDetail(id),
+      )
+      if (result === null) return true
+      if (!result) {
         jsonError(req, res, 'Evaluación no encontrada', 404)
         return true
       }
-      jsonResponse(req, res, detail)
+      jsonResponse(req, res, result)
       return true
     }
 
     if (pathname === '/api/intelligence/priorities') {
-      const result = await listPriorities({
-        attention_level: searchParams.get('attention_level') ?? undefined,
-        verification_level: searchParams.get('verification_level') ?? undefined,
-        action_level: searchParams.get('action_level') ?? undefined,
-        department_code: searchParams.get('department_code') ?? undefined,
-        dominant_domain: searchParams.get('dominant_domain') ?? undefined,
-        limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : undefined,
-        offset: searchParams.get('offset') ? Number(searchParams.get('offset')) : undefined,
-      })
+      const result = await runOperationalGuard(
+        req,
+        res,
+        { permission: 'priorities.view', rateLimit: 'default_read' },
+        async (auth) =>
+          listPriorities(
+            {
+              attention_level: searchParams.get('attention_level') ?? undefined,
+              verification_level: searchParams.get('verification_level') ?? undefined,
+              action_level: searchParams.get('action_level') ?? undefined,
+              department_code: searchParams.get('department_code') ?? undefined,
+              dominant_domain: searchParams.get('dominant_domain') ?? undefined,
+              limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : undefined,
+              offset: searchParams.get('offset') ? Number(searchParams.get('offset')) : undefined,
+            },
+            auth,
+          ),
+      )
+      if (result === null) return true
       jsonResponse(req, res, result)
       return true
     }
@@ -73,16 +88,18 @@ export async function handleFirePriorityRoute(
     jsonError(req, res, 'Method not allowed', 405)
     return true
   }
-  if (await rejectIfUnauthenticated(req, res)) return true
 
   const eventId = match[1]
-  if (!UUID_RE.test(eventId)) {
-    jsonError(req, res, 'ID de evento inválido', 400)
-    return true
-  }
+  if (rejectInvalidUuid(req, res, eventId, 'ID de evento')) return true
 
   try {
-    const result = await getPriorityForFireEvent(eventId)
+    const result = await runOperationalGuard(
+      req,
+      res,
+      { permission: 'priorities.view', rateLimit: 'default_read' },
+      async () => getPriorityForFireEvent(eventId),
+    )
+    if (result === null) return true
     jsonResponse(req, res, result)
     return true
   } catch (err) {

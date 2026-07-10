@@ -1,3 +1,4 @@
+import type { RequestAuthContext } from '@/core/auth/permissions'
 import {
   getIncidentById,
   getIncidentForFireEvent,
@@ -9,20 +10,24 @@ import {
 } from '@/pipeline/stores/incident-memberships.store'
 import { listCorrelationRunsForEvent } from '@/pipeline/stores/incident-correlation-runs.store'
 import { loadFireEventIncidentSnapshot } from '@/modules/incidents/services/fire-incident-snapshot.loader'
+import { filterRowsByActiveOrganization } from '../auth/tenant-list-scope.js'
 
-export async function listIncidentsDto(filters: {
+export async function listIncidentsDto(
+  filters: {
   status?: string
   attention_level?: string
   verification_level?: string
   domain?: string
   limit?: number
-}) {
+  },
+  auth?: RequestAuthContext,
+) {
   const rows = await listIncidents({
     status: filters.status,
     attention_level: filters.attention_level,
     limit: filters.limit ?? 100,
   })
-  let items = rows
+  let items = auth ? filterRowsByActiveOrganization(auth, rows as Array<{ organization_id?: string | null }>) : rows
   if (filters.verification_level) {
     items = items.filter((r) => r.verification_level === filters.verification_level)
   }

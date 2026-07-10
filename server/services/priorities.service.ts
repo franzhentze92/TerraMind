@@ -1,3 +1,4 @@
+import type { RequestAuthContext } from '@/core/auth/permissions'
 import type { PriorityAssessment } from '@/modules/priorities/priorities.types'
 import {
   getPriorityAssessmentById,
@@ -7,6 +8,7 @@ import {
   type PriorityAssessmentRow,
 } from '@/pipeline/stores/priority-assessments.store'
 import { getSupabaseAdmin } from '@/pipeline/stores/supabase.client'
+import { filterRowsByActiveOrganization } from '../auth/tenant-list-scope.js'
 
 export interface PriorityListItemDto {
   id: string
@@ -94,7 +96,8 @@ function toListItem(
   }
 }
 
-export async function listPriorities(filters: {
+export async function listPriorities(
+  filters: {
   attention_level?: string
   verification_level?: string
   action_level?: string
@@ -102,7 +105,9 @@ export async function listPriorities(filters: {
   dominant_domain?: string
   limit?: number
   offset?: number
-}): Promise<{ items: PriorityListItemDto[]; generated_at: string }> {
+  },
+  auth?: RequestAuthContext,
+): Promise<{ items: PriorityListItemDto[]; generated_at: string }> {
   const rows = await listPriorityAssessments({
     assessment_status: 'active',
     attention_level: filters.attention_level,
@@ -112,11 +117,14 @@ export async function listPriorities(filters: {
     limit: filters.limit,
     offset: filters.offset,
   })
+  const scoped = auth
+    ? filterRowsByActiveOrganization(auth, rows as Array<{ organization_id?: string | null }>)
+    : rows
 
-  const entityIds = rows.map((r) => r.entity_id)
+  const entityIds = scoped.map((r) => r.entity_id)
   const deptMap = await loadEventDepartments(entityIds)
 
-  let items = rows.map((row) => toListItem(row, deptMap.get(row.entity_id)))
+  let items = scoped.map((row) => toListItem(row, deptMap.get(row.entity_id)))
 
   if (filters.department_code) {
     items = items.filter((item) => {

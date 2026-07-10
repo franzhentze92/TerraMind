@@ -4,11 +4,10 @@ import {
   getFindingsForFireEvent,
   listFindings,
 } from '../services/findings.service.js'
-import { rejectIfUnauthenticated } from '../middleware/auth.js'
+import { authorizeFindingAccess } from '../services/authorization/index.js'
+import { runOperationalGuard } from '../middleware/operational-guard.js'
+import { rejectInvalidUuid } from '../http/route-utils.js'
 import { jsonError, jsonResponse } from '../http/json.js'
-
-const UUID_RE =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 export async function handleFindingsRoutes(
   req: IncomingMessage,
@@ -21,36 +20,52 @@ export async function handleFindingsRoutes(
     jsonError(req, res, 'Method not allowed', 405)
     return true
   }
-  if (await rejectIfUnauthenticated(req, res)) return true
 
   try {
     const detailMatch = pathname.match(/^\/api\/intelligence\/findings\/([^/]+)$/)
     if (detailMatch) {
       const id = detailMatch[1]
-      if (!UUID_RE.test(id)) {
-        jsonError(req, res, 'ID de hallazgo inválido', 400)
-        return true
-      }
-      const detail = await getFindingDetail(id)
-      if (!detail) {
+      if (rejectInvalidUuid(req, res, id, 'ID de hallazgo')) return true
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'findings.view',
+          rateLimit: 'default_read',
+          authorize: (auth) => authorizeFindingAccess(auth, id),
+        },
+        async () => getFindingDetail(id),
+      )
+      if (result === null) return true
+      if (!result) {
         jsonError(req, res, 'Hallazgo no encontrado', 404)
         return true
       }
-      jsonResponse(req, res, detail)
+      jsonResponse(req, res, result)
       return true
     }
 
     if (pathname === '/api/intelligence/findings') {
-      const result = await listFindings({
-        status: searchParams.get('status') ?? undefined,
-        finding_type: searchParams.get('finding_type') ?? undefined,
-        entity_type: searchParams.get('entity_type') ?? undefined,
-        entity_id: searchParams.get('entity_id') ?? undefined,
-        department_code: searchParams.get('department_code') ?? undefined,
-        confidence: searchParams.get('confidence') ?? undefined,
-        limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : undefined,
-        offset: searchParams.get('offset') ? Number(searchParams.get('offset')) : undefined,
-      })
+      const result = await runOperationalGuard(
+        req,
+        res,
+        { permission: 'findings.view', rateLimit: 'default_read' },
+        async (auth) =>
+          listFindings(
+            {
+              status: searchParams.get('status') ?? undefined,
+              finding_type: searchParams.get('finding_type') ?? undefined,
+              entity_type: searchParams.get('entity_type') ?? undefined,
+              entity_id: searchParams.get('entity_id') ?? undefined,
+              department_code: searchParams.get('department_code') ?? undefined,
+              confidence: searchParams.get('confidence') ?? undefined,
+              limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : undefined,
+              offset: searchParams.get('offset') ? Number(searchParams.get('offset')) : undefined,
+            },
+            auth,
+          ),
+      )
+      if (result === null) return true
       jsonResponse(req, res, result)
       return true
     }
@@ -74,16 +89,18 @@ export async function handleFireFindingsRoute(
     jsonError(req, res, 'Method not allowed', 405)
     return true
   }
-  if (await rejectIfUnauthenticated(req, res)) return true
 
   const eventId = match[1]
-  if (!UUID_RE.test(eventId)) {
-    jsonError(req, res, 'ID de evento inválido', 400)
-    return true
-  }
+  if (rejectInvalidUuid(req, res, eventId, 'ID de evento')) return true
 
   try {
-    const result = await getFindingsForFireEvent(eventId)
+    const result = await runOperationalGuard(
+      req,
+      res,
+      { permission: 'incidents.view', rateLimit: 'default_read' },
+      async () => getFindingsForFireEvent(eventId),
+    )
+    if (result === null) return true
     jsonResponse(req, res, result)
     return true
   } catch (err) {

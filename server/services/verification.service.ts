@@ -1,3 +1,4 @@
+import type { RequestAuthContext } from '@/core/auth/permissions'
 import { FIRE_VERIFICATION_MODEL_VERSION } from '@/modules/verification/config/fire-verification.config'
 import { FIRE_VERIFICATION_METHOD_CATALOG } from '@/modules/verification/config/fire-verification.config'
 import {
@@ -8,8 +9,10 @@ import {
   listVerificationPlans,
 } from '@/pipeline/stores/verification-plans.store'
 import { getIncidentById } from '@/pipeline/stores/incidents.store'
+import { filterRowsByActiveOrganization } from '../auth/tenant-list-scope.js'
 
-export async function listVerificationPlansDto(filters: {
+export async function listVerificationPlansDto(
+  filters: {
   status?: string
   plan_priority?: number
   recommended_method?: string
@@ -18,16 +21,21 @@ export async function listVerificationPlansDto(filters: {
   domain?: string
   blocked?: boolean
   limit?: number
-}) {
+  },
+  auth?: RequestAuthContext,
+) {
   const rows = await listVerificationPlans({
     status: filters.status,
     domain: filters.domain,
     min_priority: filters.plan_priority,
     limit: filters.limit ?? 100,
   })
+  const scoped = auth
+    ? filterRowsByActiveOrganization(auth, rows as Array<{ organization_id?: string | null }>)
+    : rows
 
   const items = []
-  for (const plan of rows) {
+  for (const plan of scoped) {
     const incident = await getIncidentById(plan.incident_id)
     const needs = await listVerificationNeedsForPlan(plan.id)
     const methods = await listMethodCandidatesForPlan(plan.id)

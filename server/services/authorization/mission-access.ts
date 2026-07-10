@@ -1,4 +1,5 @@
 import type { AuthorizedResourceContext, RequestAuthContext } from '@/core/auth/permissions'
+import { AuthorizationError } from '@/core/auth/permissions'
 import { authorizeWithPermission } from './authorization-core.js'
 import { TEST_MISSION_ORG_A, TEST_MISSION_ORG_B } from '../../auth/test-fixtures.js'
 
@@ -44,14 +45,14 @@ export async function authorizeMissionAccess(
   options?: { requireAssignee?: boolean },
 ): Promise<AuthorizedResourceContext> {
   const mission = await loadMissionAccessSnapshot(missionId)
-  if (!mission) throw new Error('Misión no encontrada')
+  if (!mission) throw new AuthorizationError('Misión no encontrada', 404)
 
   const ctx = authorizeWithPermission(auth, 'missions.view', mission, 'mission')
 
   if (options?.requireAssignee && !auth.isPlatformAdmin && !auth.roles.includes('field_supervisor')) {
     const allowed = mission.assignee_user_ids?.includes(auth.userId)
     if (!allowed && !auth.permissions.includes('missions.assign')) {
-      throw new Error('Misión no asignada al usuario')
+      throw new AuthorizationError('Misión no asignada al usuario', 403)
     }
   }
 
@@ -63,6 +64,6 @@ export async function authorizeAssignmentAction(
   missionId: string,
 ): Promise<AuthorizedResourceContext> {
   const mission = await loadMissionAccessSnapshot(missionId)
-  if (!mission) throw new Error('Misión no encontrada')
+  if (!mission) throw new AuthorizationError('Misión no encontrada', 404)
   return authorizeWithPermission(auth, 'missions.assign', mission, 'mission_assignment')
 }

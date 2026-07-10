@@ -21,7 +21,7 @@ import {
 } from '@/pipeline/stores/field-sync.store'
 import { runEvidenceProcessing } from '@/pipeline/engines/evidence/evidence-intake-processing.runner'
 import { getMissionById } from '@/pipeline/stores/missions.store'
-import { authorizeFieldSyncAccess } from './authorization/index.js'
+import { authorizeFieldSyncAccess, authorizeEvidenceSubmissionRead, authorizeEvidenceSubmissionWrite, authorizeSignedUploadUrl } from './authorization/index.js'
 import { assertAuthorizedBeforeServiceRole } from './authorized-admin.client.js'
 import { recordAuthAuditEvent } from './auth-audit.service.js'
 
@@ -79,6 +79,7 @@ export async function registerBundleSync(
 }
 
 export async function startEvidenceUploadSession(
+  auth: RequestAuthContext,
   submissionId: string,
   input: {
     local_asset_id?: string | null
@@ -90,6 +91,8 @@ export async function startEvidenceUploadSession(
     actor_id?: string | null
   },
 ) {
+  const authorized = await authorizeSignedUploadUrl(auth, submissionId)
+  assertAuthorizedBeforeServiceRole(authorized)
   const submission = await getEvidenceSubmissionById(submissionId)
   if (!submission) throw new Error('Submission no encontrada')
 
@@ -127,7 +130,7 @@ export async function startEvidenceUploadSession(
   await recordIntakeEvent({
     submissionId,
     eventType: 'upload_session_started',
-    actorId: input.actor_id ?? null,
+    actorId: input.actor_id ?? auth.userId,
     payload: { upload_session_id: session.id, storage_path: storagePath },
   })
 
@@ -141,7 +144,13 @@ export async function startEvidenceUploadSession(
   }
 }
 
-export async function renewEvidenceUploadUrl(submissionId: string, uploadSessionId: string) {
+export async function renewEvidenceUploadUrl(
+  auth: RequestAuthContext,
+  submissionId: string,
+  uploadSessionId: string,
+) {
+  const authorized = await authorizeSignedUploadUrl(auth, submissionId)
+  assertAuthorizedBeforeServiceRole(authorized)
   const session = await getUploadSessionById(uploadSessionId)
   if (!session || String(session.submission_id) !== submissionId) {
     throw new Error('Upload session no encontrada')
@@ -161,10 +170,12 @@ export async function renewEvidenceUploadUrl(submissionId: string, uploadSession
 }
 
 export async function reportUploadProgress(
+  auth: RequestAuthContext,
   submissionId: string,
   uploadSessionId: string,
   input: { bytes_transferred: number; status?: string },
 ) {
+  await authorizeEvidenceSubmissionWrite(auth, submissionId)
   const session = await getUploadSessionById(uploadSessionId)
   if (!session || String(session.submission_id) !== submissionId) {
     throw new Error('Upload session no encontrada')
@@ -177,7 +188,12 @@ export async function reportUploadProgress(
   return { ok: true, bytes_transferred: input.bytes_transferred }
 }
 
-export async function getUploadSessionStatus(submissionId: string, uploadSessionId: string) {
+export async function getUploadSessionStatus(
+  auth: RequestAuthContext,
+  submissionId: string,
+  uploadSessionId: string,
+) {
+  await authorizeEvidenceSubmissionRead(auth, submissionId)
   const session = await getUploadSessionById(uploadSessionId)
   if (!session || String(session.submission_id) !== submissionId) {
     throw new Error('Upload session no encontrada')
@@ -191,6 +207,7 @@ export async function getUploadSessionStatus(submissionId: string, uploadSession
 }
 
 export async function linkSubmissionRequirements(
+  auth: RequestAuthContext,
   submissionId: string,
   links: Array<{
     requirement_id: string
@@ -200,6 +217,7 @@ export async function linkSubmissionRequirements(
     preliminary_coverage: string
   }>,
 ) {
+  await authorizeEvidenceSubmissionWrite(auth, submissionId)
   const rows = await upsertRequirementLinksIdempotent(submissionId, links)
   await recordIntakeEvent({
     submissionId,
@@ -209,19 +227,25 @@ export async function linkSubmissionRequirements(
   return { linked_count: rows.length }
 }
 
-export async function finalizeSubmissionIntake(submissionId: string, actorId?: string | null) {
+export async function finalizeSubmissionIntake(
+  auth: RequestAuthContext,
+  submissionId: string,
+  actorId?: string | null,
+) {
+  await authorizeEvidenceSubmissionWrite(auth, submissionId)
   await runEvidenceProcessing(submissionId)
   const submission = await getEvidenceSubmissionById(submissionId)
   await recordIntakeEvent({
     submissionId,
     eventType: 'sync_finalize_requested',
-    actorId: actorId ?? null,
+    actorId: actorId ?? auth.userId,
     payload: { status: submission?.status },
   })
   return { status: String(submission?.status ?? 'processing') }
 }
 
-export async function getSubmissionReconciliation(submissionId: string) {
+export async function getSubmissionReconciliation(auth: RequestAuthContext, submissionId: string) {
+  await authorizeEvidenceSubmissionRead(auth, submissionId)
   const submission = await getEvidenceSubmissionById(submissionId)
   if (!submission) throw new Error('Submission no encontrada')
   const [assets, observation, links] = await Promise.all([
