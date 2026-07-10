@@ -7,6 +7,7 @@ import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
 import { MissionWorkflowActions } from '../components/MissionWorkflowActions'
 import { MissionEvidenceSection } from '@/modules/evidence/components/MissionEvidenceSection'
 import { MissionResolutionContributionsSection } from '@/modules/verification/components/MissionResolutionContributionsSection'
+import { OfflinePackageSection } from '@/modules/field-operations/offline-packages/components/OfflinePackageSection'
 
 export function MissionDetailPage() {
   const { missionId } = useParams()
@@ -95,6 +96,11 @@ export function MissionDetailPage() {
       />
 
       <MissionEvidenceSection missionId={String(mission.id)} />
+      <OfflinePackageSection
+        missionId={String(mission.id)}
+        missionTitle={String(mission.title)}
+        missionStatus={String(mission.status)}
+      />
       <MissionResolutionContributionsSection missionId={String(mission.id)} />
 
       <section className="mb-6">

@@ -54,6 +54,7 @@ const NAV_SECTIONS: NavSection[] = [
       { path: '/verificaciones', label: 'Verificaciones', icon: CheckCircle2 },
       { path: '/misiones', label: 'Misiones', icon: ClipboardList },
       { path: '/operaciones/asignaciones', label: 'Asignaciones', icon: ClipboardList },
+      { path: '/campo/paquetes', label: 'Campo — Paquetes', icon: Map },
       { path: '/copilot', label: 'Copilot', icon: Brain },
     ],
   },
