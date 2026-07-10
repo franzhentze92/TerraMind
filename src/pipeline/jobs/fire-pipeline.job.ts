@@ -366,6 +366,37 @@ export async function runFirePipeline(
               throw err
             }
           }
+
+          const landCoverEnqueueStart = Date.now()
+          try {
+            const { enqueueLandCoverJobs } = await import(
+              '@/pipeline/engines/fire/context/land-cover-jobs.engine'
+            )
+            const landCoverEnqueue = await enqueueLandCoverJobs({ limit: 10000, force: false })
+            stages.land_cover_enqueue = {
+              status: 'success',
+              duration_ms: Date.now() - landCoverEnqueueStart,
+              metrics: {
+                jobs_created: landCoverEnqueue.jobs_created,
+                land_cover_jobs_created: landCoverEnqueue.jobs_created,
+                jobs_skipped: landCoverEnqueue.jobs_skipped,
+                events_unchanged: landCoverEnqueue.events_unchanged,
+                context_version: landCoverEnqueue.context_version,
+              },
+            }
+          } catch (err) {
+            stages.land_cover_enqueue = {
+              status: 'partial',
+              duration_ms: Date.now() - landCoverEnqueueStart,
+              error: err instanceof Error ? err.message : 'land cover enqueue failed',
+              error_code: 'land_cover_enqueue_failed',
+              metrics: { land_cover_jobs_created: 0 },
+            }
+            logStage(pipelineRunId, 'land_cover_enqueue', {
+              status: 'warning',
+              error: err instanceof Error ? err.message : 'enqueue failed',
+            })
+          }
         })(),
         PIPELINE_TIMEOUTS_MS.pipelineTotal,
         'pipeline',

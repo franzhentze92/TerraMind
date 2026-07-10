@@ -47,6 +47,7 @@ export interface EventDetectionPoint {
 export interface LandCoverEventCandidate {
   id: string
   department_name: string | null
+  status: string
   detection_count: number
   centroid_lat: number | null
   centroid_lng: number | null
@@ -118,6 +119,7 @@ export async function listLandCoverEventCandidates(limit: number): Promise<LandC
     .select(
       `
       id,
+      status,
       detection_count,
       centroid_lat,
       centroid_lng,
@@ -149,6 +151,7 @@ export async function listLandCoverEventCandidates(limit: number): Promise<LandC
     return {
       id: row.id as string,
       department_name,
+      status: String(row.status ?? 'new'),
       detection_count: Number(row.detection_count ?? 0),
       centroid_lat: row.centroid_lat != null ? Number(row.centroid_lat) : null,
       centroid_lng: row.centroid_lng != null ? Number(row.centroid_lng) : null,

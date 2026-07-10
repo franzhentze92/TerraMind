@@ -1,4 +1,8 @@
-import type { LandCoverContextDto, LandCoverZoneDto } from '@/modules/fires/types/fire.dto'
+import type {
+  LandCoverContextDto,
+  LandCoverEnrichmentStateDto,
+  LandCoverZoneDto,
+} from '@/modules/fires/types/fire.dto'
 import { LAND_COVER_EXPECTED_ZONE_RADII_M } from '@/modules/fires/config/land-cover.constants'
 import { LandCoverDistributionBar } from '@/modules/fires/components/LandCoverDistributionBar'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
@@ -14,6 +18,7 @@ import { landCoverDisplayLabel } from '@/modules/territory/land-cover/land-cover
 
 interface FireLandCoverSectionProps {
   context?: LandCoverContextDto | null
+  enrichment?: LandCoverEnrichmentStateDto | null
   isLoading?: boolean
 }
 
@@ -62,7 +67,7 @@ function ZoneBlock({ zone, title }: { zone: LandCoverZoneDto; title: string }) {
   )
 }
 
-export function FireLandCoverSection({ context, isLoading }: FireLandCoverSectionProps) {
+export function FireLandCoverSection({ context, enrichment, isLoading }: FireLandCoverSectionProps) {
   const uiState = resolveLandCoverUiState({ isLoading, context })
   const stateMessage = landCoverUiStateMessage(uiState)
 
@@ -77,14 +82,22 @@ export function FireLandCoverSection({ context, isLoading }: FireLandCoverSectio
   }
 
   if (!context) {
+    const queueMessage =
+      enrichment?.status === 'queued' || enrichment?.status === 'processing'
+        ? enrichment.message
+        : enrichment?.message ?? stateMessage ?? 'Contexto de cobertura del suelo aún no calculado.'
+
     return (
       <div className="mt-6">
         <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
           Cobertura del suelo
         </p>
-        <p className="mt-2 text-sm text-text-tertiary">
-          {stateMessage ?? 'Contexto de cobertura del suelo aún no calculado.'}
-        </p>
+        <p className="mt-2 text-sm text-text-tertiary">{queueMessage}</p>
+        {enrichment?.status === 'failed' && (
+          <p className="mt-2 text-[11px] text-text-tertiary">
+            No se pudo completar el cálculo de cobertura del suelo.
+          </p>
+        )}
       </div>
     )
   }

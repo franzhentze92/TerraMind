@@ -61,13 +61,17 @@ function parseRadiiM(): number[] {
   return radii
 }
 
+export function parseLandCoverRadiiM(): number[] {
+  return parseRadiiM()
+}
+
 function parseConcurrency(): number {
   const raw = Number(process.env.LAND_COVER_ENRICHMENT_CONCURRENCY ?? 1)
   if (!Number.isFinite(raw) || raw < 1) return 1
   return Math.min(Math.floor(raw), 4)
 }
 
-function eventNeedsEnrichment(
+export function eventNeedsLandCoverEnrichment(
   event: LandCoverEventCandidate,
   contextVersion: string,
   force: boolean,
@@ -83,6 +87,21 @@ function eventNeedsEnrichment(
     return true
   }
   return false
+}
+
+function eventNeedsEnrichment(
+  event: LandCoverEventCandidate,
+  contextVersion: string,
+  force: boolean,
+): boolean {
+  if (
+    event.status === 'closed' &&
+    !force &&
+    !eventNeedsLandCoverEnrichment(event, contextVersion, false)
+  ) {
+    return false
+  }
+  return eventNeedsLandCoverEnrichment(event, contextVersion, force)
 }
 
 function resolveSamplePoints(
@@ -176,6 +195,49 @@ async function enrichSingleEvent(
   return toResultRow(event, finalAnalysis, Date.now() - started, usedCentroidFallback)
 }
 
+export interface LandCoverRuntimeContext {
+  contextVersion: string
+  radiiM: number[]
+  sourceLayerId: string | null
+}
+
+export async function resolveLandCoverRuntime(): Promise<LandCoverRuntimeContext> {
+  const radiiM = parseRadiiM()
+  const service = createLandCoverService()
+  const status = await service.getSourceStatus()
+  if (!status.available || !status.analyticCogSha256) {
+    throw new LandCoverSourceUnavailableError()
+  }
+
+  const contextVersion = buildLandCoverContextVersion({
+    sourceVersion: status.sourceVersion!,
+    rasterHash: status.analyticCogSha256!,
+    mapperVersion: status.mapperVersion!,
+    analysisMethodVersion: status.analysisMethodVersion!,
+    zoneRadiiM: radiiM,
+    nodataPolicy: LAND_COVER_NODATA_POLICY,
+    areaStrategy: LAND_COVER_AREA_STRATEGY,
+    bufferUnionMethod: LAND_COVER_BUFFER_UNION_METHOD,
+  })
+  const sourceLayerId = await getTerritorialLayerId(ESA_WORLDCOVER_LAYER_CODE)
+
+  return { contextVersion, radiiM, sourceLayerId }
+}
+
+export async function enrichLandCoverForEvent(
+  eventId: string,
+  runtime?: LandCoverRuntimeContext,
+): Promise<LandCoverEnrichResultRow> {
+  const candidates = await listLandCoverEventCandidates(10000)
+  const event = candidates.find((c) => c.id === eventId)
+  if (!event) {
+    throw new Error('Evento no encontrado')
+  }
+
+  const ctx = runtime ?? (await resolveLandCoverRuntime())
+  return enrichSingleEvent(event, ctx.radiiM, ctx.sourceLayerId)
+}
+
 async function runWithConcurrency<T>(
   items: T[],
   concurrency: number,
@@ -198,26 +260,10 @@ export async function runLandCoverEnrichment(
   const started = Date.now()
   const limit = options.limit ?? 10000
   const force = options.force ?? false
-  const radiiM = parseRadiiM()
   const concurrency = options.concurrency ?? parseConcurrency()
 
-  const service = createLandCoverService()
-  const status = await service.getSourceStatus()
-  if (!status.available || !status.analyticCogSha256) {
-    throw new LandCoverSourceUnavailableError()
-  }
-
-  const contextVersion = buildLandCoverContextVersion({
-    sourceVersion: status.sourceVersion!,
-    rasterHash: status.analyticCogSha256!,
-    mapperVersion: status.mapperVersion!,
-    analysisMethodVersion: status.analysisMethodVersion!,
-    zoneRadiiM: radiiM,
-    nodataPolicy: LAND_COVER_NODATA_POLICY,
-    areaStrategy: LAND_COVER_AREA_STRATEGY,
-    bufferUnionMethod: LAND_COVER_BUFFER_UNION_METHOD,
-  })
-  const sourceLayerId = await getTerritorialLayerId(ESA_WORLDCOVER_LAYER_CODE)
+  const runtime = await resolveLandCoverRuntime()
+  const { contextVersion, radiiM, sourceLayerId } = runtime
 
   const metrics: LandCoverEnrichMetrics = {
     events_considered: 0,

@@ -30,6 +30,8 @@
     "land-cover:benchmark": "tsx scripts/land-cover-benchmark.ts",
     "fires:enrich-land-cover": "tsx scripts/fires-enrich-land-cover.ts",
     "land-cover:context-status": "tsx scripts/land-cover-context-status.ts",
+    "land-cover:worker": "tsx scripts/land-cover-worker.ts",
+    "land-cover:jobs-retry": "tsx scripts/land-cover-jobs-retry.ts",
     "biodiversity:search": "tsx scripts/biodiversity-search.ts",
     "biodiversity:taxon": "tsx scripts/biodiversity-taxon.ts",
     "biodiversity:status": "tsx scripts/biodiversity-status.ts",

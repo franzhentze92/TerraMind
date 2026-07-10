@@ -98,6 +98,7 @@ export interface FireEventDetailDto extends FireEventListItemDto {
   interpretation: string
   protected_area_context: ProtectedAreaContextDto | null
   land_cover_context: LandCoverContextDto | null
+  land_cover_enrichment: LandCoverEnrichmentStateDto | null
   generated_at: string
 }
 
@@ -179,6 +180,18 @@ export interface LandCoverContextDto {
   zones: LandCoverZoneDto[]
   warnings: string[]
   disclaimer: string
+}
+
+export type LandCoverEnrichmentQueueStatus =
+  | 'queued'
+  | 'processing'
+  | 'complete'
+  | 'failed'
+  | 'unavailable'
+
+export interface LandCoverEnrichmentStateDto {
+  status: LandCoverEnrichmentQueueStatus
+  message: string | null
 }
 
 export interface FireDepartmentOptionDto {

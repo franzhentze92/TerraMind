@@ -48,6 +48,7 @@ describe('land-cover engine', () => {
       {
         id: 'evt-1',
         department_name: 'Petén',
+        status: 'active',
         detection_count: 2,
         centroid_lat: 16.9,
         centroid_lng: -90.5,
@@ -104,6 +105,7 @@ describe('land-cover engine', () => {
       {
         id: 'evt-2',
         department_name: 'Petén',
+        status: 'active',
         detection_count: 0,
         centroid_lat: 16.9,
         centroid_lng: -90.5,
@@ -129,6 +131,7 @@ describe('land-cover engine', () => {
       {
         id: 'evt-3',
         department_name: 'Petén',
+        status: 'active',
         detection_count: 1,
         centroid_lat: 16.9,
         centroid_lng: -90.5,

@@ -334,7 +334,10 @@ export function FireEventDetailPanel({
                   )}
                 </div>
 
-                <FireLandCoverSection context={event.land_cover_context} />
+                <FireLandCoverSection
+                  context={event.land_cover_context}
+                  enrichment={event.land_cover_enrichment}
+                />
               </section>
             )}
 

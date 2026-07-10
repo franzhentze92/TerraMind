@@ -7,11 +7,13 @@ import { mapEventRowToDto } from '@/modules/fires/api/fire-api.mappers'
 import type { FireEventDetailDto, FireDepartmentOptionDto } from '@/modules/fires/types/fire.dto'
 import { buildProtectedAreaContextDto } from '@/modules/fires/utils/protected-area-context.dto'
 import { buildLandCoverContextDto } from '@/modules/fires/utils/land-cover-context.dto'
+import { buildLandCoverEnrichmentState } from '@/modules/fires/utils/land-cover-enrichment-state'
 import type { FireEventContextRow } from '@/pipeline/stores/territorial.store'
 import {
   getLandCoverContext,
   getLandCoverZones,
 } from '@/pipeline/stores/land-cover.store'
+import { getActiveLandCoverJobForEvent } from '@/pipeline/stores/land-cover-jobs.store'
 import { getSupabaseAdmin } from '@/pipeline/stores/supabase.client'
 
 const EVENT_SELECT = `
@@ -119,6 +121,13 @@ export async function getFireEventDetail(eventId: string): Promise<FireEventDeta
     ? await getLandCoverZones(eventId, landCoverRow.context_version)
     : []
   const land_cover_context = buildLandCoverContextDto(landCoverRow, landCoverZones)
+  const activeLandCoverJob = land_cover_context
+    ? null
+    : await getActiveLandCoverJobForEvent(eventId)
+  const land_cover_enrichment = buildLandCoverEnrichmentState(
+    land_cover_context,
+    activeLandCoverJob,
+  )
 
   const detail: FireEventDetailDto = {
     ...base,
@@ -136,6 +145,7 @@ export async function getFireEventDetail(eventId: string): Promise<FireEventDeta
     }),
     protected_area_context,
     land_cover_context,
+    land_cover_enrichment,
     generated_at: generatedAt,
   }
 
