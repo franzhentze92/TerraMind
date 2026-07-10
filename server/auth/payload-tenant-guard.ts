@@ -2,11 +2,11 @@ import type { RequestAuthContext } from '@/core/auth/permissions'
 import { AuthorizationError } from '@/core/auth/permissions'
 import {
   loadEvidenceSubmissionSnapshot,
-  loadMissionAccessSnapshot,
   loadOfflinePackageSnapshot,
   loadTaskSnapshot,
   loadVerificationNeedSnapshot,
 } from '../services/authorization/resource-resolver.js'
+import { loadMissionAccessSnapshot } from '../services/authorization/mission-access.js'
 
 export async function assertMissionTaskBelongsToMission(
   auth: RequestAuthContext,

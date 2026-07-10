@@ -1,0 +1,31 @@
+{
+  "phase": "8B.7F.4",
+  "generated_at": "2026-07-10T23:46:20.298Z",
+  "project_ref_masked": "djtk…neul",
+  "migrations": [
+    {
+      "name": "028_field_sync",
+      "status": "verified"
+    },
+    {
+      "name": "029_auth_tenant_isolation",
+      "status": "verified"
+    },
+    {
+      "name": "030_auth_provisioning",
+      "status": "verified"
+    }
+  ],
+  "counts": {
+    "organizations": 1,
+    "user_profiles": 1,
+    "organization_memberships": 1,
+    "organization_invitations": 0,
+    "platform_bootstrap_runs": 1,
+    "evidence_upload_sessions": 0,
+    "evidence_bundle_sync_registrations": 0,
+    "evidence_submissions": 0
+  },
+  "bootstrap_enabled": false,
+  "field_real_sync_enabled": false
+}

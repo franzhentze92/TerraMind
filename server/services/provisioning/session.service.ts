@@ -100,7 +100,9 @@ export async function buildAuthSessionPayload(
     return { state: 'awaiting_access', context: null, profile: profileDto, organizations }
   }
 
-  if (membership.status === 'suspended') throw new AuthenticationError('Membership suspended')
+  if (membership.status === 'suspended') {
+    return { state: 'suspended', context: null, profile: profileDto, organizations }
+  }
   if (membership.status === 'revoked') {
     return { state: 'revoked', context: null, profile: profileDto, organizations }
   }
@@ -169,7 +171,9 @@ function buildTestAuthSessionPayload(authUserId: string, requestedOrgId?: string
     return { state: 'awaiting_access', context: null, profile: profileDto, organizations }
   }
 
-  if (membership.status === 'suspended') throw new AuthenticationError('Membership suspended')
+  if (membership.status === 'suspended') {
+    return { state: 'suspended', context: null, profile: profileDto, organizations }
+  }
   if (membership.status === 'revoked') {
     return { state: 'revoked', context: null, profile: profileDto, organizations }
   }

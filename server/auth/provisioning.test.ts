@@ -15,6 +15,7 @@ import {
   listOrganizationMembers,
   revokeOrganizationMembership,
   suspendOrganizationMembership,
+  reactivateOrganizationMembership,
   assignOrganizationRole,
 } from '../services/provisioning/membership-admin.service.js'
 import { buildAuthSessionPayload } from '../services/provisioning/session.service.js'
@@ -186,9 +187,10 @@ describe('provisioning — 8B.7F.3', () => {
     const members = await listOrganizationMembers(admin)
     const tech = members.find((m) => m.email.includes('tech')) ?? members[0]
     await suspendOrganizationMembership(admin, tech.membership_id)
-    await expect(buildAuthSessionPayload(resolveTestAuthToken('test-tech-org-a')!.authUserId)).rejects.toThrow(
-      /suspended/i,
-    )
+    const session = await buildAuthSessionPayload(resolveTestAuthToken('test-tech-org-a')!.authUserId)
+    expect(session.state).toBe('suspended')
+    expect(session.context).toBeNull()
+    await reactivateOrganizationMembership(admin, tech.membership_id)
   })
 
   it('cannot revoke last organization admin', async () => {

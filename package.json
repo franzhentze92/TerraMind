@@ -68,6 +68,7 @@
     "field-sync:validate": "tsx scripts/field-sync-validate.ts",
     "auth:audit": "tsx scripts/auth-audit.ts",
     "auth:bootstrap-admin": "tsx scripts/bootstrap-platform-admin.ts",
+    "auth:activation-8b7f4": "tsx scripts/auth-activation-8b7f4.ts",
     "tenant-isolation:test": "vitest run server/auth/auth.test.ts server/auth/operational-auth.test.ts server/auth/provisioning.test.ts",
     "land-cover:plan-tiles": "tsx scripts/land-cover-plan-tiles.ts",
     "land-cover:download": "tsx scripts/land-cover-download.ts",
