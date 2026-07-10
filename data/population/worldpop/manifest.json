@@ -34,25 +34,57 @@
   "conservation": [
     {
       "variant": "constrained",
-      "raw_sum": 17170496,
-      "wgs84_clip_sum": 17196427,
-      "wgs84_cog_sum": 17196427,
-      "laea_cog_sum": 17150264,
-      "diff_wgs84_clip_pct": 0.15,
-      "diff_laea_pct": 0.27,
-      "outside_adm0_population": 0,
-      "nodata_inside_adm0_pixels": 0
+      "raw_sum": 17228621,
+      "inside_adm0_sum": 17223237,
+      "outside_adm0_sum": 5384,
+      "wgs84_clip_sum": 17223237,
+      "wgs84_cog_sum": 17223237,
+      "laea_cog_sum": 17223215,
+      "diff_inside_vs_raw_pct": 0.03,
+      "diff_wgs84_vs_inside_pct": 0,
+      "diff_wgs84_clip_pct": 0,
+      "diff_laea_pct": 0,
+      "outside_adm0_population": 5384,
+      "nodata_inside_adm0_pixels": 20738128,
+      "wgs84_verdict": "pass",
+      "laea_verdict": "pass",
+      "wgs84_approved": true,
+      "laea_approved": true,
+      "sum_method": "pixel_read_float32",
+      "clip_policy": "gdalwarp -cutline ADM0 -crop_to_cutline; center-of-pixel inclusion (default); sin resampling; dstnodata=-9999",
+      "resampling_laea": "sum",
+      "superseded_histogram_sums": {
+        "raw": 17170496,
+        "wgs84_clip": 17196427,
+        "laea_delta_pct": 0.27
+      }
     },
     {
       "variant": "unconstrained",
-      "raw_sum": 17251094,
-      "wgs84_clip_sum": 17692858,
-      "wgs84_cog_sum": 17692858,
-      "laea_cog_sum": 17900341,
-      "diff_wgs84_clip_pct": 2.56,
-      "diff_laea_pct": 1.17,
-      "outside_adm0_population": 0,
-      "nodata_inside_adm0_pixels": 0
+      "raw_sum": 18280536,
+      "inside_adm0_sum": 18243443,
+      "outside_adm0_sum": 37093,
+      "wgs84_clip_sum": 18243443,
+      "wgs84_cog_sum": 18243443,
+      "laea_cog_sum": 18243367,
+      "diff_inside_vs_raw_pct": 0.2,
+      "diff_wgs84_vs_inside_pct": 0,
+      "diff_wgs84_clip_pct": 0,
+      "diff_laea_pct": 0,
+      "outside_adm0_population": 37093,
+      "nodata_inside_adm0_pixels": 10519642,
+      "wgs84_verdict": "pass",
+      "laea_verdict": "pass",
+      "wgs84_approved": true,
+      "laea_approved": true,
+      "sum_method": "pixel_read_float32",
+      "clip_policy": "gdalwarp -cutline ADM0 -crop_to_cutline; center-of-pixel inclusion (default); sin resampling; dstnodata=-9999",
+      "resampling_laea": "sum",
+      "superseded_histogram_sums": {
+        "raw": 17251094,
+        "wgs84_clip": 17692858,
+        "laea_delta_pct": 1.17
+      }
     }
   ],
   "artifacts": {
@@ -64,23 +96,24 @@
     "resampling_clip": "none (same CRS cutline crop)",
     "unconstrained_wgs84_cog": ".\\data\\population\\worldpop\\processed\\gtm_worldpop_2020_unconstrained_wgs84_cog.tif",
     "unconstrained_wgs84_sha256": "0dadbae9f605fc4e8fdf02d02ff08db9e8768e230ed0fd4664318986150c13e4",
-    "unconstrained_laea_skipped": true,
-    "unconstrained_laea_skip_reason": "Conservación LAEA 5.1% > 1.5% — usar WGS84 COG para auditoría.",
     "unconstrained_laea_cog": ".\\data\\population\\worldpop\\processed\\gtm_worldpop_2020_unconstrained_laea_cog.tif",
-    "unconstrained_laea_sha256": "e3259c272241aea63669f07ca0ca043a7265308b41ca9be96d28a730103901ee"
+    "unconstrained_laea_sha256": "e3259c272241aea63669f07ca0ca043a7265308b41ca9be96d28a730103901ee",
+    "clip_policy": "gdalwarp -cutline ADM0 -crop_to_cutline; center-of-pixel inclusion (default); sin resampling; dstnodata=-9999",
+    "sum_method": "pixel_read_float32"
   },
-  "prepare_completed_at": "2026-07-10T18:53:20.373Z",
+  "prepare_completed_at": "2026-07-10T19:04:19.163Z",
   "audit": {
-    "completed_at": "2026-07-10T18:53:49.950Z",
+    "completed_at": "2026-07-10T19:05:00.539Z",
     "national": {
-      "constrained": 17196427,
-      "unconstrained": 17692858,
+      "constrained": 17223237,
+      "unconstrained": 18243443,
       "ineProjection2020": 17980803,
       "ineCensus2018Separate": 14901286,
-      "deltaConstrainedVsIne2020Pct": 4.36,
-      "deltaUnconstrainedVsIne2020Pct": 1.6
+      "deltaConstrainedVsIne2020Pct": 4.21,
+      "deltaUnconstrainedVsIne2020Pct": 1.46
     },
-    "recommended_primary_variant": "dual_use"
+    "recommended_primary_variant": "dual_use",
+    "adm1_vs_national_delta_pct": 0
   },
   "recommended_primary_variant": "dual_use",
   "benchmark": {

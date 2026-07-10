@@ -1,12 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
+import { CONSERVATION_PASS_MAX_PCT, CONSERVATION_WARNING_MAX_PCT } from '@/modules/territory/population/processing/population-conservation'
 import { DIAGNOSTIC_MAP_ZONES } from '@/modules/territory/population/processing/diagnostic-maps'
-import { POPULATION_SUM_TOLERANCE_PCT } from '@/modules/territory/population/processing/paths'
 
 describe('population processing constants', () => {
   it('defines conservation tolerance thresholds', () => {
-    expect(POPULATION_SUM_TOLERANCE_PCT.constrained).toBe(0.5)
-    expect(POPULATION_SUM_TOLERANCE_PCT.unconstrained).toBe(1.5)
+    expect(CONSERVATION_PASS_MAX_PCT).toBe(0.1)
+    expect(CONSERVATION_WARNING_MAX_PCT).toBe(0.5)
   })
 
   it('defines four diagnostic map zones', () => {

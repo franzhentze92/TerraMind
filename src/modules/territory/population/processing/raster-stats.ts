@@ -1,4 +1,5 @@
-import { gdalInfoJson } from '@/modules/territory/population/processing/gdal'
+import { gdalInfoJsonNoHist } from '@/modules/territory/population/processing/gdal'
+import { calculatePopulationRasterSum } from '@/modules/territory/population/processing/raster-sum'
 
 export interface PopulationRasterInspection {
   path: string
@@ -17,9 +18,14 @@ export interface PopulationRasterInspection {
   nonFinitePixelCount: number
   validPixelCount: number
   nodataPixelCount: number
+  zeroPixelCount: number
   populationSum: number
+  sumMethod: 'pixel_read_float32'
+  sumCommand: string
   cellSemantics: 'persons_per_pixel'
   effectiveResolutionM: number | null
+  /** Suma previa por histograma (solo diagnóstico; puede diferir). */
+  histogramApproxSum?: number
 }
 
 function parseCrs(json: Record<string, unknown>): string | null {
@@ -42,50 +48,41 @@ function parseCrs(json: Record<string, unknown>): string | null {
   return epsgCode ? `EPSG:${epsgCode}` : wkt.slice(0, 60) || null
 }
 
-function sumFromHistogram(hist: {
+function histogramApproxSum(hist: {
   buckets?: number[]
   min?: number
   max?: number
-  count?: number
-}): { sum: number; negative: number; nonFinite: number; valid: number; nodata: number } {
+}): number | undefined {
   const buckets = hist.buckets ?? []
+  if (buckets.length === 0) return undefined
   const min = hist.min ?? 0
   const max = hist.max ?? 0
-  const totalCount = hist.count ?? buckets.reduce((a, b) => a + b, 0)
-  if (buckets.length === 0) {
-    return { sum: 0, negative: 0, nonFinite: 0, valid: 0, nodata: totalCount }
-  }
   const bucketWidth = buckets.length > 1 ? (max - min) / buckets.length : max - min
   let sum = 0
-  let negative = 0
-  let valid = 0
   for (let i = 0; i < buckets.length; i++) {
     const count = buckets[i] ?? 0
     if (count === 0) continue
     const bucketMin = min + i * bucketWidth
     const bucketMax = bucketMin + bucketWidth
-    const midpoint = (bucketMin + bucketMax) / 2
-    sum += midpoint * count
-    if (midpoint < 0) negative += count
-    else if (midpoint > 0) valid += count
+    sum += ((bucketMin + bucketMax) / 2) * count
   }
-  const nodata = Math.max(0, totalCount - valid - negative)
-  return { sum, negative, nonFinite: 0, valid, nodata }
+  return Math.round(sum)
 }
 
 export function parsePopulationRasterInspection(
   path: string,
   json: Record<string, unknown>,
+  sumResult: Awaited<ReturnType<typeof calculatePopulationRasterSum>>,
 ): PopulationRasterInspection {
   const sizeRaw = json.size as { x: number; y: number } | number[] | undefined
-  let width = 0
-  let height = 0
+  let width = sumResult.width
+  let height = sumResult.height
   if (Array.isArray(sizeRaw)) {
-    width = sizeRaw[0] ?? 0
-    height = sizeRaw[1] ?? 0
+    width = sizeRaw[0] ?? width
+    height = sizeRaw[1] ?? height
   } else if (sizeRaw) {
-    width = sizeRaw.x ?? 0
-    height = sizeRaw.y ?? 0
+    width = sizeRaw.x ?? width
+    height = sizeRaw.y ?? height
   }
 
   const geoTransform = json.geoTransform as number[] | undefined
@@ -109,14 +106,10 @@ export function parsePopulationRasterInspection(
   const band1 = bands[0] ?? {}
   const bandMetadata = (band1.metadata as Record<string, Record<string, string>>) ?? {}
   const stats = bandMetadata[''] ?? {}
-  const hist = (band1.histogram as {
-    buckets?: number[]
-    min?: number
-    max?: number
-    count?: number
-  }) ?? { buckets: [] }
+  const hist = (band1.histogram as { buckets?: number[]; min?: number; max?: number }) ?? {
+    buckets: [],
+  }
 
-  const histAgg = sumFromHistogram(hist)
   const latMid = bounds ? (bounds[1] + bounds[3]) / 2 : 15.5
   const metersPerDegLon = 111_320 * Math.cos((latMid * Math.PI) / 180)
   const effectiveResolutionM =
@@ -135,26 +128,30 @@ export function parsePopulationRasterInspection(
     height,
     bounds,
     dataType: (band1.type as string) ?? null,
-    nodata: band1.noDataValue != null ? Number(band1.noDataValue) : null,
+    nodata: sumResult.nodata,
     minimum: stats.STATISTICS_MINIMUM != null ? Number(stats.STATISTICS_MINIMUM) : hist.min ?? null,
     maximum: stats.STATISTICS_MAXIMUM != null ? Number(stats.STATISTICS_MAXIMUM) : hist.max ?? null,
     mean: stats.STATISTICS_MEAN != null ? Number(stats.STATISTICS_MEAN) : null,
-    negativePixelCount: histAgg.negative,
-    nonFinitePixelCount: histAgg.nonFinite,
-    validPixelCount: histAgg.valid,
-    nodataPixelCount: histAgg.nodata,
-    populationSum: Math.round(histAgg.sum),
+    negativePixelCount: sumResult.negativeCount,
+    nonFinitePixelCount: sumResult.nonFiniteCount,
+    validPixelCount: sumResult.validCount,
+    nodataPixelCount: sumResult.nodataCount,
+    zeroPixelCount: sumResult.zeroCount,
+    populationSum: sumResult.totalSum,
+    sumMethod: 'pixel_read_float32',
+    sumCommand: sumResult.command,
     cellSemantics: 'persons_per_pixel',
     effectiveResolutionM,
+    histogramApproxSum: histogramApproxSum(hist),
   }
 }
 
 export async function inspectPopulationRaster(path: string): Promise<PopulationRasterInspection> {
-  const json = await gdalInfoJson(path)
-  return parsePopulationRasterInspection(path, json)
+  const [json, sumResult] = await Promise.all([
+    gdalInfoJsonNoHist(path),
+    calculatePopulationRasterSum(path),
+  ])
+  return parsePopulationRasterInspection(path, json, sumResult)
 }
 
-export function populationDiffPct(reference: number, observed: number): number {
-  if (reference === 0) return observed === 0 ? 0 : 100
-  return Math.round((Math.abs(observed - reference) / reference) * 10000) / 100
-}
+export { populationDiffPct } from '@/modules/territory/population/processing/population-conservation'

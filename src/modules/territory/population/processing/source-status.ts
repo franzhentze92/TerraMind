@@ -24,6 +24,7 @@ export interface LocalPopulationSourceStatus extends PopulationSourceStatus {
     rawAvailable: boolean
     wgs84CogAvailable: boolean
     laeaCogAvailable: boolean
+    laeaApproved: boolean
     checksumValid: boolean
     totalPopulation?: number
     cellSemantics: string
@@ -31,6 +32,7 @@ export interface LocalPopulationSourceStatus extends PopulationSourceStatus {
     resamplingWgs84: string
     resamplingLaea?: string
     conservationDeltaPct?: number
+    laeaVerdict?: string
   }>
   totalPopulation?: number
   primaryVariant?: 'constrained' | 'unconstrained' | 'dual_use'
@@ -100,20 +102,31 @@ export async function getLocalPopulationSourceStatus(): Promise<LocalPopulationS
       ? loadPopulationManifest()
       : undefined
     const conservation = manifest?.conservation?.find((c) => c.variant === variant)
+    const laeaApproved = conservation?.laea_approved === true
 
     variants.push({
       variant,
       rawAvailable,
       wgs84CogAvailable,
-      laeaCogAvailable,
+      laeaCogAvailable: laeaCogAvailable && laeaApproved,
+      laeaApproved,
       checksumValid: variantChecksumValid,
       totalPopulation: variantPopulation,
       cellSemantics: 'persons_per_pixel',
       crs: wgs84CogAvailable ? 'EPSG:4326' : 'unknown',
       resamplingWgs84: 'none (ADM0 crop)',
-      resamplingLaea: laeaCogAvailable ? 'sum' : manifest?.artifacts?.unconstrained_laea_skipped ? 'skipped' : undefined,
+      resamplingLaea: laeaApproved ? 'sum' : conservation?.laea_verdict === 'reject' ? 'rejected' : 'skipped',
       conservationDeltaPct: conservation?.diff_laea_pct,
+      laeaVerdict: conservation?.laea_verdict,
     })
+  }
+
+  const constrainedConservation = existsSync(POPULATION_MANIFEST_PATH)
+    ? loadPopulationManifest().conservation?.find((c) => c.variant === 'constrained')
+    : undefined
+  if (constrainedConservation?.wgs84_approved === false) {
+    warnings.push(populationWarning('raster_processing_failed', 'COG WGS84 constrained no aprobado por conservación.'))
+    cogValid = false
   }
 
   if (!filesAvailable) {

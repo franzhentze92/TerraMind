@@ -7,6 +7,9 @@ import {
   savePopulationManifest,
 } from '@/modules/territory/population/processing/manifest-io'
 import {
+  POPULATION_7D1A_SUPERSEDED,
+} from '@/modules/territory/population/processing/population-7d1a-superseded'
+import {
   GUATEMALA_ADM1_GEOJSON,
   POPULATION_AUDIT_REPORT,
   POPULATION_CLIP_TEMP_DIR,
@@ -64,7 +67,7 @@ export interface PopulationAuditReport {
   departments: DepartmentAuditRow[]
   territorialZones: TerritorialZoneAudit[]
   rawInspections: Record<string, PopulationRasterInspection>
-  recommendedPrimaryVariant: WorldPopVariant | 'dual_use'
+  recommendedPrimaryVariant: WorldPopVariant | 'dual_use' | 'pending_review'
   recommendationRationale: string[]
   limitations: string[]
 }
@@ -281,10 +284,29 @@ export async function auditWorldPop2020(): Promise<PopulationAuditReport> {
       .filter((d) => ruralDepts.includes(d.adm1Pcode))
       .reduce((s, d) => s + d.deltaUnconstrainedPct, 0) / ruralDepts.length
 
-  let recommended: WorldPopVariant | 'dual_use' = 'dual_use'
+  const deptConstrainedSum = departments.reduce((s, d) => s + d.constrainedSum, 0)
+  const adm1VsNationalDeltaPct = populationDiffPct(nationalConstrained, deptConstrainedSum)
+
+  const manifestBeforeSave = loadPopulationManifest()
+  const conservation = manifestBeforeSave.conservation ?? []
+  const conservationReady =
+    conservation.length === 2 &&
+    conservation.every((c) => c.wgs84_approved && c.laea_approved)
+
+  let recommended: WorldPopVariant | 'dual_use' | 'pending_review' = 'pending_review'
   const rationale: string[] = []
+  if (conservationReady) {
+    recommended = 'dual_use'
+    rationale.push(
+      'Conservación de masa validada (7D.1A.1): WGS84 y LAEA pass ≤0.1% en constrained y unconstrained.',
+    )
+  } else {
+    rationale.push(
+      'Recomendación final pendiente: uno o más artefactos no aprobados en manifest.conservation.',
+    )
+  }
   rationale.push(
-    `Nacional: unconstrained Δ ${deltaUnconstrainedVsIne}% vs constrained ${deltaConstrainedVsIne}% vs INE 2020.`,
+    `Nacional: unconstrained Δ ${deltaUnconstrainedVsIne}% vs constrained ${deltaConstrainedVsIne}% vs INE 2020 (concordancia metodológica, no validez técnica).`,
   )
   if (ruralDeltaU < ruralDeltaC) {
     rationale.push(
@@ -298,12 +320,11 @@ export async function auditWorldPop2020(): Promise<PopulationAuditReport> {
   const peten = departments.find((d) => d.adm1Pcode === 'GT17')
   if (peten && peten.deltaUnconstrainedPct > 20) {
     rationale.push(
-      `Petén: unconstrained sobreestima fuertemente (${peten.deltaUnconstrainedPct}% vs INE) — constrained más coherente localmente.`,
+      `Petén: unconstrained sobreestima fuertemente (${peten.deltaUnconstrainedPct}% vs INE) — hipótesis constrained más coherente localmente.`,
     )
-    recommended = 'dual_use'
   }
   rationale.push(
-    'Opción C recomendada: constrained primario para exposición urbana y buffers; unconstrained como validación rural/nacional hasta 7D.1B.',
+    'Hipótesis dual_use (constrained primario + unconstrained validación) sujeta a aprobación humana antes de 7D.1B.',
   )
 
   const report: PopulationAuditReport = {
@@ -325,9 +346,11 @@ export async function auditWorldPop2020(): Promise<PopulationAuditReport> {
     recommendedPrimaryVariant: recommended,
     recommendationRationale: rationale,
     limitations: [
-      'Sumas derivadas de histograma GDAL — tolerancia aproximada ±0.5%.',
+      'Sumas canónicas: lectura Float32 píxel a píxel (pixel_read_float32), no histogramas.',
+      'Cifras 7D.1A iniciales por histograma quedan superseded en manifest.conservation.',
       'INE municipal 2020 no importado — sin factor de ajuste municipal.',
       'Comparación INE usa proyección departamental 2020, no Censo 2018.',
+      `Σ ADM1 constrained (${deptConstrainedSum.toLocaleString()}) vs nacional (${nationalConstrained.toLocaleString()}): Δ ${adm1VsNationalDeltaPct}% — posible doble conteo en bordes departamentales.`,
       'No inferir población de vivienda individual.',
     ],
   }
@@ -337,15 +360,29 @@ export async function auditWorldPop2020(): Promise<PopulationAuditReport> {
     completed_at: report.generatedAt,
     national: report.national,
     recommended_primary_variant: report.recommendedPrimaryVariant,
+    adm1_vs_national_delta_pct: adm1VsNationalDeltaPct,
   }
   manifest.recommended_primary_variant = report.recommendedPrimaryVariant
   savePopulationManifest(manifest)
 
-  writeAuditMarkdown(report)
+  writeAuditMarkdown(report, {
+    deptConstrainedSum,
+    adm1VsNationalDeltaPct,
+  })
   return report
 }
 
-function writeAuditMarkdown(report: PopulationAuditReport): void {
+function writeAuditMarkdown(
+  report: PopulationAuditReport,
+  massBalance: { deptConstrainedSum: number; adm1VsNationalDeltaPct: number },
+): void {
+  const manifest = loadPopulationManifest()
+  const conservationRows = (manifest.conservation ?? [])
+    .map(
+      (c) =>
+        `| ${c.variant} | ${c.raw_sum.toLocaleString()} | ${(c.inside_adm0_sum ?? c.wgs84_clip_sum).toLocaleString()} | ${(c.outside_adm0_sum ?? c.outside_adm0_population).toLocaleString()} | ${c.wgs84_cog_sum.toLocaleString()} | ${c.laea_cog_sum.toLocaleString()} | ${c.diff_laea_pct}% | ${c.laea_verdict ?? 'n/a'} | ${c.laea_approved ? 'sí' : 'no'} |`,
+    )
+    .join('\n')
   mkdirSync(resolve(POPULATION_AUDIT_REPORT, '..'), { recursive: true })
   const deptTable = report.departments
     .map(
@@ -366,7 +403,7 @@ function writeAuditMarkdown(report: PopulationAuditReport): void {
     })
     .join('\n\n')
 
-  const md = `# WorldPop 2020 — auditoría poblacional Guatemala (7D.1A)
+  const md = `# WorldPop 2020 — auditoría poblacional Guatemala (7D.1A / 7D.1A.1)
 
 Generado: ${report.generatedAt}
 
@@ -395,6 +432,33 @@ ${deptTable}
 ## Validación territorial
 
 ${zoneBlocks}
+
+## Cifras superseded (7D.1A inicial — histograma GDAL)
+
+**Método superseded:** ${POPULATION_7D1A_SUPERSEDED.method}
+
+**Causa raíz:** ${POPULATION_7D1A_SUPERSEDED.rootCause}
+
+| Variante | Raw (hist.) | WGS84 clip (hist.) | Δ LAEA (hist.) | Aprobado (incorrecto) |
+|----------|-------------|--------------------|----------------|------------------------|
+| constrained | ${POPULATION_7D1A_SUPERSEDED.constrained.raw_sum.toLocaleString()} | ${POPULATION_7D1A_SUPERSEDED.constrained.wgs84_clip_sum.toLocaleString()} | ${POPULATION_7D1A_SUPERSEDED.constrained.laea_delta_pct}% | sí |
+| unconstrained | ${POPULATION_7D1A_SUPERSEDED.unconstrained.raw_sum.toLocaleString()} | ${POPULATION_7D1A_SUPERSEDED.unconstrained.wgs84_clip_sum.toLocaleString()} | ${POPULATION_7D1A_SUPERSEDED.unconstrained.laea_delta_pct}% | sí |
+
+El incremento aparente raw→clip (p. ej. +441 764 en unconstrained) era un artefacto metodológico, no un recorte que añadía población.
+
+## Conservación de masa (7D.1A.1)
+
+Método: **pixel_read_float32** (gdal_translate -of ENVI + suma exacta).  
+Política clip: center-of-pixel, crop_to_cutline, sin resampling.  
+LAEA: gdalwarp -r sum.
+
+| Variante | Raw | Dentro ADM0 | Fuera ADM0 | WGS84 COG | LAEA COG | Δ LAEA | Veredicto | LAEA aprobado |
+|----------|-----|-------------|------------|-----------|----------|--------|-----------|---------------|
+${conservationRows}
+
+Tolerancia técnica: pass ≤ 0.1% · warning ≤ 0.5% · reject > 0.5%.
+
+Σ departamentos constrained: **${massBalance.deptConstrainedSum.toLocaleString()}** · Δ vs nacional: **${massBalance.adm1VsNationalDeltaPct}%**
 
 ## Recomendación
 

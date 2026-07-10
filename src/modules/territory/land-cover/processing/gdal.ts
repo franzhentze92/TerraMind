@@ -45,6 +45,15 @@ export async function gdalInfoJson(path: string): Promise<Record<string, unknown
   return JSON.parse(res.stdout) as Record<string, unknown>
 }
 
+/** Metadatos sin histograma — para dimensiones, CRS y nodata. */
+export async function gdalInfoJsonNoHist(path: string): Promise<Record<string, unknown>> {
+  const res = await runCommand('gdalinfo', ['-json', path])
+  if (res.exitCode !== 0) {
+    throw new Error(`gdalinfo falló (${path}): ${res.stderr || res.stdout}`)
+  }
+  return JSON.parse(res.stdout) as Record<string, unknown>
+}
+
 export async function getToolVersions(): Promise<Record<string, string>> {
   const [gdal, aws, node] = await Promise.all([
     runCommand('gdalinfo', ['--version']),

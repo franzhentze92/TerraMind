@@ -34,10 +34,10 @@ export {
   LAEA_PROJ4,
 }
 
-/** Tolerancia LAEA — unconstrained legacy puede diferir más por alineación de grilla. */
+/** @deprecated Usar evaluateConservationDeltaPct en population-conservation.ts */
 export const POPULATION_SUM_TOLERANCE_PCT: Record<'constrained' | 'unconstrained', number> = {
-  constrained: 0.5,
-  unconstrained: 1.5,
+  constrained: 0.1,
+  unconstrained: 0.1,
 } as const
 
 export function rawRasterPath(variant: 'constrained' | 'unconstrained'): string {

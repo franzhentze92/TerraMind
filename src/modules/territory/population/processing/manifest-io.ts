@@ -19,13 +19,25 @@ export interface PopulationDownloadEntry {
 export interface PopulationConservationEntry {
   variant: 'constrained' | 'unconstrained'
   raw_sum: number
+  inside_adm0_sum?: number
+  outside_adm0_sum?: number
   wgs84_clip_sum: number
   wgs84_cog_sum: number
   laea_cog_sum: number
+  diff_inside_vs_raw_pct?: number
+  diff_wgs84_vs_inside_pct?: number
   diff_wgs84_clip_pct: number
   diff_laea_pct: number
   outside_adm0_population: number
   nodata_inside_adm0_pixels: number
+  wgs84_verdict?: 'pass' | 'warning' | 'reject'
+  laea_verdict?: 'pass' | 'warning' | 'reject'
+  wgs84_approved?: boolean
+  laea_approved?: boolean
+  sum_method?: string
+  clip_policy?: string
+  resampling_laea?: string
+  superseded_histogram_sums?: Record<string, number | undefined>
 }
 
 export interface PopulationManifest {

@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, statSync, unlinkSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 import { runCommand } from '@/modules/territory/population/processing/gdal'
@@ -9,32 +9,46 @@ import {
   type PopulationConservationEntry,
 } from '@/modules/territory/population/processing/manifest-io'
 import {
+  POPULATION_7D1A_SUPERSEDED,
+} from '@/modules/territory/population/processing/population-7d1a-superseded'
+import {
+  evaluateConservationDeltaPct,
+  populationDiffPct,
+} from '@/modules/territory/population/processing/population-conservation'
+import {
   GUATEMALA_ADM0_GEOJSON,
   LAEA_PROJ4,
   POPULATION_CLIP_TEMP_DIR,
   POPULATION_PROCESSED_DIR,
-  POPULATION_SUM_TOLERANCE_PCT,
   processedLaeaCog,
   processedWgs84Cog,
   rawRasterPath,
 } from '@/modules/territory/population/processing/paths'
-import {
-  inspectPopulationRaster,
-  populationDiffPct,
-} from '@/modules/territory/population/processing/raster-stats'
+import { calculatePopulationRasterSum } from '@/modules/territory/population/processing/raster-sum'
 import type { WorldPopVariant } from '@/modules/territory/population/providers/worldpop/worldpop-products'
 
 export interface PrepareVariantResult {
   variant: WorldPopVariant
   raw_sum: number
-  wgs84_clip_sum: number
+  inside_adm0_sum: number
+  outside_adm0_sum: number
   wgs84_cog_sum: number
   laea_cog_sum: number
-  diff_wgs84_clip_pct: number
+  diff_inside_vs_raw_pct: number
+  diff_wgs84_vs_inside_pct: number
   diff_laea_pct: number
   wgs84_cog_bytes: number
   laea_cog_bytes: number
+  wgs84_approved: boolean
   laea_approved: boolean
+  laea_verdict: string
+  clip_policy: string
+  resampling_laea: string
+  superseded_histogram_sums?: {
+    raw?: number
+    wgs84_clip?: number
+    laea?: number
+  }
 }
 
 function clipTemp(variant: WorldPopVariant, stage: string): string {
@@ -46,6 +60,9 @@ async function assertOk(label: string, res: { exitCode: number; stderr: string; 
     throw new Error(`${label} falló: ${res.stderr || res.stdout}`)
   }
 }
+
+const CLIP_POLICY =
+  'gdalwarp -cutline ADM0 -crop_to_cutline; center-of-pixel inclusion (default); sin resampling; dstnodata=-9999'
 
 export async function prepareWorldPopVariant(
   variant: WorldPopVariant,
@@ -61,14 +78,14 @@ export async function prepareWorldPopVariant(
   mkdirSync(POPULATION_PROCESSED_DIR, { recursive: true })
   mkdirSync(POPULATION_CLIP_TEMP_DIR, { recursive: true })
 
-  const rawInspection = await inspectPopulationRaster(rawPath)
+  const rawSumResult = await calculatePopulationRasterSum(rawPath)
+
   const wgs84Out = processedWgs84Cog(variant)
   const laeaOut = processedLaeaCog(variant)
   const clipPath = clipTemp(variant, 'clip_wgs84')
   if (existsSync(wgs84Out)) unlinkSync(wgs84Out)
   if (existsSync(laeaOut)) unlinkSync(laeaOut)
 
-  // Clip to ADM0 — same CRS, no resampling interpolation
   const clipRes = await runCommand('gdalwarp', [
     '-overwrite',
     '-cutline',
@@ -84,7 +101,8 @@ export async function prepareWorldPopVariant(
   ])
   await assertOk('gdalwarp clip ADM0', clipRes)
 
-  const clipInspection = await inspectPopulationRaster(clipPath)
+  const insideSumResult = await calculatePopulationRasterSum(clipPath)
+  const outsideAdm0 = Math.max(0, rawSumResult.totalSum - insideSumResult.totalSum)
 
   const cogRes = await runCommand('gdal_translate', [
     '-of',
@@ -100,9 +118,8 @@ export async function prepareWorldPopVariant(
   ])
   await assertOk('gdal_translate COG WGS84', cogRes)
 
-  const wgs84Inspection = await inspectPopulationRaster(wgs84Out)
+  const wgs84SumResult = await calculatePopulationRasterSum(wgs84Out)
 
-  // Mass-conserving reprojection for quantitative population raster
   const laeaRes = await runCommand('gdalwarp', [
     '-overwrite',
     '-of',
@@ -125,88 +142,74 @@ export async function prepareWorldPopVariant(
   ])
   await assertOk('gdalwarp COG LAEA (resampling=sum)', laeaRes)
 
-  const laeaInspection = await inspectPopulationRaster(laeaOut)
-  const diffClipPct = populationDiffPct(rawInspection.populationSum, clipInspection.populationSum)
-  const diffLaeaPct = populationDiffPct(wgs84Inspection.populationSum, laeaInspection.populationSum)
-  const tolerance = POPULATION_SUM_TOLERANCE_PCT[variant]
-  const laeaApproved = diffLaeaPct <= tolerance
+  const laeaSumResult = await calculatePopulationRasterSum(laeaOut)
 
-  if (!laeaApproved) {
-    if (existsSync(laeaOut)) unlinkSync(laeaOut)
-    const conservationEntry: PopulationConservationEntry = {
-      variant,
-      raw_sum: rawInspection.populationSum,
-      wgs84_clip_sum: clipInspection.populationSum,
-      wgs84_cog_sum: wgs84Inspection.populationSum,
-      laea_cog_sum: laeaInspection.populationSum,
-      diff_wgs84_clip_pct: diffClipPct,
-      diff_laea_pct: diffLaeaPct,
-      outside_adm0_population: Math.max(
-        0,
-        rawInspection.populationSum - clipInspection.populationSum,
-      ),
-      nodata_inside_adm0_pixels: clipInspection.nodataPixelCount,
-    }
-    if (variant === 'unconstrained') {
-      const manifest = loadPopulationManifest()
-      manifest.conservation = [
-        ...(manifest.conservation ?? []).filter((c) => c.variant !== variant),
-        conservationEntry,
-      ]
-      manifest.artifacts = {
-        ...(manifest.artifacts ?? {}),
-        [`${variant}_wgs84_cog`]: wgs84Out.replace(process.cwd(), '.'),
-        [`${variant}_wgs84_sha256`]: await sha256File(wgs84Out),
-        unconstrained_laea_skipped: true,
-        unconstrained_laea_skip_reason: `Conservación LAEA ${diffLaeaPct}% > ${tolerance}% — usar WGS84 COG para auditoría.`,
-      }
-      manifest.prepare_completed_at = new Date().toISOString()
-      savePopulationManifest(manifest)
-      if (existsSync(clipPath)) unlinkSync(clipPath)
-      return {
-        variant,
-        raw_sum: rawInspection.populationSum,
-        wgs84_clip_sum: clipInspection.populationSum,
-        wgs84_cog_sum: wgs84Inspection.populationSum,
-        laea_cog_sum: laeaInspection.populationSum,
-        diff_wgs84_clip_pct: diffClipPct,
-        diff_laea_pct: diffLaeaPct,
-        wgs84_cog_bytes: statSync(wgs84Out).size,
-        laea_cog_bytes: 0,
-        laea_approved: false,
-      }
-    }
-    throw new Error(
-      `Conservación LAEA ${diffLaeaPct}% excede tolerancia ${tolerance}% para ${variant}`,
-    )
+  const diffInsideVsRawPct = populationDiffPct(rawSumResult.totalSum, insideSumResult.totalSum)
+  const diffWgs84VsInsidePct = populationDiffPct(insideSumResult.totalSum, wgs84SumResult.totalSum)
+  const diffLaeaPct = populationDiffPct(wgs84SumResult.totalSum, laeaSumResult.totalSum)
+
+  const wgs84Eval = evaluateConservationDeltaPct(diffWgs84VsInsidePct)
+  const laeaEval = evaluateConservationDeltaPct(diffLaeaPct)
+
+  const laeaApproved = laeaEval.approved
+  if (!laeaApproved && existsSync(laeaOut)) {
+    unlinkSync(laeaOut)
   }
 
   const conservation: PopulationConservationEntry = {
     variant,
-    raw_sum: rawInspection.populationSum,
-    wgs84_clip_sum: clipInspection.populationSum,
-    wgs84_cog_sum: wgs84Inspection.populationSum,
-    laea_cog_sum: laeaInspection.populationSum,
-    diff_wgs84_clip_pct: diffClipPct,
+    raw_sum: rawSumResult.totalSum,
+    inside_adm0_sum: insideSumResult.totalSum,
+    outside_adm0_sum: outsideAdm0,
+    wgs84_clip_sum: insideSumResult.totalSum,
+    wgs84_cog_sum: wgs84SumResult.totalSum,
+    laea_cog_sum: laeaApproved ? laeaSumResult.totalSum : 0,
+    diff_inside_vs_raw_pct: diffInsideVsRawPct,
+    diff_wgs84_vs_inside_pct: diffWgs84VsInsidePct,
+    diff_wgs84_clip_pct: diffWgs84VsInsidePct,
     diff_laea_pct: diffLaeaPct,
-    outside_adm0_population: Math.max(
-      0,
-      rawInspection.populationSum - clipInspection.populationSum,
-    ),
-    nodata_inside_adm0_pixels: clipInspection.nodataPixelCount,
+    outside_adm0_population: outsideAdm0,
+    nodata_inside_adm0_pixels: insideSumResult.nodataCount,
+    wgs84_verdict: wgs84Eval.verdict,
+    laea_verdict: laeaEval.verdict,
+    wgs84_approved: wgs84Eval.approved,
+    laea_approved: laeaApproved,
+    sum_method: 'pixel_read_float32',
+    clip_policy: CLIP_POLICY,
+    resampling_laea: 'sum',
+    superseded_histogram_sums: {
+      raw: POPULATION_7D1A_SUPERSEDED[variant].raw_sum,
+      wgs84_clip: POPULATION_7D1A_SUPERSEDED[variant].wgs84_clip_sum,
+      laea_delta_pct: POPULATION_7D1A_SUPERSEDED[variant].laea_delta_pct,
+    },
   }
 
   const manifest = loadPopulationManifest()
-  const existing = manifest.conservation ?? []
-  manifest.conservation = [...existing.filter((c) => c.variant !== variant), conservation]
+  manifest.conservation = [
+    ...(manifest.conservation ?? []).filter((c) => c.variant !== variant),
+    conservation,
+  ]
   manifest.artifacts = {
     ...(manifest.artifacts ?? {}),
     [`${variant}_wgs84_cog`]: wgs84Out.replace(process.cwd(), '.'),
-    [`${variant}_laea_cog`]: laeaOut.replace(process.cwd(), '.'),
     [`${variant}_wgs84_sha256`]: await sha256File(wgs84Out),
-    [`${variant}_laea_sha256`]: await sha256File(laeaOut),
     resampling_laea: 'sum',
     resampling_clip: 'none (same CRS cutline crop)',
+    clip_policy: CLIP_POLICY,
+    sum_method: 'pixel_read_float32',
+  }
+  if (laeaApproved) {
+    manifest.artifacts[`${variant}_laea_cog`] = laeaOut.replace(process.cwd(), '.')
+    manifest.artifacts[`${variant}_laea_sha256`] = await sha256File(laeaOut)
+    delete manifest.artifacts.unconstrained_laea_skipped
+    delete manifest.artifacts.unconstrained_laea_skip_reason
+  } else {
+    delete manifest.artifacts[`${variant}_laea_cog`]
+    delete manifest.artifacts[`${variant}_laea_sha256`]
+    if (variant === 'unconstrained') {
+      manifest.artifacts.unconstrained_laea_skipped = true
+      manifest.artifacts.unconstrained_laea_skip_reason = laeaEval.message
+    }
   }
   manifest.prepare_completed_at = new Date().toISOString()
   savePopulationManifest(manifest)
@@ -215,15 +218,25 @@ export async function prepareWorldPopVariant(
 
   return {
     variant,
-    raw_sum: rawInspection.populationSum,
-    wgs84_clip_sum: clipInspection.populationSum,
-    wgs84_cog_sum: wgs84Inspection.populationSum,
-    laea_cog_sum: laeaInspection.populationSum,
-    diff_wgs84_clip_pct: diffClipPct,
+    raw_sum: rawSumResult.totalSum,
+    inside_adm0_sum: insideSumResult.totalSum,
+    outside_adm0_sum: outsideAdm0,
+    wgs84_cog_sum: wgs84SumResult.totalSum,
+    laea_cog_sum: laeaApproved ? laeaSumResult.totalSum : laeaSumResult.totalSum,
+    diff_inside_vs_raw_pct: diffInsideVsRawPct,
+    diff_wgs84_vs_inside_pct: diffWgs84VsInsidePct,
     diff_laea_pct: diffLaeaPct,
     wgs84_cog_bytes: statSync(wgs84Out).size,
-    laea_cog_bytes: statSync(laeaOut).size,
+    laea_cog_bytes: laeaApproved && existsSync(laeaOut) ? statSync(laeaOut).size : 0,
+    wgs84_approved: wgs84Eval.approved,
     laea_approved: laeaApproved,
+    laea_verdict: laeaEval.verdict,
+    clip_policy: CLIP_POLICY,
+    resampling_laea: 'sum',
+    superseded_histogram_sums: {
+      raw: POPULATION_7D1A_SUPERSEDED[variant].raw_sum,
+      wgs84_clip: POPULATION_7D1A_SUPERSEDED[variant].wgs84_clip_sum,
+    },
   }
 }
 

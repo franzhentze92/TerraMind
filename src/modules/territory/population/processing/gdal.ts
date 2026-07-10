@@ -1,5 +1,6 @@
 export {
   gdalInfoJson,
+  gdalInfoJsonNoHist,
   getToolVersions,
   runCommand,
   type CommandResult,
