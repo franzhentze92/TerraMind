@@ -15,6 +15,7 @@ import { handleLifecycleRoutes } from './routes/lifecycle.js'
 import { handleIncidentsRoutes, handleFireEventIncidentRoute } from './routes/incidents.js'
 import { handleVerificationRoutes } from './routes/verification.js'
 import { handleMissionsRoutes } from './routes/missions.js'
+import { handleEvidenceIntakeRoutes } from './routes/evidence-intake.js'
 
 config({ path: resolve(process.cwd(), '.env') })
 
@@ -38,6 +39,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
   if (await handleFireEventIncidentRoute(req, res, pathname)) return
   if (await handleVerificationRoutes(req, res, pathname, url.searchParams)) return
   if (await handleMissionsRoutes(req, res, pathname, url.searchParams)) return
+  if (await handleEvidenceIntakeRoutes(req, res, pathname)) return
 
   if (pathname === '/api/health' && req.method === 'GET') {
     jsonResponse(req, res, { status: 'ok', service: 'terramind-pipeline' })

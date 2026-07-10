@@ -53,6 +53,7 @@
     "missions:create": "tsx scripts/mission-create.ts",
     "missions:worker": "tsx scripts/mission-worker.ts",
     "missions:status": "tsx scripts/mission-status.ts",
+    "evidence:worker": "tsx scripts/evidence-worker.ts",
     "land-cover:plan-tiles": "tsx scripts/land-cover-plan-tiles.ts",
     "land-cover:download": "tsx scripts/land-cover-download.ts",
     "land-cover:build": "tsx scripts/land-cover-build.ts",
