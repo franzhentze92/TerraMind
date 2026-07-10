@@ -1,0 +1,28 @@
+{
+  "generated_at": "2026-07-10T10:25:13.138Z",
+  "config": { "radius_m": 10000, "limit": 30 },
+  "provider_reports": [
+    {
+      "zone": "A",
+      "provider": "gbif",
+      "records_received": 30,
+      "records_accepted": 30,
+      "unique_species": 23,
+      "latency_ms": 1520
+    },
+    {
+      "zone": "A",
+      "provider": "inaturalist",
+      "records_received": 9,
+      "obscured_coordinates": 3,
+      "unknown_licenses": 4,
+      "latency_ms": 878
+    }
+  ],
+  "health": {
+    "gbif_reachable": true,
+    "inaturalist_reachable": true,
+    "database_reachable": false
+  },
+  "_note": "Ejemplo sanitizado. Regenerar con: npx tsx scripts/biodiversity-final-review.ts > artifacts/review/review-output.json"
+}

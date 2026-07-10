@@ -30,6 +30,10 @@ data/terramind-store.json
 data/geo/sources/land-cover/**/*.tif
 data/geo/sources/land-cover/**/tiles/
 
+# Review artifacts (regenerable; ver docs/BIODIVERSITY-INTELLIGENCE-CORE.md)
+artifacts/review/
+review-output.json
+
 # Secrets — nunca commitear
 .env
 .env.local
