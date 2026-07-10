@@ -53,3 +53,18 @@ export async function enqueueFindingJobs(options: {
   metrics.duration_ms = Date.now() - started
   return metrics
 }
+
+export async function enqueueFindingJobForEntity(eventId: string): Promise<boolean> {
+  const config = loadFindingWorkerConfig()
+  if (!config.evaluationEnabled) return false
+
+  const active = await getActiveFindingJobForEntity(eventId)
+  if (active) return false
+
+  const inserted = await insertFindingJob({
+    entity_id: eventId,
+    requested_rule_set_version: resolveFindingRuleSetVersion(),
+    max_attempts: config.maxAttempts,
+  })
+  return inserted.created
+}

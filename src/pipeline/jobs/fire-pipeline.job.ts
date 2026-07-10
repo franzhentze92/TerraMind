@@ -491,6 +491,36 @@ export async function runFirePipeline(
             })
           }
 
+          const lifecycleEnqueueStart = Date.now()
+          try {
+            const { enqueueLifecycleJobs } = await import(
+              '@/pipeline/engines/lifecycle/lifecycle-jobs.engine'
+            )
+            const lifecycleEnqueue = await enqueueLifecycleJobs({ limit: 10000, force: false })
+            stages.lifecycle_enqueue = {
+              status: 'success',
+              duration_ms: Date.now() - lifecycleEnqueueStart,
+              metrics: {
+                jobs_created: lifecycleEnqueue.jobs_created,
+                lifecycle_jobs_created: lifecycleEnqueue.jobs_created,
+                jobs_skipped: lifecycleEnqueue.jobs_skipped,
+                lifecycle_model_version: lifecycleEnqueue.lifecycle_model_version,
+              },
+            }
+          } catch (err) {
+            stages.lifecycle_enqueue = {
+              status: 'partial',
+              duration_ms: Date.now() - lifecycleEnqueueStart,
+              error: err instanceof Error ? err.message : 'lifecycle enqueue failed',
+              error_code: 'lifecycle_enqueue_failed',
+              metrics: { lifecycle_jobs_created: 0 },
+            }
+            logStage(pipelineRunId, 'lifecycle_enqueue', {
+              status: 'warning',
+              error: err instanceof Error ? err.message : 'enqueue failed',
+            })
+          }
+
           const findingEnqueueStart = Date.now()
           try {
             const { enqueueFindingJobs } = await import(

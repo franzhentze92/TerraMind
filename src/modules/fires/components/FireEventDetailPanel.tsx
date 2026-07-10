@@ -19,6 +19,12 @@ import { FireRelatedFindings } from '@/modules/findings/components/FireRelatedFi
 import { useFireEventFindings } from '@/modules/findings/hooks/useFindings'
 import { FireEventPriorityCard } from '@/modules/priorities/components/FireEventPriorityCard'
 import { useFireEventPriority } from '@/modules/priorities/hooks/usePriorities'
+import { FireLifecycleSection } from '@/modules/lifecycle/components/FireLifecycleSection'
+import {
+  useFireEventLifecycle,
+  useFireEventLifecycleTransitions,
+} from '@/modules/lifecycle/hooks/useLifecycle'
+import { lifecycleStateLabel, lifecycleStateVariant } from '@/modules/lifecycle/utils/lifecycle-labels'
 import {
   buildTerritorySummaryText,
   territoryDisclaimer,
@@ -73,6 +79,8 @@ export function FireEventDetailPanel({
   const [tab, setTab] = useState<DetailTab>('resumen')
   const findingsQuery = useFireEventFindings(event?.id)
   const priorityQuery = useFireEventPriority(event?.id)
+  const lifecycleQuery = useFireEventLifecycle(event?.id)
+  const lifecycleTransitionsQuery = useFireEventLifecycleTransitions(event?.id)
 
   useEffect(() => {
     setTab('resumen')
@@ -111,6 +119,11 @@ export function FireEventDetailPanel({
           <div className="mt-2 flex flex-wrap gap-2 pb-3">
             <Badge variant="default">{eventStatusLabel(event.status)}</Badge>
             <Badge variant="accent">{validationStatusLabel(event.validation_status)}</Badge>
+            {lifecycleQuery.data?.lifecycle_state && (
+              <Badge variant={lifecycleStateVariant(lifecycleQuery.data.lifecycle_state)}>
+                {lifecycleStateLabel(lifecycleQuery.data.lifecycle_state)}
+              </Badge>
+            )}
           </div>
 
           <div
@@ -228,6 +241,18 @@ export function FireEventDetailPanel({
 
             {tab === 'historial' && (
               <section className="space-y-4">
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+                    Ciclo de vida del evento
+                  </p>
+                  <div className="mt-2">
+                    <FireLifecycleSection
+                      lifecycle={lifecycleQuery.data}
+                      transitions={lifecycleTransitionsQuery.data?.items}
+                      isLoading={lifecycleQuery.isLoading || lifecycleTransitionsQuery.isLoading}
+                    />
+                  </div>
+                </div>
                 <FireEvidenceTimeline detections={event.detections} />
                 <div>
                   <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">

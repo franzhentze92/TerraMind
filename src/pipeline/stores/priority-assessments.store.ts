@@ -291,3 +291,22 @@ export async function countActivePriorityAssessments(): Promise<number> {
   if (error) throw new Error(error.message)
   return count ?? 0
 }
+
+export async function expireActivePriorityAssessment(
+  entityType: string,
+  entityId: string,
+  modelVersion: string,
+): Promise<boolean> {
+  const supabase = getSupabaseAdmin()
+  const now = new Date().toISOString()
+  const { data, error } = await supabase
+    .from('finding_priority_assessments')
+    .update({ assessment_status: 'expired', updated_at: now })
+    .eq('entity_type', entityType)
+    .eq('entity_id', entityId)
+    .eq('priority_model_version', modelVersion)
+    .eq('assessment_status', 'active')
+    .select('id')
+  if (error) throw new Error(error.message)
+  return (data ?? []).length > 0
+}

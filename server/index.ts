@@ -11,6 +11,7 @@ import { handleClimateRoutes } from './routes/climate.js'
 import { handleBiodiversityRoutes } from './routes/biodiversity.js'
 import { handleFindingsRoutes, handleFireFindingsRoute } from './routes/findings.js'
 import { handlePrioritiesRoutes, handleFirePriorityRoute } from './routes/priorities.js'
+import { handleLifecycleRoutes } from './routes/lifecycle.js'
 
 config({ path: resolve(process.cwd(), '.env') })
 
@@ -29,6 +30,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
   if (await handleFireFindingsRoute(req, res, pathname)) return
   if (await handlePrioritiesRoutes(req, res, pathname, url.searchParams)) return
   if (await handleFirePriorityRoute(req, res, pathname)) return
+  if (await handleLifecycleRoutes(req, res, pathname)) return
 
   if (pathname === '/api/health' && req.method === 'GET') {
     jsonResponse(req, res, { status: 'ok', service: 'terramind-pipeline' })
