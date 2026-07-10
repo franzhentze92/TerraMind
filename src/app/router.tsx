@@ -24,6 +24,7 @@ import { AssignmentsPage } from '@/modules/missions/pages/AssignmentsPage'
 import { FieldPackagesPage } from '@/modules/field-operations/pages/FieldPackagesPage'
 import { FieldPackageDetailPage } from '@/modules/field-operations/pages/FieldPackageDetailPage'
 import { FieldTaskFormPage } from '@/modules/field-operations/pages/FieldTaskFormPage'
+import { PendingEvidencePage } from '@/modules/field-operations/pages/PendingEvidencePage'
 
 export const router = createBrowserRouter([
   {
@@ -49,6 +50,7 @@ export const router = createBrowserRouter([
       { path: 'campo/paquetes', element: <FieldPackagesPage /> },
       { path: 'campo/paquetes/:packageId', element: <FieldPackageDetailPage /> },
       { path: 'campo/paquetes/:packageId/tareas/:taskId', element: <FieldTaskFormPage /> },
+      { path: 'campo/evidencia-pendiente', element: <PendingEvidencePage /> },
       { path: 'estrategias', element: <StrategiesPage /> },
       { path: 'territorio', element: <TerritoryPage /> },
       { path: 'tendencias', element: <TrendsPage /> },

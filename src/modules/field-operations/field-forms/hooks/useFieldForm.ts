@@ -14,9 +14,16 @@ import {
 } from '@/modules/field-operations/field-forms/field-form.runtime'
 import { FieldFormRepository } from '@/modules/field-operations/field-forms/field-form.repository'
 import { translateUi } from '@/modules/field-operations/field-forms/i18n/field-form-i18n'
+import { LocalEvidencePanel } from '@/modules/field-operations/offline-evidence/components/LocalEvidencePanel'
+import {
+  captureContextFromPackage,
+  createStructuredEvidenceFromForm,
+} from '@/modules/field-operations/offline-evidence/engine/offline-evidence-capture'
+import { OfflineEvidenceRepository } from '@/modules/field-operations/offline-evidence/offline-evidence.repository'
 import type { LocalOfflinePackageRecord } from '@/modules/field-operations/offline-packages/offline-package.repository'
 
 const formRepo = FieldFormRepository.createDefault()
+const evidenceRepo = OfflineEvidenceRepository.createDefault()
 
 export function useFieldFormTask(
   pkg: LocalOfflinePackageRecord | null,
@@ -101,14 +108,28 @@ export function useFieldFormTask(
 
   const finalize = useCallback(
     async (allowLimitations = false) => {
-      if (!runtime || !response) return { ok: false as const, reason: 'missing' }
+      if (!runtime || !response || !pkg) return { ok: false as const, reason: 'missing' }
       const result = await finalizeForm(runtime, response, answers, new Date().toISOString(), {
         allowLimitations,
       })
       if (result.response) setResponse(result.response)
+      if (result.ok && result.output) {
+        const ctx = captureContextFromPackage(
+          pkg,
+          String(task?.id ?? response.task_id),
+          runtime.tabId,
+          new Date().toISOString(),
+        )
+        await createStructuredEvidenceFromForm({
+          repo: evidenceRepo,
+          ctx,
+          output: result.output,
+          pkg_payloads: pkg.payloads,
+        })
+      }
       return result
     },
-    [runtime, response, answers],
+    [runtime, response, answers, pkg, task],
   )
 
   const revise = useCallback(
@@ -220,6 +241,8 @@ export function FieldTaskFormView({
           )}
         </div>
       </div>
+
+      <LocalEvidencePanel pkg={pkg} taskId={String(task.id)} />
     </div>
   )
 }
