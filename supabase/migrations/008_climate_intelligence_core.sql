@@ -9,11 +9,13 @@ create table if not exists public.climate_locations (
   id                  uuid primary key default gen_random_uuid(),
   location_key        text not null unique,
   name                text not null,
+  display_name        text not null,
   latitude            double precision not null,
   longitude           double precision not null,
   elevation_m         double precision,
   timezone            text not null default 'America/Guatemala',
   location_type       text not null,
+  location_representation text not null default 'point_reference',
   related_entity_type text,
   related_entity_id   text,
   is_active           boolean not null default true,
@@ -23,8 +25,10 @@ create table if not exists public.climate_locations (
   constraint climate_locations_lng_chk check (longitude between -180 and 180)
 );
 
-comment on table public.climate_locations is
-  'Ubicaciones climáticas reutilizables (país, departamento, estación, evento, etc.).';
+comment on column public.climate_locations.display_name is
+  'Etiqueta humana; para centroides usar punto de referencia, no promedio espacial.';
+comment on column public.climate_locations.location_representation is
+  'point_reference | station | area_weighted | grid_cell';
 
 create table if not exists public.climate_observations (
   id                      uuid primary key default gen_random_uuid(),
@@ -48,8 +52,11 @@ create table if not exists public.climate_observations (
   constraint climate_observations_unique unique (location_id, provider, observed_at)
 );
 
-comment on table public.climate_observations is
-  'Observaciones o condiciones actuales normalizadas por ubicación y proveedor.';
+comment on table public.climate_locations is
+  'Ubicaciones climáticas reutilizables (país, departamento, estación, evento, etc.).';
+
+comment on column public.climate_observations.observed_at is
+  'Hora UTC del bloque modelado más reciente (model_time_utc); no observación de estación.';
 
 create table if not exists public.climate_forecasts (
   id                            uuid primary key default gen_random_uuid(),
@@ -198,3 +205,7 @@ grant all on public.climate_locations to service_role;
 grant all on public.climate_observations to service_role;
 grant all on public.climate_forecasts to service_role;
 grant all on public.climate_fetch_runs to service_role;
+
+-- -----------------------------------------------------------------------------
+-- Migraciones posteriores: land cover debe usar 009_land_cover_context.sql
+-- -----------------------------------------------------------------------------

@@ -7,7 +7,7 @@ import {
 import { CLIMATE_CONFIG } from '@/modules/climate/config/climate.config'
 
 export async function getClimateSnapshotForApi(locationId: string) {
-  const snapshot = await climateService.getLocationSnapshot(locationId)
+  const { snapshot } = await climateService.getLocationSnapshot(locationId)
   const dto = toClimateSnapshotDto(snapshot)
   assertSafeClimateDto(dto)
   return dto
@@ -24,7 +24,8 @@ export async function getClimateHourlyForApi(locationId: string, hours: number) 
     location_id: locationId,
     hours: safeHours,
     items: points.map((p) => ({
-      timestamp: p.timestamp,
+      timestamp_utc: p.timestamp_utc,
+      temporal_phase: p.temporal_phase,
       temperature_c: p.temperature_c,
       relative_humidity_pct: p.relative_humidity_pct,
       precipitation_probability_pct: p.precipitation_probability_pct ?? null,
@@ -42,7 +43,7 @@ export async function getClimateHourlyForApi(locationId: string, hours: number) 
 }
 
 export async function getClimateHealthForApi() {
-  const health = await climateService.getProviderHealth()
+  const health = await climateService.getSystemHealth()
   const dto = toClimateHealthDto(health)
   assertSafeClimateDto(dto)
   return dto

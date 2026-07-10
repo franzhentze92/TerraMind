@@ -24,7 +24,7 @@ export class OpenMeteoProvider implements ClimateProvider {
   async getCurrentConditions(location: ClimateLocation) {
     const fetchedAt = new Date().toISOString()
     const response = await fetchOpenMeteoCurrentAndHourly(location, 1)
-    const current = mapOpenMeteoCurrent(response, fetchedAt)
+    const current = mapOpenMeteoCurrent(response, fetchedAt, location.elevation_m)
     if (!current) {
       throw new Error('Open-Meteo no devolvió bloque current')
     }
@@ -33,7 +33,7 @@ export class OpenMeteoProvider implements ClimateProvider {
 
   async getHourlyForecast(location: ClimateLocation, hours: number) {
     const response = await fetchOpenMeteoCurrentAndHourly(location, hours)
-    return mapOpenMeteoHourly(response, hours)
+    return mapOpenMeteoHourly(response)
   }
 
   async getDailyForecast(location: ClimateLocation, days: number) {

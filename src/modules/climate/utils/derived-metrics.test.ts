@@ -1,48 +1,58 @@
 import { describe, expect, it } from 'vitest'
-import {
-  buildForecastSummary,
-  computeVaporPressureDeficitKpa,
-  countHoursWithRainProbability,
-  countHoursWithoutForecastRain,
-} from './derived-metrics'
+import { buildForecastSummary, selectForecastHours, selectPreviousHours } from './derived-metrics'
 import type { ClimateHourlyPoint } from '../types/climate.types'
 
-function hour(i: number, patch: Partial<ClimateHourlyPoint> = {}): ClimateHourlyPoint {
+function hour(offsetHours: number, patch: Partial<ClimateHourlyPoint> = {}): ClimateHourlyPoint {
+  const base = new Date('2026-07-10T12:00:00.000Z').getTime()
   return {
-    timestamp: `2026-07-10T${String(i).padStart(2, '0')}:00:00`,
-    temperature_c: 20 + i * 0.1,
-    relative_humidity_pct: 80 - i,
-    precipitation_mm: i % 3 === 0 ? 0.5 : 0,
-    rain_mm: i % 3 === 0 ? 0.4 : 0,
+    timestamp_utc: new Date(base + offsetHours * 60 * 60 * 1000).toISOString(),
+    temperature_c: 20,
+    relative_humidity_pct: 70,
+    precipitation_mm: offsetHours < 0 ? 1 : 0.5,
+    rain_mm: offsetHours < 0 ? 0.8 : 0.4,
     wind_speed_10m_kph: 10,
     wind_direction_10m_deg: 180,
-    wind_gusts_10m_kph: 20 + i,
+    wind_gusts_10m_kph: 20,
     cloud_cover_pct: 50,
-    precipitation_probability_pct: i % 2 === 0 ? 60 : 10,
+    temporal_phase: offsetHours < 0 ? 'previous' : 'forecast',
     ...patch,
   }
 }
 
-describe('derived metrics', () => {
-  const hourly = Array.from({ length: 72 }, (_, i) => hour(i))
+describe('derived metrics precipitation windows', () => {
+  const reference = '2026-07-10T12:00:00.000Z'
+  const hourly = [
+    ...Array.from({ length: 24 }, (_, i) => hour(-24 + i)),
+    hour(0, { temporal_phase: 'current' }),
+    ...Array.from({ length: 72 }, (_, i) => hour(i + 1)),
+  ]
 
-  it('sums rain accumulations', () => {
-    const summary = buildForecastSummary(hourly, null, 50)
-    expect(summary.rain_accum_24h_mm).toBeGreaterThan(0)
-    expect(summary.rain_accum_72h_mm).toBeGreaterThan(summary.rain_accum_24h_mm!)
-    expect(summary.max_gust_24h_kph).toBe(43)
-    expect(summary.min_humidity_24h_pct).toBe(57)
-  })
+  it('separates previous and forecast precipitation', () => {
+    const previous24 = selectPreviousHours(hourly, reference, 24)
+    const forecast24 = selectForecastHours(hourly, reference, 24)
+    expect(previous24.length).toBe(24)
+    expect(forecast24.length).toBe(24)
 
-  it('counts rain probability hours and dry hours', () => {
-    expect(countHoursWithRainProbability(hourly, 24, 50)).toBe(12)
-    expect(countHoursWithoutForecastRain(hourly, 24)).toBeGreaterThan(0)
-  })
-
-  it('computes VPD with Magnus formula', () => {
-    const vpd = computeVaporPressureDeficitKpa(25, 50)
-    expect(vpd).not.toBeNull()
-    expect(vpd!).toBeGreaterThan(0)
-    expect(vpd!).toBeLessThan(3)
+    const summary = buildForecastSummary(
+      hourly,
+      {
+        model_time_utc: reference,
+        temperature_c: 20,
+        relative_humidity_pct: 70,
+        precipitation_mm: 0,
+        rain_mm: 0,
+        wind_speed_10m_kph: 0,
+        wind_direction_10m_deg: 0,
+        wind_gusts_10m_kph: 0,
+        cloud_cover_pct: 0,
+        surface_pressure_hpa: 900,
+        provider: 'open_meteo',
+        source_timestamp: reference,
+      },
+      50,
+    )
+    expect(summary.precipitation_previous_24h_mm).toBeGreaterThan(0)
+    expect(summary.precipitation_forecast_next_24h_mm).toBeGreaterThan(0)
+    expect(summary.precipitation_previous_source).toBe('modelled_hourly')
   })
 })

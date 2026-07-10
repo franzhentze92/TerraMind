@@ -3,6 +3,8 @@ import type {
   ClimateDailyPoint,
   ClimateHourlyPoint,
 } from '../../types/climate.types'
+import { computeElevationDifference } from '../../utils/derived-metrics'
+import { openMeteoLocalTimeToUtc } from '../../utils/timestamp'
 import type { OpenMeteoForecastResponse } from './open-meteo.types'
 
 function at<T>(arr: T[] | undefined, index: number): T | null {
@@ -16,19 +18,19 @@ function safeNumber(value: number | null | undefined): number | null {
   return value
 }
 
-function toIsoLocal(timestamp: string): string {
-  return timestamp.includes('T') ? timestamp : `${timestamp}T00:00:00`
-}
-
 export function mapOpenMeteoCurrent(
   response: OpenMeteoForecastResponse,
   fetchedAt: string,
+  registeredElevationM?: number | null,
 ): ClimateCurrentConditions | null {
   const current = response.current
   if (!current) return null
 
+  const providerElevation = safeNumber(response.elevation)
+  const elevationDiff = computeElevationDifference(registeredElevationM, providerElevation)
+
   return {
-    observed_at: toIsoLocal(current.time),
+    model_time_utc: openMeteoLocalTimeToUtc(current.time, response.utc_offset_seconds),
     temperature_c: safeNumber(current.temperature_2m),
     relative_humidity_pct: safeNumber(current.relative_humidity_2m),
     precipitation_mm: safeNumber(current.precipitation),
@@ -44,22 +46,22 @@ export function mapOpenMeteoCurrent(
     provider: 'open_meteo',
     model: 'open-meteo-forecast',
     source_timestamp: fetchedAt,
+    registered_elevation_m: registeredElevationM ?? null,
+    provider_elevation_m: providerElevation,
+    elevation_difference_m: elevationDiff,
   }
 }
 
 export function mapOpenMeteoHourly(
   response: OpenMeteoForecastResponse,
-  maxHours?: number,
 ): ClimateHourlyPoint[] {
   const hourly = response.hourly
   if (!hourly?.time?.length) return []
 
-  const limit = maxHours ? Math.min(maxHours, hourly.time.length) : hourly.time.length
   const points: ClimateHourlyPoint[] = []
-
-  for (let i = 0; i < limit; i++) {
+  for (let i = 0; i < hourly.time.length; i++) {
     points.push({
-      timestamp: toIsoLocal(hourly.time[i]),
+      timestamp_utc: openMeteoLocalTimeToUtc(hourly.time[i], response.utc_offset_seconds),
       temperature_c: safeNumber(at(hourly.temperature_2m, i)),
       relative_humidity_pct: safeNumber(at(hourly.relative_humidity_2m, i)),
       precipitation_probability_pct: safeNumber(at(hourly.precipitation_probability, i)),
@@ -70,6 +72,7 @@ export function mapOpenMeteoHourly(
       wind_gusts_10m_kph: safeNumber(at(hourly.wind_gusts_10m, i)),
       cloud_cover_pct: safeNumber(at(hourly.cloud_cover, i)),
       vapor_pressure_deficit_kpa: safeNumber(at(hourly.vapour_pressure_deficit, i)),
+      temporal_phase: 'forecast',
     })
   }
 
@@ -95,14 +98,23 @@ export function mapOpenMeteoDaily(response: OpenMeteoForecastResponse): ClimateD
   return points
 }
 
-export function openMeteoSourceMetadata(response: OpenMeteoForecastResponse): Record<string, unknown> {
+export function openMeteoSourceMetadata(
+  response: OpenMeteoForecastResponse,
+  registeredElevationM?: number | null,
+): Record<string, unknown> {
+  const providerElevation = safeNumber(response.elevation)
   return {
     generationtime_ms: response.generationtime_ms ?? null,
     utc_offset_seconds: response.utc_offset_seconds ?? null,
     timezone: response.timezone ?? null,
     timezone_abbreviation: response.timezone_abbreviation ?? null,
-    elevation_m: response.elevation ?? null,
+    registered_elevation_m: registeredElevationM ?? null,
+    provider_elevation_m: providerElevation,
+    elevation_difference_m: computeElevationDifference(registeredElevationM, providerElevation),
     latitude: response.latitude,
     longitude: response.longitude,
+    elevation_source: registeredElevationM !== null && registeredElevationM !== undefined
+      ? 'registered_or_model'
+      : 'model_auto',
   }
 }

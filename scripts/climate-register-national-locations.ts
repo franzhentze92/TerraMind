@@ -11,15 +11,15 @@ async function main() {
   console.log(`✅ Ubicaciones registradas: ${locations.length}`)
   const countries = locations.filter((l) => l.location_type === 'country')
   const departments = locations.filter((l) => l.location_type === 'department')
-  console.log(`   · País: ${countries.length}`)
-  console.log(`   · Departamentos: ${departments.length}`)
+  console.log(`   · Puntos de referencia nacional: ${countries.length}`)
+  console.log(`   · Puntos de referencia departamentales: ${departments.length}`)
 
   if (locations.length !== 23) {
     console.warn(`⚠️  Se esperaban 23 ubicaciones (1 país + 22 departamentos), hay ${locations.length}`)
   }
 
   for (const loc of locations) {
-    console.log(`  - ${loc.location_type.padEnd(12)} ${loc.name} (${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)})`)
+    console.log(`  - ${loc.location_type.padEnd(12)} ${loc.display_name} (${loc.latitude.toFixed(4)}, ${loc.longitude.toFixed(4)})`)
   }
 
   console.log(`\nDuración registro: ${Date.now() - started} ms`)

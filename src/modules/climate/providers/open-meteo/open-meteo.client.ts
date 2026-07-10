@@ -61,6 +61,9 @@ function buildForecastUrl(location: ClimateLocation, params: Record<string, stri
     wind_speed_unit: 'kmh',
     ...params,
   })
+  if (location.elevation_m !== null && location.elevation_m !== undefined) {
+    search.set('elevation', String(location.elevation_m))
+  }
   return `${base}/v1/forecast?${search.toString()}`
 }
 
@@ -131,11 +134,13 @@ export async function fetchOpenMeteoForecast(
 export async function fetchOpenMeteoCurrentAndHourly(
   location: ClimateLocation,
   hours: number,
+  pastDays = CLIMATE_CONFIG.pastDays,
 ): Promise<OpenMeteoForecastResponse> {
   return fetchOpenMeteoForecast(location, {
     current: CURRENT_VARS,
     hourly: HOURLY_VARS,
     forecast_hours: String(hours),
+    past_days: String(pastDays),
   })
 }
 

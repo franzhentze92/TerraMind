@@ -8,123 +8,148 @@ Módulo climático reutilizable de TerraMind. **No está acoplado a incendios** 
 ```text
 feature/climate-intelligence-core
 worktree: ../terramind-climate
+base: main @ b092e59 (rebased)
 ```
 
-## Objetivo
+## Numeración de migraciones
 
-Capa normalizada para consultar, almacenar y servir:
+| Archivo | Módulo |
+|---------|--------|
+| `008_climate_intelligence_core.sql` | Climate Core (este commit) |
+| `009_land_cover_context.sql` | Land cover (agente separado; reservado) |
 
-- condiciones actuales / más recientes;
-- pronóstico horario (72 h por defecto);
-- precipitación reciente y acumulados derivados;
-- trazabilidad de proveedor y calidad de datos.
+No usar `008` para land cover.
 
-## Arquitectura
+## Semántica espacial — puntos de referencia
 
-```text
-ClimateProvider (interfaz)
-    └── OpenMeteoProvider (MVP)
-ClimateService
-    ├── caché / frescura (TTL)
-    ├── persistencia Supabase
-    └── métricas derivadas puras
-API read-only (/api/environment/climate/*)
-CLI administrativo (register / refresh / status)
-```
+Las 23 ubicaciones nacionales son **puntos de referencia**, no promedios espaciales:
 
-### Proveedor inicial: Open-Meteo
+| Tipo | Etiqueta |
+|------|----------|
+| País | `Punto de referencia nacional — centroide geográfico de Guatemala` |
+| Departamento | `Punto de referencia departamental — centroide de {nombre}` |
 
-- **API:** `https://api.open-meteo.com/v1/forecast`
-- **Histórico (archive):** `https://archive-api.open-meteo.com/v1/archive`
-- **Licencia:** API gratuita para uso no comercial; revisar [open-meteo.com](https://open-meteo.com/en/terms) antes de producción.
-- **Atribución:** Datos modelados por Open-Meteo (no fuente oficial de Guatemala).
-- **Timezone:** `America/Guatemala` en todas las ubicaciones nacionales registradas.
-- **Unidades internas:** °C, %, mm, km/h, hPa, kPa (VPD cuando aplica).
+Campos:
 
-**Limitaciones conocidas**
+- `location_representation = point_reference`
+- `display_name` — etiqueta humana correcta
+- `spatial_disclaimer` en DTO API
 
-- Resolución espacial ~11 km (modelo numérico).
-- `current` es interpolación del modelo, no estación local.
-- No sustituye INSIVUMEH ni series oficiales.
+> Este valor corresponde a un punto geográfico de referencia y no representa un
+> promedio espacial del territorio.
 
-## Variables mínimas
+Para clima nacional real en el futuro: estaciones, muestreo espacial, promedios
+ponderados por área, máximos/mínimos departamentales — nunca un único centroide.
 
-| Variable interna | Unidad | Fuente Open-Meteo |
-|------------------|--------|-------------------|
-| `temperature_c` | °C | `temperature_2m` |
-| `relative_humidity_pct` | % | `relative_humidity_2m` |
-| `precipitation_mm` | mm | `precipitation` |
-| `rain_mm` | mm | `rain` |
-| `wind_speed_10m_kph` | km/h | `wind_speed_10m` (`wind_speed_unit=kmh`) |
-| `wind_direction_10m_deg` | ° | `wind_direction_10m` |
-| `wind_gusts_10m_kph` | km/h | `wind_gusts_10m` |
-| `cloud_cover_pct` | % | `cloud_cover` |
-| `surface_pressure_hpa` | hPa | `surface_pressure` |
+## Tipo de dato — modelado, no observado
 
-## Caché y frescura
+Open-Meteo `current` es salida **modelada/interpolada**, no medición de estación.
 
-| Variable de entorno | Default |
-|---------------------|---------|
-| `CLIMATE_CURRENT_TTL_MINUTES` | 30 |
-| `CLIMATE_FORECAST_TTL_MINUTES` | 60 |
+- `observed_or_modelled = modelled`
+- API: `condition_label = "Condición meteorológica modelada más reciente"`
+- Columna DB `observed_at` almacena `model_time_utc` (UTC)
+
+## Elevación
+
+Open-Meteo resuelve elevación del modelo automáticamente si no se envía `elevation`.
+Si `climate_locations.elevation_m` está registrado, se envía como parámetro `elevation`.
+
+Se guarda y expone:
+
+| Campo | Descripción |
+|-------|-------------|
+| `registered_elevation_m` | En `climate_locations.elevation_m` |
+| `provider_elevation_m` | Respuesta Open-Meteo (`elevation`) |
+| `elevation_difference_m` | Diferencia absoluta |
+
+Warning si diferencia > `CLIMATE_ELEVATION_WARNING_THRESHOLD_M` (default 150 m).
+
+Quetzaltenango ~847 hPa es coherente con altitud; no se trata como error automático.
+
+## Precipitación temporal
+
+Campos separados en `forecast_summary`:
+
+| Campo | Ventana |
+|-------|---------|
+| `precipitation_previous_24h_mm` | Horas modeladas **anteriores** al modelo actual |
+| `precipitation_previous_72h_mm` | Idem 72 h (si hay `past_days` suficiente) |
+| `precipitation_forecast_next_24h_mm` | Próximas 24 h de pronóstico |
+| `precipitation_forecast_next_72h_mm` | Próximas 72 h de pronóstico |
+
+Fuente histórica: `past_days` en una sola llamada Open-Meteo (`CLIMATE_PAST_DAYS=3`).
+`precipitation_previous_source = modelled_hourly` — no lluvia observada de estación.
+
+## Timestamps
+
+- Almacenamiento: **UTC ISO8601** (`model_time_utc`, `valid_at`, `fetched_at`, `issued_at`)
+- Presentación: `America/Guatemala` vía `timestamp_local` en DTO
+- Conversión: `utc_offset_seconds` de Open-Meteo
+
+## Refresh de ubicaciones
+
+Una sola llamada HTTP por ubicación: `current` + `hourly` + `past_days` + `forecast_hours`.
+
+| Variable | Default |
+|----------|---------|
+| `CLIMATE_REFRESH_CONCURRENCY` | 4 |
+| `CLIMATE_PAST_DAYS` | 3 |
 | `CLIMATE_FORECAST_HOURS` | 72 |
-| `CLIMATE_PROVIDER` | `open_meteo` |
 
-Si el snapshot en base está fresco, `ClimateService` no vuelve a llamar al proveedor.
+Ejecución: `batched_parallel` con límite de concurrencia configurable.
+Retry solo en errores transitorios; timeout por request.
 
-## Esquema (migración `008_climate_intelligence_core.sql`)
+## Caché
 
-- `climate_locations` — ubicaciones reutilizables (`location_key` único)
-- `climate_observations` — condiciones actuales (`location_id + provider + observed_at`)
-- `climate_forecasts` — pronóstico horario (`location_id + provider + issued_at + valid_at`)
-- `climate_fetch_runs` — trazabilidad de ingesta
+TTL: `CLIMATE_CURRENT_TTL_MINUTES=30`, `CLIMATE_FORECAST_TTL_MINUTES=60`.
 
-RPC auxiliar: `geo_list_territorial_centroids()` — país + 22 departamentos GT.
+`getLocationSnapshot` desglosa latencia:
+
+- `location_ms`, `observation_ms`, `forecast_ms`, `assemble_ms`, `total_ms`
+
+`measureCacheHitLatency(id, 10)` reporta p50 de consultas locales.
+
+## Health ampliado
+
+`GET /api/environment/climate/health` devuelve:
+
+- `provider_reachable`, `provider_latency_ms`
+- `database_reachable`
+- `last_fetch_status`, `last_success_at`
+- `stale_locations_count`, `locations_total`, `locations_fresh`
+- `consecutive_failures`
+
+## API (solo lectura)
+
+| Método | Ruta |
+|--------|------|
+| GET | `/api/environment/climate/health` |
+| GET | `/api/environment/climate/locations/:id/snapshot` |
+| GET | `/api/environment/climate/locations/:id/hourly?hours=72` |
 
 ## Comandos
 
 ```bash
-npm run climate:register-national-locations   # 1 país + 22 deptos
-npm run climate:refresh                       # todas las ubicaciones activas
-npm run climate:refresh -- --location=<uuid>  # una ubicación
-npm run climate:status                        # estado y última corrida
+npm run climate:register-national-locations
+npm run climate:refresh
+npm run climate:refresh -- --location=<uuid>
+npm run climate:status
 ```
 
-## API (solo lectura)
+## Extensión futura
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
-| GET | `/api/environment/climate/health` | Salud del proveedor |
-| GET | `/api/environment/climate/locations/:id/snapshot` | Snapshot consolidado |
-| GET | `/api/environment/climate/locations/:id/hourly?hours=72` | Serie horaria |
+| Proveedor | Uso |
+|-----------|-----|
+| INSIVUMEH | Estaciones oficiales |
+| CHIRPS | Precipitación histórica |
+| ERA5/ERA5-Land | Reanálisis |
+| NASA GPM | Precipitación satelital |
 
-DTO sanitizado: sin `source_metadata`, URLs internas, credenciales ni stack traces.
+Nunca fusionar valores de proveedores distintos sin registrar procedencia.
 
-## Extensión futura (sin fusionar proveniencia)
+## Merge
 
-| Proveedor | Uso previsto |
-|-----------|--------------|
-| **INSIVUMEH** | Estaciones oficiales; prioridad de autoridad en observaciones |
-| **CHIRPS** | Precipitación histórica y anomalías |
-| **ERA5 / ERA5-Land** | Climatología y reanálisis (no refrescos operativos) |
-| **NASA GPM** | Precipitación satelital reciente |
-
-Regla: **nunca mezclar valores de proveedores distintos sin registrar procedencia**.
-
-Implementar nuevos proveedores como clases `ClimateProvider` adicionales y selección
-por tipo de variable / prioridad en `ClimateService` (commit 7B.2+).
-
-## Estrategia de merge
-
-1. El otro agente termina `007_territorial_protected_areas.sql` en `main`.
-2. Esta rama aporta `008_climate_intelligence_core.sql` (numeración revisada al merge).
-3. Sin conflictos esperados en: `fire_event_context`, scheduler, UI incendios.
-4. Posible conflicto menor en `server/index.ts` y `package.json` — resolver añadiendo rutas climate.
-
-## Pruebas
-
-```bash
-npm test -- src/modules/climate
-```
-
-Cubre: mapping, timezone, unidades, nulls, retry, caché, DTO seguro, 23 ubicaciones.
+1. Rebase contra `main` actual (`b092e59+`)
+2. `008` = climate; land cover reserva `009`
+3. Conflictos esperados: `package.json`, `server/index.ts` (menores)
+4. Ejecutar `npm test` completo antes de merge

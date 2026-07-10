@@ -24,7 +24,7 @@ async function main() {
     console.log(
       JSON.stringify(
         {
-          location: snapshot.location.name,
+          location: snapshot.location.display_name,
           current: snapshot.current,
           forecast_hours: snapshot.hourly.length,
           data_status: snapshot.data_status,

@@ -11,11 +11,14 @@ function mapLocationRow(row: Record<string, unknown>): ClimateLocationRecord {
     id: String(row.id),
     location_key: String(row.location_key),
     name: String(row.name),
+    display_name: String(row.display_name ?? row.name),
     latitude: Number(row.latitude),
     longitude: Number(row.longitude),
     elevation_m: row.elevation_m === null || row.elevation_m === undefined ? null : Number(row.elevation_m),
     timezone: String(row.timezone),
     location_type: row.location_type as ClimateLocationRecord['location_type'],
+    location_representation: (row.location_representation ??
+      'point_reference') as ClimateLocationRecord['location_representation'],
     related_entity_type: row.related_entity_type ? String(row.related_entity_type) : null,
     related_entity_id: row.related_entity_id ? String(row.related_entity_id) : null,
     is_active: Boolean(row.is_active),
@@ -34,11 +37,13 @@ export async function upsertClimateLocation(
       {
         location_key: input.location_key,
         name: input.name,
+        display_name: input.display_name,
         latitude: input.latitude,
         longitude: input.longitude,
         elevation_m: input.elevation_m ?? null,
         timezone: input.timezone ?? 'America/Guatemala',
         location_type: input.location_type,
+        location_representation: input.location_representation ?? 'point_reference',
         related_entity_type: input.related_entity_type ?? null,
         related_entity_id: input.related_entity_id ?? null,
         is_active: true,
@@ -69,9 +74,19 @@ export async function listActiveClimateLocations(): Promise<ClimateLocationRecor
     .from('climate_locations')
     .select('*')
     .eq('is_active', true)
-    .order('name')
+    .order('display_name')
   if (error) throw new Error(`climate_locations list: ${error.message}`)
   return (data ?? []).map((row) => mapLocationRow(row as Record<string, unknown>))
+}
+
+export async function checkDatabaseReachable(): Promise<boolean> {
+  try {
+    const supabase = getSupabaseAdmin()
+    const { error } = await supabase.from('climate_locations').select('id').limit(1)
+    return !error
+  } catch {
+    return false
+  }
 }
 
 export async function getLatestObservation(
@@ -104,7 +119,7 @@ export async function upsertObservation(
       location_id: locationId,
       provider: current.provider,
       model: current.model ?? null,
-      observed_at: current.observed_at,
+      observed_at: current.model_time_utc,
       fetched_at: current.source_timestamp,
       temperature_c: current.temperature_c,
       relative_humidity_pct: current.relative_humidity_pct,
@@ -120,6 +135,9 @@ export async function upsertObservation(
         soil_temperature_0cm_c: current.soil_temperature_0cm_c ?? null,
         soil_moisture_0_1cm: current.soil_moisture_0_1cm ?? null,
         weather_code: current.weather_code ?? null,
+        registered_elevation_m: current.registered_elevation_m ?? null,
+        provider_elevation_m: current.provider_elevation_m ?? null,
+        elevation_difference_m: current.elevation_difference_m ?? null,
       },
       source_metadata: sourceMetadata,
     },
@@ -144,7 +162,7 @@ export async function upsertForecasts(
     provider,
     model,
     issued_at: issuedAt,
-    valid_at: point.timestamp,
+    valid_at: point.timestamp_utc,
     fetched_at: fetchedAt,
     horizon_hours: index + 1,
     temperature_c: point.temperature_c,
@@ -158,6 +176,7 @@ export async function upsertForecasts(
     cloud_cover_pct: point.cloud_cover_pct,
     optional_variables: {
       vapor_pressure_deficit_kpa: point.vapor_pressure_deficit_kpa ?? null,
+      temporal_phase: point.temporal_phase,
     },
     source_metadata: sourceMetadata,
   }))
@@ -172,7 +191,7 @@ export async function upsertForecasts(
 export async function listForecastHourly(
   locationId: string,
   provider: string,
-  hours: number,
+  maxPoints: number,
 ): Promise<{ points: ClimateHourlyPoint[]; fetched_at: string | null; issued_at: string | null }> {
   const supabase = getSupabaseAdmin()
   const { data: latestRun, error: runError } = await supabase
@@ -193,13 +212,13 @@ export async function listForecastHourly(
     .eq('provider', provider)
     .eq('issued_at', latestRun.issued_at)
     .order('valid_at', { ascending: true })
-    .limit(hours)
+    .limit(maxPoints)
   if (error) throw new Error(`climate_forecasts list: ${error.message}`)
 
   const points: ClimateHourlyPoint[] = (data ?? []).map((row) => {
     const optional = (row.optional_variables ?? {}) as Record<string, unknown>
     return {
-      timestamp: String(row.valid_at),
+      timestamp_utc: String(row.valid_at),
       temperature_c: row.temperature_c ?? null,
       relative_humidity_pct: row.relative_humidity_pct ?? null,
       precipitation_probability_pct: row.precipitation_probability_pct ?? null,
@@ -213,6 +232,7 @@ export async function listForecastHourly(
         optional.vapor_pressure_deficit_kpa === null || optional.vapor_pressure_deficit_kpa === undefined
           ? null
           : Number(optional.vapor_pressure_deficit_kpa),
+      temporal_phase: (optional.temporal_phase ?? 'forecast') as ClimateHourlyPoint['temporal_phase'],
     }
   })
 
@@ -285,6 +305,24 @@ export async function getLatestFetchRun(provider: string): Promise<ClimateFetchR
   }
 }
 
+export async function countConsecutiveFailures(provider: string): Promise<number> {
+  const supabase = getSupabaseAdmin()
+  const { data, error } = await supabase
+    .from('climate_fetch_runs')
+    .select('status')
+    .eq('provider', provider)
+    .order('started_at', { ascending: false })
+    .limit(10)
+  if (error) throw new Error(`climate_fetch_runs failures: ${error.message}`)
+
+  let count = 0
+  for (const row of data ?? []) {
+    if (row.status === 'success') break
+    if (row.status === 'failed' || row.status === 'partial') count += 1
+  }
+  return count
+}
+
 export interface TerritorialCentroid {
   entity_type: string
   entity_id: string
@@ -309,7 +347,7 @@ export async function listTerritorialCentroids(): Promise<TerritorialCentroid[]>
 function mapObservationRow(row: Record<string, unknown>): ClimateCurrentConditions {
   const optional = (row.optional_variables ?? {}) as Record<string, unknown>
   return {
-    observed_at: String(row.observed_at),
+    model_time_utc: String(row.observed_at),
     temperature_c: row.temperature_c === null ? null : Number(row.temperature_c),
     relative_humidity_pct:
       row.relative_humidity_pct === null ? null : Number(row.relative_humidity_pct),
@@ -337,6 +375,18 @@ function mapObservationRow(row: Record<string, unknown>): ClimateCurrentConditio
     provider: row.provider as ClimateCurrentConditions['provider'],
     model: row.model ? String(row.model) : null,
     source_timestamp: String(row.fetched_at),
+    registered_elevation_m:
+      optional.registered_elevation_m === null || optional.registered_elevation_m === undefined
+        ? null
+        : Number(optional.registered_elevation_m),
+    provider_elevation_m:
+      optional.provider_elevation_m === null || optional.provider_elevation_m === undefined
+        ? null
+        : Number(optional.provider_elevation_m),
+    elevation_difference_m:
+      optional.elevation_difference_m === null || optional.elevation_difference_m === undefined
+        ? null
+        : Number(optional.elevation_difference_m),
   }
 }
 

@@ -12,6 +12,9 @@ export const CLIMATE_CONFIG = {
   currentTtlMinutes: readInt('CLIMATE_CURRENT_TTL_MINUTES', 30),
   forecastTtlMinutes: readInt('CLIMATE_FORECAST_TTL_MINUTES', 60),
   forecastHours: readInt('CLIMATE_FORECAST_HOURS', 72),
+  pastDays: readInt('CLIMATE_PAST_DAYS', 3),
+  refreshConcurrency: readInt('CLIMATE_REFRESH_CONCURRENCY', 4),
+  elevationWarningThresholdM: readInt('CLIMATE_ELEVATION_WARNING_THRESHOLD_M', 150),
   defaultTimezone: 'America/Guatemala',
   rainProbabilityThresholdPct: 50,
   openMeteo: {
