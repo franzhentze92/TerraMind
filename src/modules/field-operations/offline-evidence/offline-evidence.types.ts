@@ -145,7 +145,7 @@ export interface LocalEvidenceBundle {
   location_summary: Record<string, unknown>
   limitations: string[]
   bundle_checksum: string
-  status: 'incomplete' | 'ready' | 'pending_sync' | 'sync_blocked' | 'superseded'
+  status: 'incomplete' | 'ready' | 'pending_sync' | 'sync_blocked' | 'superseded' | 'synced'
   size_bytes: number
   supersedes_bundle_id: string | null
   created_at: string
