@@ -11,7 +11,9 @@ import { HallazgosList } from '../components/HallazgosList'
 import { LiveTimelinePanel } from '../components/LiveTimelinePanel'
 import { SourcesFooter } from '../components/SourcesFooter'
 import { FireHeatSummaryCard } from '@/modules/fires/components/FireHeatSummaryCard'
+import { BiodiversityNationalSummaryCard } from '@/modules/biodiversity/components/BiodiversityNationalSummaryCard'
 import { useFireSummary } from '@/modules/fires/hooks/useFireSummary'
+import { useBiodiversityNationalSummary } from '@/modules/biodiversity/hooks/useBiodiversityDashboard'
 import {
   buildFireDashboardHeader,
   buildFireExecutiveBrief,
@@ -32,6 +34,7 @@ function HeaderSkeleton() {
 export function NationalSituationPage() {
   const { isLoading: briefLoading } = useDailyBrief()
   const fireSummary = useFireSummary()
+  const biodiversitySummary = useBiodiversityNationalSummary()
 
   const fireData = fireSummary.data
   const hasFireData = Boolean(fireData)
@@ -119,6 +122,11 @@ export function NationalSituationPage() {
                 data={fireSummary.data}
                 isLoading={fireSummary.isLoading}
                 isError={fireSummary.isError}
+              />
+              <BiodiversityNationalSummaryCard
+                data={biodiversitySummary.data}
+                isLoading={biodiversitySummary.isLoading}
+                isError={biodiversitySummary.isError}
               />
               <ExecutiveSummaryCard brief={executiveBrief} />
               {showDemoHallazgos ? (
