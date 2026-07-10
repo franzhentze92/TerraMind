@@ -68,6 +68,9 @@ create table if not exists public.fire_event_land_cover_context (
 create index if not exists fire_event_land_cover_context_status_idx
   on public.fire_event_land_cover_context (status);
 
+create index if not exists fire_event_land_cover_context_generated_at_idx
+  on public.fire_event_land_cover_context (generated_at desc);
+
 -- -----------------------------------------------------------------------------
 -- Zonas por radio (extensible)
 -- -----------------------------------------------------------------------------
@@ -97,6 +100,9 @@ create table if not exists public.fire_event_land_cover_zones (
 create index if not exists fire_event_land_cover_zones_event_idx
   on public.fire_event_land_cover_zones (event_id);
 
+create index if not exists fire_event_land_cover_zones_event_radius_idx
+  on public.fire_event_land_cover_zones (event_id, radius_m);
+
 -- -----------------------------------------------------------------------------
 -- RLS: backend-only
 -- -----------------------------------------------------------------------------
@@ -105,3 +111,6 @@ alter table public.fire_event_land_cover_zones enable row level security;
 
 revoke all on table public.fire_event_land_cover_context from anon, authenticated;
 revoke all on table public.fire_event_land_cover_zones from anon, authenticated;
+
+grant select, insert, update, delete on table public.fire_event_land_cover_context to service_role;
+grant select, insert, update, delete on table public.fire_event_land_cover_zones to service_role;
