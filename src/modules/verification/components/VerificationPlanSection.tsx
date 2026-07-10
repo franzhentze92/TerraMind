@@ -1,6 +1,8 @@
 import { Badge } from '@/shared/components/Badge'
 import { useIncidentVerificationPlan } from '../hooks/useVerificationPlans'
+import { usePlanResolutionSummary } from '../hooks/useVerificationResolution'
 import {
+  needResolutionStatusLabel,
   verificationMethodLabel,
   verificationNeedTypeLabel,
   verificationPlanStatusLabel,
@@ -13,6 +15,13 @@ interface Props {
 export function VerificationPlanSection({ incidentId }: Props) {
   const query = useIncidentVerificationPlan(incidentId)
   const plan = query.data
+  const resolutionQuery = usePlanResolutionSummary(plan?.id ? String(plan.id) : undefined)
+  const resolutionByNeed = new Map(
+    ((resolutionQuery.data?.needs as Array<Record<string, unknown>> | undefined) ?? []).map((n) => [
+      String(n.need_id),
+      n.resolution as Record<string, unknown> | null,
+    ]),
+  )
 
   if (query.isLoading) {
     return (
@@ -70,6 +79,13 @@ export function VerificationPlanSection({ incidentId }: Props) {
             const recommended = methods.find((m) => m.is_recommended)
             const alternatives = methods.filter((m) => m.is_alternative)
             const evidenceMin = (need.evidence_minimum as string[] | undefined) ?? []
+            const resolution = resolutionByNeed.get(String(need.id))
+            const bundle = resolution?.evidence_bundle as
+              | { validations_used?: string[]; limitations?: string[] }
+              | undefined
+            const conflict = resolution?.conflict_assessment as
+              | { status?: string; reasons?: string[] }
+              | undefined
 
             return (
               <div
@@ -80,6 +96,43 @@ export function VerificationPlanSection({ incidentId }: Props) {
                   {verificationNeedTypeLabel(String(need.need_type))}
                 </p>
                 <p className="mt-1 text-xs text-text-secondary">{String(need.need_question)}</p>
+
+                {resolution && (
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <Badge variant="default">
+                      {needResolutionStatusLabel(String(resolution.resolution_status))}
+                    </Badge>
+                    <span className="text-[11px] text-text-tertiary">
+                      Confianza {String(resolution.resolution_confidence_score ?? resolution.resolution_confidence)} ·
+                      Fuerza {String(resolution.resolution_strength)}
+                    </span>
+                  </div>
+                )}
+
+                {bundle?.validations_used && bundle.validations_used.length > 0 && (
+                  <p className="mt-1 text-[11px] text-text-tertiary">
+                    Evidencias utilizadas: {bundle.validations_used.length}
+                  </p>
+                )}
+
+                {conflict?.status && conflict.status !== 'none' && (
+                  <p className="mt-1 text-[11px] text-text-tertiary">
+                    Conflicto: {conflict.status}
+                    {conflict.reasons?.[0] ? ` — ${conflict.reasons[0]}` : ''}
+                  </p>
+                )}
+
+                {(resolution?.remaining_uncertainties as string[] | undefined)?.[0] && (
+                  <p className="mt-1 text-[11px] text-text-tertiary">
+                    Incertidumbre: {(resolution?.remaining_uncertainties as string[])[0]}
+                  </p>
+                )}
+
+                {(resolution?.recommended_follow_up as string[] | undefined)?.[0] && (
+                  <p className="mt-1 text-[11px] text-text-tertiary">
+                    Seguimiento: {(resolution?.recommended_follow_up as string[])[0]}
+                  </p>
+                )}
 
                 {recommended && (
                   <p className="mt-2 text-xs text-text-secondary">

@@ -51,3 +51,27 @@ export function fetchIncidentVerificationNeeds(incidentId: string) {
     `/api/intelligence/incidents/${incidentId}/verification-needs`,
   )
 }
+
+export function fetchNeedResolution(needId: string) {
+  return apiFetch<Record<string, unknown>>(
+    `/api/intelligence/verification-needs/${needId}/resolution`,
+  )
+}
+
+export function fetchIncidentVerificationResolution(incidentId: string) {
+  return apiFetch<Record<string, unknown>>(
+    `/api/intelligence/incidents/${incidentId}/verification-resolution`,
+  )
+}
+
+export function fetchPlanResolutionSummary(planId: string) {
+  return apiFetch<Record<string, unknown>>(
+    `/api/intelligence/verification-plans/${planId}/resolution-summary`,
+  )
+}
+
+export function fetchMissionResolutionContributions(missionId: string) {
+  return apiFetch<{ items: unknown[]; generated_at: string }>(
+    `/api/operations/missions/${missionId}/resolution-contributions`,
+  )
+}

@@ -31,7 +31,16 @@ export async function getActiveVerificationPlan(
     .select('*')
     .eq('incident_id', incidentId)
     .eq('verification_model_version', modelVersion)
-    .in('status', ['draft', 'ready', 'not_required', 'blocked'])
+    .in('status', [
+      'draft',
+      'ready',
+      'in_progress',
+      'partially_satisfied',
+      'satisfied',
+      'inconclusive',
+      'not_required',
+      'blocked',
+    ])
     .order('created_at', { ascending: false })
     .limit(1)
     .maybeSingle()

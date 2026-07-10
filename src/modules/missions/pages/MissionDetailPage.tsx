@@ -6,6 +6,7 @@ import { missionStatusLabel, missionTypeLabel } from '../utils/mission-labels'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
 import { MissionWorkflowActions } from '../components/MissionWorkflowActions'
 import { MissionEvidenceSection } from '@/modules/evidence/components/MissionEvidenceSection'
+import { MissionResolutionContributionsSection } from '@/modules/verification/components/MissionResolutionContributionsSection'
 
 export function MissionDetailPage() {
   const { missionId } = useParams()
@@ -94,6 +95,7 @@ export function MissionDetailPage() {
       />
 
       <MissionEvidenceSection missionId={String(mission.id)} />
+      <MissionResolutionContributionsSection missionId={String(mission.id)} />
 
       <section className="mb-6">
         <h2 className="text-sm font-semibold text-text-primary">Tareas</h2>

@@ -2,11 +2,29 @@ export function verificationPlanStatusLabel(status: string): string {
   const map: Record<string, string> = {
     draft: 'Borrador',
     ready: 'Listo',
+    in_progress: 'En progreso',
+    partially_satisfied: 'Parcialmente satisfecho',
+    inconclusive: 'Inconcluso',
     not_required: 'No requerido',
     blocked: 'Bloqueado',
     superseded: 'Reemplazado',
     satisfied: 'Satisfecho',
     cancelled: 'Cancelado',
+  }
+  return map[status] ?? status
+}
+
+export function needResolutionStatusLabel(status: string): string {
+  const map: Record<string, string> = {
+    open: 'Abierta',
+    partially_satisfied: 'Parcialmente satisfecha',
+    satisfied: 'Satisfecha',
+    inconclusive: 'Inconclusa',
+    insufficient_evidence: 'Evidencia insuficiente',
+    conflicting_evidence: 'Conflicto de evidencia',
+    blocked: 'Bloqueada',
+    superseded: 'Reemplazada',
+    cancelled: 'Cancelada',
   }
   return map[status] ?? status
 }
