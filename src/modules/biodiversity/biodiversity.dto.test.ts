@@ -15,22 +15,23 @@ describe('biodiversity.dto', () => {
     expect(parsed.ok).toBe(false)
   })
 
-  it('strips internal fields from public dto', () => {
+  it('strips coordinates when privacy is not public_exact', () => {
     const occ: BiodiversityOccurrence = {
-      source: 'gbif',
+      source: 'inaturalist',
       sourceOccurrenceId: '1',
       scientificName: 'Test',
-      coordinatesObscured: false,
-      privacyLevel: 'public_exact',
-      sourceUrl: 'https://gbif.org/occurrence/1',
-      recordKind: 'human_observation',
+      coordinatesObscured: true,
+      privacyLevel: 'sensitive_generalized',
+      latitude: 14.5,
+      longitude: -90.8,
+      sourceUrl: 'https://example.com',
+      recordKind: 'citizen_science_observation',
       possibleDuplicate: false,
       fetchedAt: '2026-01-01T00:00:00.000Z',
       qualityWarnings: [],
-      sourceDatasetId: 'secret-dataset',
     }
     const dto = toPublicOccurrenceDto(occ)
-    expect(dto).not.toHaveProperty('sourceDatasetId')
-    expect(dto.source).toBe('gbif')
+    expect(dto).not.toHaveProperty('latitude')
+    expect(dto).not.toHaveProperty('longitude')
   })
 })

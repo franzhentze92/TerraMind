@@ -10,7 +10,8 @@ import type {
 import { BIODIVERSITY_CONFIG } from './config/biodiversity.config'
 import { markBiodiversityDuplicates } from './biodiversity-deduplication'
 import { buildBiodiversityDataQuality } from './biodiversity-quality'
-import { toPublicOccurrenceDto } from './biodiversity.dto'
+import { toPublicOccurrenceDto, toPublicOccurrenceSummaryDto } from './biodiversity.dto'
+import { buildBiodiversitySearchAggregate } from './biodiversity-aggregate'
 import { createGbifProvider } from './providers/gbif/gbif.provider'
 import { createInaturalistProvider } from './providers/inaturalist/inaturalist.provider'
 import { mapWithConcurrency } from './utils/concurrency'
@@ -73,10 +74,14 @@ export class BiodiversityService {
     }
   }
 
-  async searchOccurrencesPublic(query: BiodiversitySearchQuery) {
+  async searchOccurrencesPublic(query: BiodiversitySearchQuery & { mode?: 'summary' | 'detail' }) {
     const result = await this.searchOccurrences(query)
+    const mode = query.mode ?? 'detail'
+    const mapper = mode === 'summary' ? toPublicOccurrenceSummaryDto : toPublicOccurrenceDto
     return {
-      items: result.items.map(toPublicOccurrenceDto),
+      mode,
+      items: result.items.map(mapper),
+      aggregate: buildBiodiversitySearchAggregate(result.items),
       quality: result.quality,
       next_cursor: result.nextCursor,
       deduplicated_count: result.deduplicatedCount,

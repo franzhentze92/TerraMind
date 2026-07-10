@@ -1,8 +1,9 @@
 import { z } from 'zod'
 import { BIODIVERSITY_CONFIG } from './config/biodiversity.config'
 import type { BiodiversityOccurrence, BiodiversityProviderId } from './biodiversity.types'
+import { canExposeExactLocation } from './biodiversity-privacy'
 
-const providerSchema = z.enum(['gbif', 'inaturalist'])
+const providerSchema = z.enum(['gbif', 'inaturalist', 'all'])
 
 const qualityFiltersSchema = z
   .object({
@@ -22,6 +23,7 @@ export const biodiversitySearchQuerySchema = z
     to: z.string().datetime({ offset: true }).or(z.string().regex(/^\d{4}-\d{2}-\d{2}$/)).optional(),
     taxon: z.string().min(1).max(200).optional(),
     provider: providerSchema.optional(),
+    mode: z.enum(['summary', 'detail']).optional(),
     quality: z.enum(['research', 'all']).optional(),
     limit: z.coerce.number().int().min(1).max(BIODIVERSITY_CONFIG.maxLimit).optional(),
     cursor: z.string().max(500).optional(),
@@ -70,6 +72,8 @@ export type BiodiversitySearchQueryDto = z.infer<typeof biodiversitySearchQueryS
 export type BiodiversityTaxonResolveDto = z.infer<typeof biodiversityTaxonResolveSchema>
 
 export function toInternalSearchQuery(dto: BiodiversitySearchQueryDto) {
+  const providers: BiodiversityProviderId[] | undefined =
+    !dto.provider || dto.provider === 'all' ? undefined : [dto.provider]
   return {
     latitude: dto.lat,
     longitude: dto.lng,
@@ -79,7 +83,7 @@ export function toInternalSearchQuery(dto: BiodiversitySearchQueryDto) {
     observedTo: dto.to,
     scientificName: dto.taxon,
     taxonId: undefined,
-    providers: dto.provider ? [dto.provider as BiodiversityProviderId] : undefined,
+    providers,
     qualityFilters: {
       researchGradeOnly: dto.quality === 'research',
       requireCoordinates: true,
@@ -88,12 +92,13 @@ export function toInternalSearchQuery(dto: BiodiversitySearchQueryDto) {
     },
     limit: dto.limit,
     cursor: dto.cursor,
+    mode: dto.mode ?? 'detail',
   }
 }
 
 /** DTO público sin payloads crudos del proveedor. */
 export function toPublicOccurrenceDto(occurrence: BiodiversityOccurrence) {
-  return {
+  const dto: Record<string, unknown> = {
     source: occurrence.source,
     source_occurrence_id: occurrence.sourceOccurrenceId,
     scientific_name: occurrence.scientificName,
@@ -101,9 +106,6 @@ export function toPublicOccurrenceDto(occurrence: BiodiversityOccurrence) {
     common_name: occurrence.commonName,
     taxon_rank: occurrence.taxonRank,
     observed_at: occurrence.observedAt,
-    latitude: occurrence.latitude,
-    longitude: occurrence.longitude,
-    coordinate_uncertainty_m: occurrence.coordinateUncertaintyM,
     coordinates_obscured: occurrence.coordinatesObscured,
     privacy_level: occurrence.privacyLevel,
     quality_grade: occurrence.qualityGrade,
@@ -117,6 +119,32 @@ export function toPublicOccurrenceDto(occurrence: BiodiversityOccurrence) {
     duplicate_group_id: occurrence.duplicateGroupId,
     quality_warnings: occurrence.qualityWarnings,
     fetched_at: occurrence.fetchedAt,
+  }
+
+  if (canExposeExactLocation(occurrence.privacyLevel)) {
+    dto.latitude = occurrence.latitude
+    dto.longitude = occurrence.longitude
+    dto.coordinate_uncertainty_m = occurrence.coordinateUncertaintyM
+  }
+
+  return dto
+}
+
+/** Modo summary: sin coordenadas ni metadata interna. */
+export function toPublicOccurrenceSummaryDto(occurrence: BiodiversityOccurrence) {
+  return {
+    source: occurrence.source,
+    source_occurrence_id: occurrence.sourceOccurrenceId,
+    scientific_name: occurrence.scientificName,
+    common_name: occurrence.commonName,
+    observed_at: occurrence.observedAt,
+    privacy_level: occurrence.privacyLevel,
+    quality_grade: occurrence.qualityGrade,
+    record_kind: occurrence.recordKind,
+    possible_duplicate: occurrence.possibleDuplicate,
+    license: occurrence.license,
+    source_url: occurrence.sourceUrl,
+    attribution: occurrence.attribution,
   }
 }
 

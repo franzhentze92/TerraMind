@@ -46,6 +46,7 @@ export interface BiodiversitySearchQuery {
   providers?: BiodiversityProviderId[]
   limit?: number
   cursor?: string
+  mode?: 'summary' | 'detail'
 }
 
 /** Taxón normalizado. */
