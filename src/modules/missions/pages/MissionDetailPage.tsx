@@ -4,6 +4,7 @@ import { Badge } from '@/shared/components/Badge'
 import { useMissionDetail } from '../hooks/useMissions'
 import { missionStatusLabel, missionTypeLabel } from '../utils/mission-labels'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
+import { MissionWorkflowActions } from '../components/MissionWorkflowActions'
 
 export function MissionDetailPage() {
   const { missionId } = useParams()
@@ -37,6 +38,25 @@ export function MissionDetailPage() {
       <section className="mb-6 rounded-lg border border-border-subtle bg-surface-2/30 p-4 text-sm">
         <p className="text-[10px] uppercase tracking-wider text-text-tertiary">Objetivo</p>
         <p className="mt-1 text-text-secondary">{String(mission.objective)}</p>
+
+        {mission.active_assignment ? (
+          <div className="mt-4 rounded border border-border-subtle/60 bg-surface-1/40 p-3 text-xs">
+            <p className="font-medium text-text-primary">Asignación operacional</p>
+            <p className="mt-1 text-text-secondary">
+              Responsable: {String((mission.active_assignment as Record<string, unknown>).assignee_id)}
+            </p>
+            <p className="text-text-tertiary">
+              Estado: {String((mission.active_assignment as Record<string, unknown>).status)}
+            </p>
+            {(mission.active_assignment as Record<string, unknown>).block_reason && (
+              <p className="mt-1 text-confidence-low">
+                Bloqueo: {String((mission.active_assignment as Record<string, unknown>).block_reason)}
+              </p>
+            )}
+          </div>
+        ) : (
+          <p className="mt-3 text-xs text-text-tertiary">Sin responsable asignado.</p>
+        )}
         <div className="mt-3 grid gap-2 md:grid-cols-2">
           <p className="text-xs text-text-tertiary">
             Incidente:{' '}
@@ -61,6 +81,16 @@ export function MissionDetailPage() {
           </p>
         </div>
       </section>
+
+      <MissionWorkflowActions
+        missionId={String(mission.id)}
+        status={String(mission.status)}
+        assignmentStatus={
+          mission.active_assignment
+            ? String((mission.active_assignment as Record<string, unknown>).status)
+            : null
+        }
+      />
 
       <section className="mb-6">
         <h2 className="text-sm font-semibold text-text-primary">Tareas</h2>
@@ -94,7 +124,30 @@ export function MissionDetailPage() {
       </section>
 
       <section>
-        <h2 className="text-sm font-semibold text-text-primary">Timeline</h2>
+        <h2 className="text-sm font-semibold text-text-primary">Historial de responsables</h2>
+        <div className="mt-3 space-y-2">
+          {((mission.assignment_history as Array<Record<string, unknown>> | undefined) ?? []).map(
+            (h) => (
+              <div
+                key={String(h.id)}
+                className="rounded border border-border-subtle px-3 py-2 text-xs"
+              >
+                <p className="font-medium text-text-primary">
+                  {String(h.action)} · {String(h.from_status)} → {String(h.to_status)}
+                </p>
+                <p className="text-text-secondary">{String(h.reason)}</p>
+              </div>
+            ),
+          )}
+          {((mission.assignment_history as Array<Record<string, unknown>> | undefined) ?? [])
+            .length === 0 && (
+            <p className="text-xs text-text-tertiary">Sin historial de asignación.</p>
+          )}
+        </div>
+      </section>
+
+      <section className="mt-6">
+        <h2 className="text-sm font-semibold text-text-primary">Timeline de misión</h2>
         <div className="mt-3 space-y-2">
           {transitions.map((tr) => (
             <div key={String(tr.id)} className="rounded border border-border-subtle px-3 py-2 text-xs">

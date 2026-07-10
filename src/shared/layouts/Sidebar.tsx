@@ -53,6 +53,7 @@ const NAV_SECTIONS: NavSection[] = [
       { path: '/incidentes', label: 'Incidentes', icon: Layers },
       { path: '/verificaciones', label: 'Verificaciones', icon: CheckCircle2 },
       { path: '/misiones', label: 'Misiones', icon: ClipboardList },
+      { path: '/operaciones/asignaciones', label: 'Asignaciones', icon: ClipboardList },
       { path: '/copilot', label: 'Copilot', icon: Brain },
     ],
   },

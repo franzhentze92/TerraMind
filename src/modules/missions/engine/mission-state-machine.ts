@@ -2,8 +2,9 @@ import type { MissionStatus } from '@/modules/missions/missions.types'
 
 const VALID_TRANSITIONS: Record<MissionStatus, MissionStatus[]> = {
   draft: ['ready', 'cancelled'],
-  ready: ['approved', 'cancelled', 'expired', 'in_progress'],
-  approved: ['in_progress', 'cancelled', 'expired'],
+  ready: ['approved', 'assigned', 'cancelled', 'expired'],
+  approved: ['assigned', 'cancelled', 'expired'],
+  assigned: ['in_progress', 'cancelled', 'expired'],
   in_progress: ['completed', 'inconclusive', 'blocked', 'failed'],
   blocked: ['in_progress', 'cancelled', 'expired'],
   completed: [],

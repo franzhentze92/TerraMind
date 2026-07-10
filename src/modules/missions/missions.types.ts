@@ -18,6 +18,7 @@ export type MissionStatus =
   | 'draft'
   | 'ready'
   | 'approved'
+  | 'assigned'
   | 'in_progress'
   | 'blocked'
   | 'completed'

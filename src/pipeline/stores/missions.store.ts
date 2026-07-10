@@ -33,7 +33,7 @@ export interface MissionRow {
   cancelled_at: string | null
 }
 
-const ACTIVE_STATUSES = ['draft', 'ready', 'approved', 'in_progress', 'blocked']
+const ACTIVE_STATUSES = ['draft', 'ready', 'approved', 'assigned', 'in_progress', 'blocked']
 
 export async function getActiveEquivalentMission(input: {
   incidentId: string

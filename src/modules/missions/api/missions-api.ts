@@ -48,3 +48,61 @@ export function fetchVerificationPlanMissions(planId: string) {
     `/api/intelligence/verification-plans/${planId}/missions`,
   )
 }
+
+export type MissionWorkflowAction =
+  | 'assign'
+  | 'accept'
+  | 'decline'
+  | 'start'
+  | 'block'
+  | 'resume'
+  | 'reassign'
+  | 'complete'
+  | 'cancel'
+
+export interface MissionWorkflowPayload {
+  assignee_type?: 'user' | 'team' | 'organization' | 'external_actor'
+  assignee_id?: string
+  organization_id?: string
+  reason?: string
+  idempotency_key?: string
+  override_compatibility?: boolean
+  explicit_inconclusive?: boolean
+  actor_id?: string
+}
+
+export interface MissionWorkflowResult {
+  ok: boolean
+  action: string
+  mission_status: string
+  assignment_status: string | null
+  assignment_id: string | null
+  reasons: string[]
+  warnings: string[]
+  idempotent_replay: boolean
+}
+
+async function apiPost<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(path, {
+    method: 'POST',
+    credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(text || `API error ${res.status}`)
+  }
+  return res.json() as Promise<T>
+}
+
+export function postMissionWorkflow(
+  missionId: string,
+  action: MissionWorkflowAction,
+  payload: MissionWorkflowPayload = {},
+) {
+  return apiPost<MissionWorkflowResult>(
+    `/api/operations/missions/${missionId}/${action}`,
+    payload,
+  )
+}

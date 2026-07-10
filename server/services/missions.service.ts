@@ -6,6 +6,11 @@ import {
   listMissionTransitions,
 } from '@/pipeline/stores/missions.store'
 import { getIncidentById } from '@/pipeline/stores/incidents.store'
+import {
+  getActiveAssignmentForMission,
+  listAssignmentHistory,
+  listAssignmentsForMission,
+} from '@/pipeline/stores/mission-assignments.store'
 
 export async function listMissionsDto(filters: {
   status?: string
@@ -47,12 +52,18 @@ export async function getMissionDetail(id: string) {
   const evidence = await listMissionEvidenceRequirements(id)
   const transitions = await listMissionTransitions(id)
   const incident = await getIncidentById(mission.incident_id)
+  const activeAssignment = await getActiveAssignmentForMission(id)
+  const assignments = await listAssignmentsForMission(id)
+  const assignmentHistory = await listAssignmentHistory(id)
   return {
     ...mission,
     incident_status: incident?.status ?? null,
     tasks,
     evidence_requirements: evidence,
     transitions,
+    active_assignment: activeAssignment,
+    assignments,
+    assignment_history: assignmentHistory,
     generated_at: new Date().toISOString(),
   }
 }

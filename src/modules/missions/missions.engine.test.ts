@@ -134,6 +134,8 @@ describe('missions core engine', () => {
 
   it('allows valid transitions', () => {
     expect(isValidMissionTransition('ready', 'approved')).toBe(true)
+    expect(isValidMissionTransition('ready', 'assigned')).toBe(true)
+    expect(isValidMissionTransition('assigned', 'in_progress')).toBe(true)
     expect(isValidMissionTransition('in_progress', 'inconclusive')).toBe(true)
     expect(isValidMissionTransition('ready', 'expired')).toBe(true)
   })

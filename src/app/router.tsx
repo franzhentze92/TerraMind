@@ -20,6 +20,7 @@ import { IncidentDetailPage } from '@/modules/incidents/pages/IncidentDetailPage
 import { VerificationsPage } from '@/modules/verification/pages/VerificationsPage'
 import { MissionsPage } from '@/modules/missions/pages/MissionsPage'
 import { MissionDetailPage } from '@/modules/missions/pages/MissionDetailPage'
+import { AssignmentsPage } from '@/modules/missions/pages/AssignmentsPage'
 
 export const router = createBrowserRouter([
   {
@@ -41,6 +42,7 @@ export const router = createBrowserRouter([
       { path: 'verificaciones', element: <VerificationsPage /> },
       { path: 'misiones', element: <MissionsPage /> },
       { path: 'misiones/:missionId', element: <MissionDetailPage /> },
+      { path: 'operaciones/asignaciones', element: <AssignmentsPage /> },
       { path: 'estrategias', element: <StrategiesPage /> },
       { path: 'territorio', element: <TerritoryPage /> },
       { path: 'tendencias', element: <TrendsPage /> },

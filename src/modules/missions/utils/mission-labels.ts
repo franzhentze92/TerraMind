@@ -3,6 +3,7 @@ export function missionStatusLabel(status: string): string {
     draft: 'Borrador',
     ready: 'Lista',
     approved: 'Aprobada',
+    assigned: 'Asignada',
     in_progress: 'En progreso',
     blocked: 'Bloqueada',
     completed: 'Completada',
