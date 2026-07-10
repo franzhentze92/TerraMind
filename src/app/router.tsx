@@ -18,6 +18,8 @@ import { BiodiversityAnalysisPage } from '@/modules/biodiversity/pages/Biodivers
 import { IncidentsPage } from '@/modules/incidents/pages/IncidentsPage'
 import { IncidentDetailPage } from '@/modules/incidents/pages/IncidentDetailPage'
 import { VerificationsPage } from '@/modules/verification/pages/VerificationsPage'
+import { MissionsPage } from '@/modules/missions/pages/MissionsPage'
+import { MissionDetailPage } from '@/modules/missions/pages/MissionDetailPage'
 
 export const router = createBrowserRouter([
   {
@@ -37,6 +39,8 @@ export const router = createBrowserRouter([
       { path: 'incidentes', element: <IncidentsPage /> },
       { path: 'incidentes/:incidentId', element: <IncidentDetailPage /> },
       { path: 'verificaciones', element: <VerificationsPage /> },
+      { path: 'misiones', element: <MissionsPage /> },
+      { path: 'misiones/:missionId', element: <MissionDetailPage /> },
       { path: 'estrategias', element: <StrategiesPage /> },
       { path: 'territorio', element: <TerritoryPage /> },
       { path: 'tendencias', element: <TrendsPage /> },

@@ -587,6 +587,39 @@ export async function runFirePipeline(
             })
           }
 
+          const missionEnqueueStart = Date.now()
+          try {
+            const { enqueueMissionCreationJobs } = await import(
+              '@/pipeline/engines/missions/mission-creation-jobs.engine'
+            )
+            const missionEnqueue = await enqueueMissionCreationJobs({
+              limit: 10000,
+              force: false,
+            })
+            stages.mission_creation_enqueue = {
+              status: 'success',
+              duration_ms: Date.now() - missionEnqueueStart,
+              metrics: {
+                jobs_created: missionEnqueue.jobs_created,
+                mission_jobs_created: missionEnqueue.jobs_created,
+                jobs_skipped: missionEnqueue.jobs_skipped,
+                mission_profile_version: missionEnqueue.mission_profile_version,
+              },
+            }
+          } catch (err) {
+            stages.mission_creation_enqueue = {
+              status: 'partial',
+              duration_ms: Date.now() - missionEnqueueStart,
+              error: err instanceof Error ? err.message : 'mission enqueue failed',
+              error_code: 'mission_creation_enqueue_failed',
+              metrics: { mission_jobs_created: 0 },
+            }
+            logStage(pipelineRunId, 'mission_creation_enqueue', {
+              status: 'warning',
+              error: err instanceof Error ? err.message : 'enqueue failed',
+            })
+          }
+
           const findingEnqueueStart = Date.now()
           try {
             const { enqueueFindingJobs } = await import(
