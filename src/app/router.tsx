@@ -17,6 +17,7 @@ import { FireAnalysisPage } from '@/modules/fires/pages/FireAnalysisPage'
 import { BiodiversityAnalysisPage } from '@/modules/biodiversity/pages/BiodiversityAnalysisPage'
 import { IncidentsPage } from '@/modules/incidents/pages/IncidentsPage'
 import { IncidentDetailPage } from '@/modules/incidents/pages/IncidentDetailPage'
+import { VerificationsPage } from '@/modules/verification/pages/VerificationsPage'
 
 export const router = createBrowserRouter([
   {
@@ -35,6 +36,7 @@ export const router = createBrowserRouter([
       { path: 'prioridades/:priorityId', element: <PriorityDetailPage /> },
       { path: 'incidentes', element: <IncidentsPage /> },
       { path: 'incidentes/:incidentId', element: <IncidentDetailPage /> },
+      { path: 'verificaciones', element: <VerificationsPage /> },
       { path: 'estrategias', element: <StrategiesPage /> },
       { path: 'territorio', element: <TerritoryPage /> },
       { path: 'tendencias', element: <TrendsPage /> },

@@ -554,6 +554,39 @@ export async function runFirePipeline(
             })
           }
 
+          const verificationEnqueueStart = Date.now()
+          try {
+            const { enqueueVerificationPlanJobs } = await import(
+              '@/pipeline/engines/verification/verification-plan-jobs.engine'
+            )
+            const verificationEnqueue = await enqueueVerificationPlanJobs({
+              limit: 10000,
+              force: false,
+            })
+            stages.verification_plan_enqueue = {
+              status: 'success',
+              duration_ms: Date.now() - verificationEnqueueStart,
+              metrics: {
+                jobs_created: verificationEnqueue.jobs_created,
+                verification_jobs_created: verificationEnqueue.jobs_created,
+                jobs_skipped: verificationEnqueue.jobs_skipped,
+                verification_model_version: verificationEnqueue.verification_model_version,
+              },
+            }
+          } catch (err) {
+            stages.verification_plan_enqueue = {
+              status: 'partial',
+              duration_ms: Date.now() - verificationEnqueueStart,
+              error: err instanceof Error ? err.message : 'verification enqueue failed',
+              error_code: 'verification_plan_enqueue_failed',
+              metrics: { verification_jobs_created: 0 },
+            }
+            logStage(pipelineRunId, 'verification_plan_enqueue', {
+              status: 'warning',
+              error: err instanceof Error ? err.message : 'enqueue failed',
+            })
+          }
+
           const findingEnqueueStart = Date.now()
           try {
             const { enqueueFindingJobs } = await import(

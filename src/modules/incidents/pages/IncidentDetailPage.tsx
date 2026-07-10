@@ -15,6 +15,7 @@ import {
 } from '@/modules/priorities/utils/priority-labels'
 import { lifecycleStateLabel } from '@/modules/lifecycle/utils/lifecycle-labels'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
+import { VerificationPlanSection } from '@/modules/verification/components/VerificationPlanSection'
 
 export function IncidentDetailPage() {
   const { incidentId } = useParams()
@@ -91,6 +92,12 @@ export function IncidentDetailPage() {
               <li key={l}>{l}</li>
             ))}
           </ul>
+        </section>
+      )}
+
+      {incidentId && (
+        <section className="mb-6">
+          <VerificationPlanSection incidentId={incidentId} />
         </section>
       )}
 
