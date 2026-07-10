@@ -8,10 +8,12 @@ export const POPULATION_DEFAULT_BUFFER_RADII_M = [500, 1000, 3000, 5000] as cons
 export interface PopulationContextVersionInput {
   sourceCode: string
   sourceVersion: string
+  productType: 'constrained' | 'unconstrained' | 'dual_use'
   rasterHash: string
   referenceYear: number
   analysisMethodVersion: string
   crs: string
+  resamplingMethod: string
   zoneRadiiM: number[]
   nodataPolicy?: string
   areaStrategy?: string
@@ -26,10 +28,12 @@ export function buildPopulationContextVersion(
   const payload = [
     input.sourceCode,
     input.sourceVersion,
+    input.productType,
     input.rasterHash,
     String(input.referenceYear),
     input.analysisMethodVersion,
     input.crs,
+    input.resamplingMethod,
     [...input.zoneRadiiM].sort((a, b) => a - b).join(','),
     input.nodataPolicy ?? POPULATION_NODATA_POLICY,
     input.areaStrategy ?? POPULATION_AREA_STRATEGY,

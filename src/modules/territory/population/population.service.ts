@@ -130,10 +130,12 @@ export function createPopulationService(): PopulationService {
         contextVersion: buildPopulationContextVersion({
           sourceCode: spatial.sourceCode,
           sourceVersion: spatial.sourceVersion,
+          productType: 'constrained',
           rasterHash: 'pending',
           referenceYear: spatial.referenceYear,
           analysisMethodVersion: WORLDPOP_ANALYSIS_METHOD_VERSION,
           crs: 'LAEA-GT',
+          resamplingMethod: 'sum',
           zoneRadiiM: radii,
         }),
         status: resolveStatus(warnings),

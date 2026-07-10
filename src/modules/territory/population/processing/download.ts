@@ -1,4 +1,4 @@
-import { createWriteStream, existsSync, mkdirSync, statSync } from 'node:fs'
+import { createWriteStream, existsSync, mkdirSync, renameSync, statSync, unlinkSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { pipeline } from 'node:stream/promises'
 
@@ -24,11 +24,23 @@ import {
 } from '@/modules/territory/population/providers/worldpop/worldpop-products'
 
 async function downloadFile(url: string, dest: string): Promise<void> {
+  const temp = `${dest}.part`
+  if (existsSync(temp)) unlinkSync(temp)
+
   const res = await fetch(url, { redirect: 'follow' })
   if (!res.ok || !res.body) {
     throw new Error(`Descarga fallida ${url}: HTTP ${res.status}`)
   }
-  await pipeline(res.body as unknown as NodeJS.ReadableStream, createWriteStream(dest))
+  await pipeline(res.body as unknown as NodeJS.ReadableStream, createWriteStream(temp))
+
+  const size = statSync(temp).size
+  if (size < 1_000_000) {
+    unlinkSync(temp)
+    throw new Error(`Descarga incompleta (${size} bytes) desde ${url}`)
+  }
+
+  if (existsSync(dest)) unlinkSync(dest)
+  renameSync(temp, dest)
 }
 
 function buildSourceMarkdown(manifest: PopulationManifest): string {
@@ -103,15 +115,17 @@ export async function downloadWorldPopRasters(): Promise<DownloadWorldPopResult>
 
     if (existsSync(dest)) {
       const size = statSync(dest).size
-      const hash = entry.sha256 ?? (await sha256File(dest))
-      if (size === product.expectedSizeBytes || size > product.expectedSizeBytes * 0.98) {
+      const hash = await sha256File(dest)
+      const expectedHash = entry.sha256
+      const sizeOk = size >= product.expectedSizeBytes * 0.98
+      if (expectedHash && hash === expectedHash && sizeOk) {
         skipped = true
         entry.size_bytes_actual = size
         entry.sha256 = hash
         entry.status = 'downloaded'
         results.push({
           variant: product.variant,
-          status: 'skipped_existing',
+          status: 'skipped_checksum',
           size_bytes: size,
           sha256: hash,
           skipped: true,

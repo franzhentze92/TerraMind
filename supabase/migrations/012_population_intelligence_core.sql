@@ -117,6 +117,9 @@ COMMENT ON TABLE population_admin_statistics IS
 COMMENT ON TABLE population_raster_datasets IS
   'Referencias a COG/rasters versionados fuera de Git; sin almacenar píxeles.';
 
+COMMENT ON COLUMN population_raster_datasets.metadata IS
+  'JSON esperado (7D.1A): variant (constrained|unconstrained), cell_semantics (persons_per_pixel), cog_type (wgs84|laea), raw_estimate, source_hash, conservation_delta_pct, adjustment_status (none|pending|applied), resampling_method.';
+
 COMMENT ON TABLE entity_population_context IS
   'Contexto poblacional genérico por entidad territorial o evento.';
 

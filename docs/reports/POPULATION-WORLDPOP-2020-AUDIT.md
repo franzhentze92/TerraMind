@@ -1,6 +1,6 @@
 # WorldPop 2020 — auditoría poblacional Guatemala (7D.1A)
 
-Generado: 2026-07-10T11:49:01.790Z
+Generado: 2026-07-10T18:53:49.950Z
 
 ## Resumen nacional
 
@@ -73,6 +73,19 @@ Variante más coherente: **constrained**
 
 - Centro urbano — constrained alinea mejor con tejido construido.
 
+### Villa Nueva
+
+Coordenadas: 14.525, -90.588
+
+- 0.5 km: constrained 11,236 · unconstrained 8,360
+- 1 km: constrained 41,250 · unconstrained 42,305
+- 3 km: constrained 308,695 · unconstrained 375,795
+- 5 km: constrained 635,464 · unconstrained 842,136
+
+Variante más coherente: **constrained**
+
+- Centro urbano — constrained alinea mejor con tejido construido.
+
 ### Champerico
 
 Coordenadas: 14.2883, -91.9081
@@ -94,6 +107,19 @@ Coordenadas: 14.6833, -91.2
 - 1 km: constrained 0 · unconstrained 0
 - 3 km: constrained 5,892 · unconstrained 4,510
 - 5 km: constrained 27,322 · unconstrained 21,442
+
+Variante más coherente: **mixed**
+
+- Patrón mixto — revisar visualmente en 7D.1B.
+
+### Sierra de las Minas
+
+Coordenadas: 15.1, -89.85
+
+- 0.5 km: constrained 0 · unconstrained 18
+- 1 km: constrained 6 · unconstrained 73
+- 3 km: constrained 244 · unconstrained 472
+- 5 km: constrained 353 · unconstrained 1,311
 
 Variante más coherente: **mixed**
 

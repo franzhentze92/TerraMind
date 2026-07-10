@@ -8,7 +8,7 @@ Descargado para auditoría 7D.1A. **No commitear rasters.**
 | unconstrained | https://data.worldpop.org/GIS/Population/Global_2000_2020/2020/GTM/gtm_ppp_2020.tif | Global_2000_2020 | 2020 | persons_per_pixel | EPSG:4326 | CC-BY-4.0 |
 
 Manifest: `population-pipeline-v1`
-Última descarga: 2026-07-10T11:37:21.023Z
+Última descarga: 2026-07-10T18:50:59.058Z
 
 ## Política de reconciliación INE
 

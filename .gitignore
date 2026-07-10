@@ -32,7 +32,10 @@ data/geo/sources/land-cover/**/tiles/
 
 # Population rasters — fuera de Git (manifest + SOURCE.md sí van)
 data/population/**/*.tif
+data/population/**/*.vrt
 data/population/**/raw/
+data/population/**/processed/
+data/population/**/reports/*.png
 data/population/**/_clip_temp/
 
 artifacts/review/

@@ -19,6 +19,19 @@ export interface LocalPopulationSourceStatus extends PopulationSourceStatus {
   filesAvailable: boolean
   checksumValid: boolean
   cogValid: boolean
+  variants: Array<{
+    variant: 'constrained' | 'unconstrained'
+    rawAvailable: boolean
+    wgs84CogAvailable: boolean
+    laeaCogAvailable: boolean
+    checksumValid: boolean
+    totalPopulation?: number
+    cellSemantics: string
+    crs: string
+    resamplingWgs84: string
+    resamplingLaea?: string
+    conservationDeltaPct?: number
+  }>
   totalPopulation?: number
   primaryVariant?: 'constrained' | 'unconstrained' | 'dual_use'
   generatedAt?: string
@@ -28,26 +41,18 @@ export async function getLocalPopulationSourceStatus(): Promise<LocalPopulationS
   const warnings: PopulationWarning[] = []
   const product = getWorldPopProduct('constrained')
 
-  const rawPath = rawRasterPath('constrained')
-  const wgs84Cog = processedWgs84Cog('constrained')
-  const laeaCog = processedLaeaCog('constrained')
+  let manifestChecksums: Record<string, string | undefined> = {}
+  let primaryVariant: 'constrained' | 'unconstrained' | 'dual_use' | undefined
+  let generatedAt: string | undefined
 
-  const filesAvailable =
-    existsSync(rawPath) && existsSync(wgs84Cog) && existsSync(laeaCog)
-
-  let checksumValid = false
   if (existsSync(POPULATION_MANIFEST_PATH)) {
     try {
       const manifest = loadPopulationManifest()
-      const entry = manifest.downloads.find((d) => d.variant === 'constrained')
-      if (entry?.sha256 && existsSync(rawPath)) {
-        checksumValid = (await sha256File(rawPath)) === entry.sha256
+      for (const entry of manifest.downloads) {
+        manifestChecksums[entry.variant] = entry.sha256
       }
-      if (!checksumValid && entry?.sha256) {
-        warnings.push(
-          populationWarning('source_unavailable', 'Checksum constrained no coincide con manifest.'),
-        )
-      }
+      primaryVariant = manifest.recommended_primary_variant
+      generatedAt = manifest.prepare_completed_at as string | undefined
     } catch {
       warnings.push(populationWarning('source_unavailable', 'Manifest inválido o ausente.'))
     }
@@ -55,51 +60,86 @@ export async function getLocalPopulationSourceStatus(): Promise<LocalPopulationS
     warnings.push(populationWarning('source_unavailable', 'Manifest de población no encontrado.'))
   }
 
-  let cogValid = false
+  const variants: LocalPopulationSourceStatus['variants'] = []
+  let filesAvailable = true
+  let checksumValid = true
+  let cogValid = true
   let totalPopulation: number | undefined
-  if (filesAvailable) {
-    try {
-      const inspection = await inspectPopulationRaster(wgs84Cog)
-      cogValid = inspection.crs === 'EPSG:4326' && inspection.populationSum > 0
-      totalPopulation = inspection.populationSum
-    } catch {
-      warnings.push(
-        populationWarning('raster_processing_failed', 'No se pudo inspeccionar COG constrained.'),
-      )
+
+  for (const variant of ['constrained', 'unconstrained'] as const) {
+    const rawPath = rawRasterPath(variant)
+    const wgs84Cog = processedWgs84Cog(variant)
+    const laeaCog = processedLaeaCog(variant)
+    const rawAvailable = existsSync(rawPath)
+    const wgs84CogAvailable = existsSync(wgs84Cog)
+    const laeaCogAvailable = existsSync(laeaCog)
+
+    let variantChecksumValid = false
+    if (rawAvailable && manifestChecksums[variant]) {
+      variantChecksumValid = (await sha256File(rawPath)) === manifestChecksums[variant]
     }
-  } else {
+
+    let variantPopulation: number | undefined
+    if (wgs84CogAvailable) {
+      try {
+        const inspection = await inspectPopulationRaster(wgs84Cog)
+        variantPopulation = inspection.populationSum
+        if (variant === 'constrained') totalPopulation = inspection.populationSum
+      } catch {
+        warnings.push(
+          populationWarning('raster_processing_failed', `No se pudo inspeccionar COG ${variant}.`),
+        )
+      }
+    }
+
+    if (!rawAvailable || !wgs84CogAvailable) filesAvailable = false
+    if (!variantChecksumValid) checksumValid = false
+    if (!wgs84CogAvailable || !variantPopulation) cogValid = false
+
+    const manifest = existsSync(POPULATION_MANIFEST_PATH)
+      ? loadPopulationManifest()
+      : undefined
+    const conservation = manifest?.conservation?.find((c) => c.variant === variant)
+
+    variants.push({
+      variant,
+      rawAvailable,
+      wgs84CogAvailable,
+      laeaCogAvailable,
+      checksumValid: variantChecksumValid,
+      totalPopulation: variantPopulation,
+      cellSemantics: 'persons_per_pixel',
+      crs: wgs84CogAvailable ? 'EPSG:4326' : 'unknown',
+      resamplingWgs84: 'none (ADM0 crop)',
+      resamplingLaea: laeaCogAvailable ? 'sum' : manifest?.artifacts?.unconstrained_laea_skipped ? 'skipped' : undefined,
+      conservationDeltaPct: conservation?.diff_laea_pct,
+    })
+  }
+
+  if (!filesAvailable) {
     warnings.push(
       populationWarning('source_unavailable', 'Archivos locales WorldPop incompletos.'),
     )
   }
 
-  let primaryVariant: 'constrained' | 'unconstrained' | 'dual_use' | undefined
-  let generatedAt: string | undefined
-  if (existsSync(POPULATION_MANIFEST_PATH)) {
-    const manifest = loadPopulationManifest()
-    primaryVariant = manifest.recommended_primary_variant
-    generatedAt = manifest.prepare_completed_at as string | undefined
-  }
-
   const isReady = filesAvailable && checksumValid && cogValid
 
   return {
-    sourceCode: product.variant === 'constrained' ? 'worldpop' : product.variant,
-    name: 'WorldPop Guatemala 2020 (auditoría constrained/unconstrained)',
+    sourceCode: 'worldpop',
+    name: 'WorldPop Guatemala 2020 (constrained + unconstrained)',
     isReady,
     isOfficial: false,
     referenceYear: product.referenceYear,
     sourceVersion: product.sourceVersion,
     spatialResolutionM: 100,
     semantics: 'modelled_spatial_population',
-    rasterHash: existsSync(POPULATION_MANIFEST_PATH)
-      ? loadPopulationManifest().downloads.find((d) => d.variant === 'constrained')?.sha256
-      : undefined,
+    rasterHash: manifestChecksums.constrained,
     storageReference: 'data/population/worldpop/processed/',
     warnings,
     filesAvailable,
     checksumValid,
     cogValid,
+    variants,
     totalPopulation,
     primaryVariant,
     generatedAt,

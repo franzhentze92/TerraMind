@@ -10,10 +10,12 @@ describe('buildPopulationContextVersion', () => {
     const input = {
       sourceCode: 'worldpop',
       sourceVersion: 'R2025A-v1',
+      productType: 'constrained' as const,
       rasterHash: 'abc123',
       referenceYear: 2020,
       analysisMethodVersion: 'zonal-sum-window-v1',
       crs: 'LAEA-GT',
+      resamplingMethod: 'sum',
       zoneRadiiM: [500, 1000, 3000, 5000],
     }
     const a = buildPopulationContextVersion(input)
@@ -26,10 +28,12 @@ describe('buildPopulationContextVersion', () => {
     const base = {
       sourceCode: 'worldpop',
       sourceVersion: 'R2025A-v1',
+      productType: 'constrained' as const,
       rasterHash: 'abc123',
       referenceYear: 2020,
       analysisMethodVersion: 'zonal-sum-window-v1',
       crs: 'LAEA-GT',
+      resamplingMethod: 'sum',
     }
     const ordered = buildPopulationContextVersion({
       ...base,

@@ -39,6 +39,7 @@
     "population:prepare-worldpop": "tsx scripts/population-prepare-worldpop.ts",
     "population:audit-worldpop": "tsx scripts/population-audit-worldpop.ts",
     "population:benchmark-worldpop": "tsx scripts/population-benchmark-worldpop.ts",
+    "population:maps-worldpop": "tsx scripts/population-maps-worldpop.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "build": "tsc && vite build",

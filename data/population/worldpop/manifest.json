@@ -11,7 +11,7 @@
       "status": "downloaded",
       "size_bytes_actual": 17033231,
       "sha256": "1a02c33697869df9efcd08ef49a58f151b2b01932adf5e962cf9fc5b567722a0",
-      "downloaded_at": "2026-07-10T11:37:21.023Z"
+      "downloaded_at": "2026-07-10T18:50:59.058Z"
     },
     {
       "variant": "unconstrained",
@@ -21,7 +21,7 @@
       "status": "downloaded",
       "size_bytes_actual": 60271574,
       "sha256": "9e2d2dfc0b5c8db7af8fd08ba9459e90bb56012ae2735e089701f95bbb28a0f7",
-      "downloaded_at": "2026-07-10T11:40:05.946Z"
+      "downloaded_at": "2026-07-10T18:52:31.044Z"
     }
   ],
   "tools": {
@@ -29,8 +29,8 @@
     "aws": "aws-cli/2.34.37 Python/3.14.4 Windows/11 exe/AMD64",
     "node": "v22.22.0"
   },
-  "download_completed_at": "2026-07-10T11:40:05.946Z",
-  "download_duration_ms": 200777,
+  "download_completed_at": "2026-07-10T18:54:16.870Z",
+  "download_duration_ms": 1136,
   "conservation": [
     {
       "variant": "constrained",
@@ -48,9 +48,9 @@
       "raw_sum": 17251094,
       "wgs84_clip_sum": 17692858,
       "wgs84_cog_sum": 17692858,
-      "laea_cog_sum": 18595106,
+      "laea_cog_sum": 17900341,
       "diff_wgs84_clip_pct": 2.56,
-      "diff_laea_pct": 5.1,
+      "diff_laea_pct": 1.17,
       "outside_adm0_population": 0,
       "nodata_inside_adm0_pixels": 0
     }
@@ -65,11 +65,13 @@
     "unconstrained_wgs84_cog": ".\\data\\population\\worldpop\\processed\\gtm_worldpop_2020_unconstrained_wgs84_cog.tif",
     "unconstrained_wgs84_sha256": "0dadbae9f605fc4e8fdf02d02ff08db9e8768e230ed0fd4664318986150c13e4",
     "unconstrained_laea_skipped": true,
-    "unconstrained_laea_skip_reason": "Conservación LAEA 5.1% > 1.5% — usar WGS84 COG para auditoría."
+    "unconstrained_laea_skip_reason": "Conservación LAEA 5.1% > 1.5% — usar WGS84 COG para auditoría.",
+    "unconstrained_laea_cog": ".\\data\\population\\worldpop\\processed\\gtm_worldpop_2020_unconstrained_laea_cog.tif",
+    "unconstrained_laea_sha256": "e3259c272241aea63669f07ca0ca043a7265308b41ca9be96d28a730103901ee"
   },
-  "prepare_completed_at": "2026-07-10T11:46:16.969Z",
+  "prepare_completed_at": "2026-07-10T18:53:20.373Z",
   "audit": {
-    "completed_at": "2026-07-10T11:49:01.790Z",
+    "completed_at": "2026-07-10T18:53:49.950Z",
     "national": {
       "constrained": 17196427,
       "unconstrained": 17692858,
@@ -82,7 +84,7 @@
   },
   "recommended_primary_variant": "dual_use",
   "benchmark": {
-    "completed_at": "2026-07-10T11:49:05.309Z",
+    "completed_at": "2026-07-10T18:54:04.660Z",
     "radii_m": [
       500,
       1000,
@@ -94,57 +96,72 @@
         "scenario": "national_inspect_constrained",
         "variant": "constrained",
         "crs": "EPSG:4326",
-        "coldStartMs": 76,
+        "coldStartMs": 57,
         "warmMs": [
-          64,
-          66,
-          75,
-          100,
-          69
+          83,
+          61,
+          53,
+          57,
+          53
         ],
-        "p50Ms": 69,
-        "p95Ms": 100
+        "p50Ms": 57,
+        "p95Ms": 83
       },
       {
         "scenario": "national_inspect_constrained",
         "variant": "constrained",
         "crs": "LAEA-GT",
-        "coldStartMs": 76,
+        "coldStartMs": 59,
         "warmMs": [
-          78,
-          95,
-          67,
-          71,
-          69
+          60,
+          64,
+          64,
+          69,
+          67
         ],
-        "p50Ms": 71,
-        "p95Ms": 95
+        "p50Ms": 64,
+        "p95Ms": 69
       },
       {
         "scenario": "national_inspect_unconstrained",
         "variant": "unconstrained",
         "crs": "EPSG:4326",
-        "coldStartMs": 68,
+        "coldStartMs": 63,
         "warmMs": [
-          67,
           64,
-          65,
-          69,
-          63
+          60,
+          61,
+          59,
+          57
         ],
-        "p50Ms": 65,
-        "p95Ms": 69
+        "p50Ms": 60,
+        "p95Ms": 64
+      },
+      {
+        "scenario": "national_inspect_unconstrained",
+        "variant": "unconstrained",
+        "crs": "LAEA-GT",
+        "coldStartMs": 62,
+        "warmMs": [
+          61,
+          65,
+          66,
+          66,
+          67
+        ],
+        "p50Ms": 66,
+        "p95Ms": 67
       },
       {
         "scenario": "adm1_metadata_read",
         "variant": "constrained",
         "crs": "EPSG:4326",
-        "coldStartMs": 110,
+        "coldStartMs": 112,
         "warmMs": [
-          110
+          112
         ],
-        "p50Ms": 110,
-        "p95Ms": 110
+        "p50Ms": 112,
+        "p95Ms": 112
       }
     ]
   }

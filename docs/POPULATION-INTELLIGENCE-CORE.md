@@ -8,7 +8,7 @@ Módulo territorial genérico de TerraMind para estimar y analizar **población 
 |------|--------|
 | Investigación de fuentes | Completada |
 | Arquitectura y tipos | Completada en `main` |
-| **7D.1A WorldPop audit** | **Completada** — ver `docs/reports/population-worldpop-2020-audit.md` |
+| **7D.1A WorldPop audit** | **Completada** — ver `docs/reports/POPULATION-WORLDPOP-2020-AUDIT.md` |
 | Migración 012 | Propuesta — **no aplicada** |
 | PopulationService operativo | **Pendiente** (7D.1B) |
 | Datos administrativos INE | **Pendiente** (7D.2) |

@@ -74,8 +74,10 @@ const BUFFER_RADII_M = [500, 1000, 3000, 5000] as const
 const TERRITORIAL_ZONES = [
   { name: 'Ciudad de Guatemala', lat: 14.6349, lon: -90.5069 },
   { name: 'Mixco', lat: 14.6333, lon: -90.6064 },
+  { name: 'Villa Nueva', lat: 14.525, lon: -90.588 },
   { name: 'Champerico', lat: 14.2883, lon: -91.9081 },
   { name: 'Lago de Atitlán (centro)', lat: 14.6833, lon: -91.2 },
+  { name: 'Sierra de las Minas', lat: 15.1, lon: -89.85 },
   { name: 'Reserva Biosfera Maya', lat: 17.75, lon: -89.5 },
   { name: 'Corredor Seco', lat: 14.75, lon: -89.35 },
   { name: 'Comunidad rural dispersa (Huehuetenango)', lat: 15.3147, lon: -91.4761 },
@@ -240,7 +242,7 @@ export async function auditWorldPop2020(): Promise<PopulationAuditReport> {
     if (zone.name.includes('no habitada') || zone.name.includes('Biosfera Maya')) {
       coherentVariant = ratio5km > 1.3 ? 'constrained' : 'unconstrained'
       notes.push('Área de baja densidad — constrained tiende a concentrar en asentamientos mapeados.')
-    } else if (zone.name.includes('Guatemala') || zone.name.includes('Mixco')) {
+    } else if (zone.name.includes('Guatemala') || zone.name.includes('Mixco') || zone.name.includes('Villa Nueva')) {
       coherentVariant = 'constrained'
       notes.push('Centro urbano — constrained alinea mejor con tejido construido.')
     } else if (zone.name.includes('Corredor Seco') || zone.name.includes('rural')) {

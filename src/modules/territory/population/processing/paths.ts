@@ -13,13 +13,14 @@ export const POPULATION_WORLDPOP_SOURCE_DIR = resolve(
 
 export const POPULATION_RAW_DIR = resolve(POPULATION_WORLDPOP_SOURCE_DIR, 'raw')
 export const POPULATION_PROCESSED_DIR = resolve(POPULATION_WORLDPOP_SOURCE_DIR, 'processed')
+export const POPULATION_REPORTS_DIR = resolve(POPULATION_WORLDPOP_SOURCE_DIR, 'reports')
 export const POPULATION_MANIFEST_PATH = resolve(POPULATION_WORLDPOP_SOURCE_DIR, 'manifest.json')
 export const POPULATION_SOURCE_MD = resolve(POPULATION_WORLDPOP_SOURCE_DIR, 'SOURCE.md')
 export const POPULATION_SHA256SUMS = resolve(POPULATION_WORLDPOP_SOURCE_DIR, 'SHA256SUMS')
 export const POPULATION_CLIP_TEMP_DIR = resolve(POPULATION_PROCESSED_DIR, '_clip_temp')
 export const POPULATION_AUDIT_REPORT = resolve(
   process.cwd(),
-  'docs/reports/population-worldpop-2020-audit.md',
+  'docs/reports/POPULATION-WORLDPOP-2020-AUDIT.md',
 )
 
 export const GUATEMALA_ADM1_GEOJSON = resolve(

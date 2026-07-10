@@ -1,5 +1,6 @@
 #!/usr/bin/env tsx
 import { auditWorldPop2020 } from '@/modules/territory/population/processing/audit'
+import { POPULATION_AUDIT_REPORT } from '@/modules/territory/population/processing/paths'
 
 async function main() {
   const report = await auditWorldPop2020()
@@ -10,7 +11,7 @@ async function main() {
         recommended: report.recommendedPrimaryVariant,
         departments: report.departments.length,
         zones: report.territorialZones.length,
-        reportPath: 'docs/reports/population-worldpop-2020-audit.md',
+        reportPath: POPULATION_AUDIT_REPORT.replace(process.cwd(), '.').replace(/\\/g, '/'),
       },
       null,
       2,
