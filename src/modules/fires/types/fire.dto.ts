@@ -103,6 +103,8 @@ export interface FireEventDetailDto extends FireEventListItemDto {
   population_enrichment: PopulationEnrichmentStateDto | null
   climate_context: ClimateContextDto | null
   climate_enrichment: ClimateEnrichmentStateDto | null
+  biodiversity_context: BiodiversityContextDto | null
+  biodiversity_enrichment: BiodiversityEnrichmentStateDto | null
   generated_at: string
 }
 
@@ -376,6 +378,97 @@ export type ClimateEnrichmentQueueStatus =
 
 export interface ClimateEnrichmentStateDto {
   status: ClimateEnrichmentQueueStatus
+  message: string | null
+}
+
+export type BiodiversityContextStatus = 'complete' | 'partial' | 'unavailable' | 'error' | 'stale'
+
+export type BiodiversityMonitoredZoneRelationDto =
+  | 'inside'
+  | 'intersects'
+  | 'near'
+  | 'outside'
+  | 'unavailable'
+
+export interface BiodiversityContextQualityDto {
+  level: 'high' | 'moderate' | 'limited' | 'very_limited'
+  reasons: string[]
+}
+
+export interface BiodiversityZoneContextDto {
+  radius_m: number
+  unique_species_documented: number
+  observations_documented: number
+  observations_recent_30d: number
+  observations_recent_90d: number
+  event_window_observations: number
+  gbif_count: number
+  inaturalist_count: number
+  research_grade_inaturalist: number
+  generalized_count: number
+  obscured_count: number
+  spatially_excluded_count: number
+  duplicated_count: number
+  media_usable_count: number
+  latest_observation_at: string | null
+  taxa_distribution: Record<string, number>
+  truncated: boolean
+  quality: Record<string, unknown>
+  warnings: string[]
+}
+
+export interface BiodiversityVisualHighlightDto {
+  common_name: string | null
+  taxon_name: string
+  taxonomic_group: string
+  thumbnail_url: string | null
+  image_url: string | null
+  image_license: string | null
+  image_attribution: string | null
+  observation_url: string | null
+  observed_at: string | null
+  privacy_status: string
+  source: 'gbif' | 'inaturalist'
+}
+
+export interface BiodiversityContextDto {
+  status: BiodiversityContextStatus
+  generated_at: string
+  context_version: string
+  geometry_source: 'detections_union' | 'event_centroid_fallback'
+  history_window: { years: number }
+  recent_window: { days: number }
+  summary: {
+    unique_species_documented: number
+    observations_documented: number
+    observations_recent_30d: number
+    observations_recent_90d: number
+    provider_distribution: Partial<Record<'gbif' | 'inaturalist', number>>
+    taxa_distribution: Record<string, number>
+    quality: BiodiversityContextQualityDto
+  }
+  zones: BiodiversityZoneContextDto[]
+  monitored_zone_context: {
+    relation: BiodiversityMonitoredZoneRelationDto
+    zone_name: string | null
+    zone_code: string | null
+    distance_m: number | null
+  }
+  visual_highlights: BiodiversityVisualHighlightDto[]
+  provider_status: Partial<Record<'gbif' | 'inaturalist', 'ok' | 'error' | 'unavailable'>>
+  warnings: string[]
+  disclaimer: string
+}
+
+export type BiodiversityEnrichmentQueueStatus =
+  | 'queued'
+  | 'processing'
+  | 'complete'
+  | 'failed'
+  | 'unavailable'
+
+export interface BiodiversityEnrichmentStateDto {
+  status: BiodiversityEnrichmentQueueStatus
   message: string | null
 }
 

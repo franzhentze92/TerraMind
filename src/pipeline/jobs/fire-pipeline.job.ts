@@ -459,6 +459,37 @@ export async function runFirePipeline(
               error: err instanceof Error ? err.message : 'enqueue failed',
             })
           }
+
+          const biodiversityEnqueueStart = Date.now()
+          try {
+            const { enqueueBiodiversityJobs } = await import(
+              '@/pipeline/engines/fire/context/biodiversity-jobs.engine'
+            )
+            const biodiversityEnqueue = await enqueueBiodiversityJobs({ limit: 10000, force: false })
+            stages.biodiversity_enqueue = {
+              status: 'success',
+              duration_ms: Date.now() - biodiversityEnqueueStart,
+              metrics: {
+                jobs_created: biodiversityEnqueue.jobs_created,
+                biodiversity_jobs_created: biodiversityEnqueue.jobs_created,
+                jobs_skipped: biodiversityEnqueue.jobs_skipped,
+                events_unchanged: biodiversityEnqueue.events_unchanged,
+                context_version: biodiversityEnqueue.context_version,
+              },
+            }
+          } catch (err) {
+            stages.biodiversity_enqueue = {
+              status: 'partial',
+              duration_ms: Date.now() - biodiversityEnqueueStart,
+              error: err instanceof Error ? err.message : 'biodiversity enqueue failed',
+              error_code: 'biodiversity_enqueue_failed',
+              metrics: { biodiversity_jobs_created: 0 },
+            }
+            logStage(pipelineRunId, 'biodiversity_enqueue', {
+              status: 'warning',
+              error: err instanceof Error ? err.message : 'enqueue failed',
+            })
+          }
         })(),
         PIPELINE_TIMEOUTS_MS.pipelineTotal,
         'pipeline',

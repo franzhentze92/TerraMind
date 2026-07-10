@@ -14,6 +14,7 @@ import { FireEvidenceTimeline } from './FireEvidenceTimeline'
 import { FireLandCoverSection } from './FireLandCoverSection'
 import { FirePopulationSection } from './FirePopulationSection'
 import { FireClimateSection } from './FireClimateSection'
+import { FireBiodiversitySection } from './FireBiodiversitySection'
 import {
   buildTerritorySummaryText,
   territoryDisclaimer,
@@ -24,7 +25,7 @@ import {
   proximityLabelText,
 } from '@/modules/fires/utils/proximity-label'
 
-type DetailTab = 'resumen' | 'evidencia' | 'analisis' | 'territorio' | 'condiciones'
+type DetailTab = 'resumen' | 'territorio' | 'condiciones' | 'ecologia' | 'historial'
 
 interface FireEventDetailPanelProps {
   event?: FireEventDetailDto
@@ -37,10 +38,10 @@ interface FireEventDetailPanelProps {
 
 const TABS: { id: DetailTab; label: string }[] = [
   { id: 'resumen', label: 'Resumen' },
-  { id: 'evidencia', label: 'Evidencia' },
   { id: 'territorio', label: 'Territorio' },
   { id: 'condiciones', label: 'Condiciones' },
-  { id: 'analisis', label: 'Análisis' },
+  { id: 'ecologia', label: 'Evidencia ecológica' },
+  { id: 'historial', label: 'Historial' },
 ]
 
 function DisabledAction({ icon: Icon, label }: { icon: typeof MapPin; label: string }) {
@@ -195,14 +196,9 @@ export function FireEventDetailPanel({
               </section>
             )}
 
-            {tab === 'evidencia' && (
-              <section>
-                <FireEvidenceTimeline detections={event.detections} />
-              </section>
-            )}
-
-            {tab === 'analisis' && (
+            {tab === 'historial' && (
               <section className="space-y-4">
+                <FireEvidenceTimeline detections={event.detections} />
                 <div>
                   <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
                     Interpretación
@@ -230,6 +226,15 @@ export function FireEventDetailPanel({
                     </div>
                   </details>
                 )}
+              </section>
+            )}
+
+            {tab === 'ecologia' && (
+              <section>
+                <FireBiodiversitySection
+                  context={event.biodiversity_context}
+                  enrichment={event.biodiversity_enrichment}
+                />
               </section>
             )}
 

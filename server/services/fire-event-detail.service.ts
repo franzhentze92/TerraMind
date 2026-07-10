@@ -16,6 +16,10 @@ import {
   buildClimateContextDto,
   buildClimateEnrichmentState,
 } from '@/modules/fires/utils/climate-context.dto'
+import {
+  buildBiodiversityContextDto,
+  buildBiodiversityEnrichmentState,
+} from '@/modules/fires/utils/biodiversity-context.dto'
 import type { FireEventContextRow } from '@/pipeline/stores/territorial.store'
 import {
   getLandCoverContext,
@@ -29,6 +33,12 @@ import {
   getPopulationZones,
 } from '@/pipeline/stores/population.store'
 import { getLatestClimateContext } from '@/pipeline/stores/climate.store'
+import { getActiveBiodiversityJobForEvent } from '@/pipeline/stores/biodiversity-jobs.store'
+import {
+  getBiodiversityVisualHighlights,
+  getBiodiversityZones,
+  getLatestBiodiversityContext,
+} from '@/pipeline/stores/biodiversity-event.store'
 import { getSupabaseAdmin } from '@/pipeline/stores/supabase.client'
 
 const EVENT_SELECT = `
@@ -167,6 +177,27 @@ export async function getFireEventDetail(eventId: string): Promise<FireEventDeta
   const activeClimateJob = climate_context ? null : await getActiveClimateJobForEvent(eventId)
   const climate_enrichment = buildClimateEnrichmentState(climate_context, activeClimateJob)
 
+  const biodiversityRow = await getLatestBiodiversityContext(eventId)
+  const biodiversityZones = biodiversityRow
+    ? await getBiodiversityZones(biodiversityRow.id)
+    : []
+  const biodiversityHighlights = biodiversityRow
+    ? await getBiodiversityVisualHighlights(biodiversityRow.id)
+    : []
+  const biodiversity_context = buildBiodiversityContextDto(
+    biodiversityRow,
+    biodiversityZones,
+    biodiversityHighlights,
+    { eventLastLinkedAt: lastLinkedAt },
+  )
+  const activeBiodiversityJob = biodiversity_context
+    ? null
+    : await getActiveBiodiversityJobForEvent(eventId)
+  const biodiversity_enrichment = buildBiodiversityEnrichmentState(
+    biodiversity_context,
+    activeBiodiversityJob,
+  )
+
   const detail: FireEventDetailDto = {
     ...base,
     estimated_area_ha: toNumber(eventRow.estimated_area_ha as number | string | null),
@@ -188,6 +219,8 @@ export async function getFireEventDetail(eventId: string): Promise<FireEventDeta
     population_enrichment,
     climate_context,
     climate_enrichment,
+    biodiversity_context,
+    biodiversity_enrichment,
     generated_at: generatedAt,
   }
 
