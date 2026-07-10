@@ -42,7 +42,7 @@ export async function handleVerificationResolutionRoutes(
     incidentResolutionMatch ||
     missionContributionsMatch
   if (!isRoute) return false
-  if (rejectIfUnauthenticated(req, res)) return true
+  if (await rejectIfUnauthenticated(req, res)) return true
 
   try {
     if (needReEvaluateMatch && req.method === 'POST') {

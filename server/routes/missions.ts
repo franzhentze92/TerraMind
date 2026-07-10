@@ -83,7 +83,7 @@ export async function handleMissionsRoutes(
   if (!isOperationsMissions && !incidentMissionsMatch && !planMissionsMatch && !isOperationsAssignees) {
     return false
   }
-  if (rejectIfUnauthenticated(req, res)) return true
+  if (await rejectIfUnauthenticated(req, res)) return true
 
   try {
     for (const action of WORKFLOW_ACTIONS) {

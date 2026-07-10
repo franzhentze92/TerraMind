@@ -28,7 +28,7 @@ export async function handleFireRoutes(
     jsonError(req, res, 'Method not allowed', 405)
     return true
   }
-  if (rejectIfUnauthenticated(req, res)) return true
+  if (await rejectIfUnauthenticated(req, res)) return true
 
   try {
     if (pathname === '/api/environment/fires/summary') {

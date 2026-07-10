@@ -21,7 +21,7 @@ export async function handleFindingsRoutes(
     jsonError(req, res, 'Method not allowed', 405)
     return true
   }
-  if (rejectIfUnauthenticated(req, res)) return true
+  if (await rejectIfUnauthenticated(req, res)) return true
 
   try {
     const detailMatch = pathname.match(/^\/api\/intelligence\/findings\/([^/]+)$/)
@@ -74,7 +74,7 @@ export async function handleFireFindingsRoute(
     jsonError(req, res, 'Method not allowed', 405)
     return true
   }
-  if (rejectIfUnauthenticated(req, res)) return true
+  if (await rejectIfUnauthenticated(req, res)) return true
 
   const eventId = match[1]
   if (!UUID_RE.test(eventId)) {

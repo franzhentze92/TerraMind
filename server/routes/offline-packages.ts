@@ -47,7 +47,7 @@ export async function handleOfflinePackageRoutes(
     statusMatch ||
     validateMatch
   if (!isRoute) return false
-  if (rejectIfUnauthenticated(req, res)) return true
+  if (await rejectIfUnauthenticated(req, res)) return true
 
   try {
     if (missionPackagesMatch) {

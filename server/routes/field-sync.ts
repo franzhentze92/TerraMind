@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
-import { rejectIfUnauthenticated } from '../middleware/auth.js'
+import { rejectIfUnauthenticated, requireRequestAuth } from '../middleware/auth.js'
 import { readJsonBody } from '../http/body.js'
 import { jsonError, jsonResponse } from '../http/json.js'
 import {
@@ -24,15 +24,16 @@ export async function handleFieldSyncRoutes(
   const bundleRegisterMatch = pathname.match(/^\/api\/operations\/field-sync\/bundles\/register$/)
   const submissionMatch = pathname.match(/^\/api\/operations\/evidence-submissions\/([^/]+)(?:\/(.+))?$/)
   if (!bundleRegisterMatch && !submissionMatch) return false
-  if (rejectIfUnauthenticated(req, res)) return true
+  if (await rejectIfUnauthenticated(req, res)) return true
 
   try {
     if (bundleRegisterMatch && req.method === 'POST') {
       const body = await readJsonBody<Record<string, unknown>>(req)
+      const auth = requireRequestAuth(req)
       jsonResponse(
         req,
         res,
-        await registerBundleSync({
+        await registerBundleSync(auth, {
           bundle_id: String(body.bundle_id),
           bundle_checksum: String(body.bundle_checksum),
           mission_id: String(body.mission_id),

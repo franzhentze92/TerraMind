@@ -1,5 +1,8 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { ProtectedRoute } from '@/core/auth/ProtectedRoute'
 import { AppShell } from '@/shared/layouts'
+import { LoginPage } from '@/modules/auth/pages/LoginPage'
+import { ForbiddenPage } from '@/modules/auth/pages/ForbiddenPage'
 import { NationalSituationPage } from '@/modules/national-center/pages/NationalSituationPage'
 import { CopilotPage } from '@/modules/copilot/pages/CopilotPage'
 import { FindingsPage } from '@/modules/findings/pages/FindingsPage'
@@ -32,9 +35,15 @@ import { FieldTaskFormPage } from '@/modules/field-operations/pages/FieldTaskFor
 import { PendingEvidencePage } from '@/modules/field-operations/pages/PendingEvidencePage'
 
 export const router = createBrowserRouter([
+  { path: '/login', element: <LoginPage /> },
+  { path: '/403', element: <ForbiddenPage /> },
   {
     path: '/',
-    element: <AppShell />,
+    element: (
+      <ProtectedRoute>
+        <AppShell />
+      </ProtectedRoute>
+    ),
     children: [
       { index: true, element: <Navigate to="/situacion" replace /> },
       { path: 'situacion', element: <NationalSituationPage /> },

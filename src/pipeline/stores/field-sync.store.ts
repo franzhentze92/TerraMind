@@ -100,12 +100,11 @@ export async function insertBundleRegistration(input: {
   task_id?: string | null
   idempotency_key: string
   metadata?: Record<string, unknown>
+  organization_id?: string | null
 }) {
   const supabase = getSupabaseAdmin()
   const now = new Date().toISOString()
-  const { data, error } = await supabase
-    .from('evidence_bundle_sync_registrations')
-    .insert({
+  const row: Record<string, unknown> = {
       bundle_id: input.bundle_id,
       bundle_checksum: input.bundle_checksum,
       mission_id: input.mission_id,
@@ -117,7 +116,11 @@ export async function insertBundleRegistration(input: {
       metadata: input.metadata ?? {},
       created_at: now,
       updated_at: now,
-    })
+  }
+  if (input.organization_id) row.organization_id = input.organization_id
+  const { data, error } = await supabase
+    .from('evidence_bundle_sync_registrations')
+    .insert(row)
     .select('*')
     .single()
   if (error) {

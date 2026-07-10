@@ -30,7 +30,7 @@ export async function handleVerificationRoutes(
     jsonError(req, res, 'Method not allowed', 405)
     return true
   }
-  if (rejectIfUnauthenticated(req, res)) return true
+  if (await rejectIfUnauthenticated(req, res)) return true
 
   try {
     if (incidentPlanMatch) {

@@ -26,6 +26,8 @@
 
 ## Mandatory next step: 8B.7F — Field Sync Authorization & Tenant Isolation
 
+**Status:** In progress in commit `8B.7F` — stub removed, JWT middleware, migration 029 ready (not applied).
+
 Before applying migration 028 or enabling operational sync in production:
 
 - Replace `requireAuth` stub with real authentication.

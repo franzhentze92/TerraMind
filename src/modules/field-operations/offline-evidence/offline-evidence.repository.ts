@@ -5,6 +5,7 @@ import type {
   LocalEvidenceRecord,
   LocalEvidenceRequirementLink,
 } from '@/modules/field-operations/offline-evidence/offline-evidence.types'
+import { fieldLocalDbName } from '@/core/auth/field-local-scope'
 
 export interface BlobStoreAdapter {
   put(ref: string, data: Uint8Array): Promise<void>
@@ -136,7 +137,6 @@ export class MemoryOfflineEvidenceStorage implements OfflineEvidenceStorageAdapt
   }
 }
 
-const DB_NAME = 'terramind-offline-evidence'
 const DB_VERSION = 1
 
 function openDb(): Promise<IDBDatabase> {
@@ -145,7 +145,7 @@ function openDb(): Promise<IDBDatabase> {
       reject(new Error('IndexedDB unavailable'))
       return
     }
-    const req = indexedDB.open(DB_NAME, DB_VERSION)
+    const req = indexedDB.open(fieldLocalDbName('terramind-offline-evidence'), DB_VERSION)
     req.onupgradeneeded = () => {
       const db = req.result
       if (!db.objectStoreNames.contains('records')) {

@@ -41,7 +41,7 @@ export async function handleEvidenceIntakeRoutes(
     incidentEvidenceMatch
 
   if (!isEvidenceRoute) return false
-  if (rejectIfUnauthenticated(req, res)) return true
+  if (await rejectIfUnauthenticated(req, res)) return true
 
   try {
     if (createSubmissionMatch && req.method === 'POST') {

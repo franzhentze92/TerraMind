@@ -34,7 +34,7 @@ export async function handleEvidenceValidationRoutes(
   const isRoute =
     validationMatch || revalidateMatch || missionValidationsMatch || missionQualityMatch
   if (!isRoute) return false
-  if (rejectIfUnauthenticated(req, res)) return true
+  if (await rejectIfUnauthenticated(req, res)) return true
 
   try {
     if (revalidateMatch && req.method === 'POST') {

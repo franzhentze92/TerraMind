@@ -23,7 +23,7 @@ export async function handleIncidentsRoutes(
     jsonError(req, res, 'Method not allowed', 405)
     return true
   }
-  if (rejectIfUnauthenticated(req, res)) return true
+  if (await rejectIfUnauthenticated(req, res)) return true
 
   try {
     const historyMatch = pathname.match(/^\/api\/intelligence\/incidents\/([^/]+)\/history$/)
@@ -101,7 +101,7 @@ export async function handleFireEventIncidentRoute(
     jsonError(req, res, 'Method not allowed', 405)
     return true
   }
-  if (rejectIfUnauthenticated(req, res)) return true
+  if (await rejectIfUnauthenticated(req, res)) return true
 
   const eventId = match[1]
   if (!UUID_RE.test(eventId)) {

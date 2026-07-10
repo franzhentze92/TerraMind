@@ -7,6 +7,7 @@ import type {
   SyncOperation,
   SyncSession,
 } from '@/modules/field-operations/field-sync/field-sync.types'
+import { fieldLocalDbName } from '@/core/auth/field-local-scope'
 
 export interface FieldSyncStorageAdapter {
   saveSession(session: SyncSession): Promise<void>
@@ -93,7 +94,7 @@ function openDb(): Promise<IDBDatabase> {
       reject(new Error('IndexedDB unavailable'))
       return
     }
-    const req = indexedDB.open(DB_NAME, DB_VERSION)
+    const req = indexedDB.open(fieldLocalDbName('terramind-field-sync'), DB_VERSION)
     req.onupgradeneeded = () => {
       const db = req.result
       if (!db.objectStoreNames.contains('sessions')) {

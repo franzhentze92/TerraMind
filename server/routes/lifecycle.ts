@@ -19,7 +19,7 @@ export async function handleLifecycleRoutes(
     jsonError(req, res, 'Method not allowed', 405)
     return true
   }
-  if (rejectIfUnauthenticated(req, res)) return true
+  if (await rejectIfUnauthenticated(req, res)) return true
 
   const lifecycleMatch = pathname.match(
     /^\/api\/intelligence\/events\/([^/]+)\/([^/]+)\/lifecycle$/,

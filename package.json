@@ -66,6 +66,8 @@
     "offline-evidence:validate": "tsx scripts/offline-evidence-validate.ts",
     "field-sync:audit": "tsx scripts/field-sync-audit.ts",
     "field-sync:validate": "tsx scripts/field-sync-validate.ts",
+    "auth:audit": "tsx scripts/auth-audit.ts",
+    "tenant-isolation:test": "vitest run server/auth/auth.test.ts",
     "land-cover:plan-tiles": "tsx scripts/land-cover-plan-tiles.ts",
     "land-cover:download": "tsx scripts/land-cover-download.ts",
     "land-cover:build": "tsx scripts/land-cover-build.ts",

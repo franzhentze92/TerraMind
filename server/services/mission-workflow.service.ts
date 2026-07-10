@@ -1,3 +1,4 @@
+import type { RequestAuthContext } from '@/core/auth/permissions'
 import {
   evaluateWorkflowCommand,
   MISSION_WORKFLOW_VERSION,
@@ -22,12 +23,24 @@ import {
 } from '@/pipeline/stores/missions.store'
 import { FIRE_MISSION_PROFILE_VERSION } from '@/modules/missions/config/fire-mission.config'
 
-function defaultActor(actorId?: string | null) {
-  return {
-    actor_type: 'user' as const,
-    actor_id: actorId ?? 'system-operator',
-    permissions: ALL_MISSION_PERMISSIONS,
+function defaultActor(auth: { userId: string; permissions: string[] } | null, actorId?: string | null) {
+  if (auth) {
+    return {
+      actor_type: 'user' as const,
+      actor_id: auth.userId,
+      permissions: ALL_MISSION_PERMISSIONS.filter((p) =>
+        auth.permissions.includes(p as never),
+      ) as typeof ALL_MISSION_PERMISSIONS,
+    }
   }
+  if (actorId) {
+    return {
+      actor_type: 'user' as const,
+      actor_id: actorId,
+      permissions: ALL_MISSION_PERMISSIONS,
+    }
+  }
+  throw new Error('actor_authentication_required')
 }
 
 export async function executeMissionWorkflow(
@@ -36,6 +49,7 @@ export async function executeMissionWorkflow(
     actor_id?: string | null
     actor_permissions?: WorkflowCommand['actor']['permissions']
   },
+  auth?: RequestAuthContext | null,
 ): Promise<WorkflowResult> {
   const mission = await getMissionById(missionId)
   if (!mission) throw new Error('Misión no encontrada')
@@ -61,14 +75,16 @@ export async function executeMissionWorkflow(
     )
   }
 
+  const actorPreview = defaultActor(auth ?? null, command.actor_id)
+
   const evaluation = evaluateWorkflowCommand({
     command: {
       ...command,
       mission_id: missionId,
       actor: {
         actor_type: 'user',
-        actor_id: command.actor_id ?? null,
-        permissions: command.actor_permissions ?? ALL_MISSION_PERMISSIONS,
+        actor_id: actorPreview.actor_id,
+        permissions: command.actor_permissions ?? actorPreview.permissions,
       },
     },
     mission: {
@@ -105,7 +121,7 @@ export async function executeMissionWorkflow(
 
   if (!evaluation.ok || evaluation.idempotent_replay) return evaluation
 
-  const actor = defaultActor(command.actor_id)
+  const actor = defaultActor(auth ?? null, command.actor_id)
   let assignmentId = assignment?.id ?? null
 
   if (evaluation.close_assignment && assignment) {

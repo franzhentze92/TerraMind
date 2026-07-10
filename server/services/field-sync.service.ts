@@ -1,3 +1,4 @@
+import type { RequestAuthContext } from '@/core/auth/permissions'
 import { UPLOAD_URL_TTL_SECONDS } from '@/modules/evidence/config/fire-evidence-intake.config'
 import {
   buildStoragePath,
@@ -20,12 +21,17 @@ import {
 } from '@/pipeline/stores/field-sync.store'
 import { runEvidenceProcessing } from '@/pipeline/engines/evidence/evidence-intake-processing.runner'
 import { getMissionById } from '@/pipeline/stores/missions.store'
+import { authorizeFieldSyncAccess } from './authorization/index.js'
+import { assertAuthorizedBeforeServiceRole } from './authorized-admin.client.js'
+import { recordAuthAuditEvent } from './auth-audit.service.js'
 
 function uploadExpiryIso(): string {
   return new Date(Date.now() + UPLOAD_URL_TTL_SECONDS * 1000).toISOString()
 }
 
-export async function registerBundleSync(input: {
+export async function registerBundleSync(
+  auth: RequestAuthContext,
+  input: {
   bundle_id: string
   bundle_checksum: string
   mission_id: string
@@ -34,7 +40,15 @@ export async function registerBundleSync(input: {
   task_id?: string | null
   idempotency_key: string
   metadata?: Record<string, unknown>
-}) {
+  },
+) {
+  const authorized = await authorizeFieldSyncAccess(auth, {
+    mission_id: input.mission_id,
+    package_id: input.package_id,
+    bundle_id: input.bundle_id,
+  })
+  assertAuthorizedBeforeServiceRole(authorized)
+
   const existing = await findBundleRegistrationByIdempotency(input.idempotency_key)
   if (existing) {
     return { registration_id: String(existing.id), idempotent_replay: true, registration: existing }
@@ -42,8 +56,25 @@ export async function registerBundleSync(input: {
   const mission = await getMissionById(input.mission_id)
   if (!mission) throw new Error('Misión no encontrada')
   if (mission.status === 'cancelled') throw new Error('mission_cancelled')
+  if (
+    mission.organization_id &&
+    String(mission.organization_id) !== authorized.organizationId &&
+    !auth.isPlatformAdmin
+  ) {
+    throw new Error('cross_tenant_denied')
+  }
 
-  const registration = await insertBundleRegistration(input)
+  const registration = await insertBundleRegistration({
+    ...input,
+    organization_id: authorized.organizationId,
+  })
+  await recordAuthAuditEvent({
+    event_type: 'field_sync_register',
+    outcome: 'allowed',
+    auth,
+    resource_type: 'evidence_bundle',
+    resource_id: input.bundle_id,
+  })
   return { registration_id: String(registration.id), idempotent_replay: false, registration }
 }
 

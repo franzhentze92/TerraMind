@@ -6,6 +6,7 @@ import { startFireScheduler } from '@/pipeline/scheduler/fire.scheduler'
 import { verifyMapKey } from '@/pipeline/connectors/firms.connector'
 import { handlePreflight } from './http/cors.js'
 import { jsonResponse } from './http/json.js'
+import { handleAuthRoutes } from './routes/auth.js'
 import { handleFireRoutes } from './routes/fires.js'
 import { handleClimateRoutes } from './routes/climate.js'
 import { handleBiodiversityRoutes } from './routes/biodiversity.js'
@@ -31,6 +32,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
   const url = new URL(req.url ?? '/', `http://localhost:${PORT}`)
   const pathname = url.pathname
 
+  if (await handleAuthRoutes(req, res, pathname)) return
   if (await handleFireRoutes(req, res, pathname, url.searchParams)) return
   if (await handleClimateRoutes(req, res, pathname, url.searchParams)) return
   if (await handleBiodiversityRoutes(req, res, pathname, url.searchParams)) return

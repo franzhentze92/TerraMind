@@ -1,5 +1,6 @@
 import type { LocalOfflinePackageStatus, OfflinePackageManifest } from '@/modules/field-operations/offline-packages/offline-package.types'
 import { verifyManifestIntegrity } from '@/modules/field-operations/offline-packages/offline-package-canonical'
+import { fieldLocalDbName } from '@/core/auth/field-local-scope'
 
 export interface LocalOfflinePackageRecord {
   package_id: string
@@ -14,6 +15,9 @@ export interface LocalOfflinePackageRecord {
   size_bytes: number
   integrity_errors: string[]
   updated_at: string
+  organization_id?: string | null
+  user_id?: string | null
+  membership_id?: string | null
 }
 
 export interface OfflinePackageStorageAdapter {
@@ -43,7 +47,6 @@ export class MemoryOfflinePackageStorage implements OfflinePackageStorageAdapter
   }
 }
 
-const DB_NAME = 'terramind-offline-packages'
 const STORE_NAME = 'packages'
 const DB_VERSION = 1
 
@@ -57,7 +60,7 @@ export class IndexedDbOfflinePackageStorage implements OfflinePackageStorageAdap
         reject(new Error('IndexedDB no disponible'))
         return
       }
-      const request = indexedDB.open(DB_NAME, DB_VERSION)
+      const request = indexedDB.open(fieldLocalDbName('terramind-offline-packages'), DB_VERSION)
       request.onupgradeneeded = () => {
         const db = request.result
         if (!db.objectStoreNames.contains(STORE_NAME)) {

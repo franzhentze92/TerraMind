@@ -24,7 +24,7 @@ export async function handleBiodiversityRoutes(
     jsonError(req, res, 'Method not allowed', 405)
     return true
   }
-  if (rejectIfUnauthenticated(req, res)) return true
+  if (await rejectIfUnauthenticated(req, res)) return true
   if (rejectIfRateLimited(req, res, { maxRequests: 60, windowMs: 60_000 })) return true
 
   const dashboard = getBiodiversityDashboardService()

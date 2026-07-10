@@ -3,6 +3,7 @@ import type {
   FieldFormRevisionSnapshot,
   LocalTaskProgress,
 } from '@/modules/field-operations/field-forms/field-form.types'
+import { fieldLocalDbName } from '@/core/auth/field-local-scope'
 
 export interface FieldFormStorageAdapter {
   saveResponse(record: FieldFormResponseRecord): Promise<void>
@@ -65,7 +66,7 @@ export class IndexedDbFieldFormStorage implements FieldFormStorageAdapter {
         reject(new Error('IndexedDB no disponible'))
         return
       }
-      const request = indexedDB.open(DB_NAME, DB_VERSION)
+      const request = indexedDB.open(fieldLocalDbName('terramind-field-forms'), DB_VERSION)
       request.onupgradeneeded = () => {
         const db = request.result
         if (!db.objectStoreNames.contains(RESPONSES_STORE)) {
