@@ -15,6 +15,8 @@ import { ReportsPage } from '@/modules/reports/pages/ReportsPage'
 import { SettingsPage } from '@/modules/settings/pages/SettingsPage'
 import { FireAnalysisPage } from '@/modules/fires/pages/FireAnalysisPage'
 import { BiodiversityAnalysisPage } from '@/modules/biodiversity/pages/BiodiversityAnalysisPage'
+import { IncidentsPage } from '@/modules/incidents/pages/IncidentsPage'
+import { IncidentDetailPage } from '@/modules/incidents/pages/IncidentDetailPage'
 
 export const router = createBrowserRouter([
   {
@@ -31,6 +33,8 @@ export const router = createBrowserRouter([
       { path: 'hallazgos/:findingId', element: <FindingDetailPage /> },
       { path: 'prioridades', element: <PrioritiesPage /> },
       { path: 'prioridades/:priorityId', element: <PriorityDetailPage /> },
+      { path: 'incidentes', element: <IncidentsPage /> },
+      { path: 'incidentes/:incidentId', element: <IncidentDetailPage /> },
       { path: 'estrategias', element: <StrategiesPage /> },
       { path: 'territorio', element: <TerritoryPage /> },
       { path: 'tendencias', element: <TrendsPage /> },

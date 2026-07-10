@@ -20,6 +20,8 @@ import { useFireEventFindings } from '@/modules/findings/hooks/useFindings'
 import { FireEventPriorityCard } from '@/modules/priorities/components/FireEventPriorityCard'
 import { useFireEventPriority } from '@/modules/priorities/hooks/usePriorities'
 import { FireLifecycleSection } from '@/modules/lifecycle/components/FireLifecycleSection'
+import { FireEventIncidentSection } from '@/modules/incidents/components/FireEventIncidentSection'
+import { useFireEventIncident } from '@/modules/incidents/hooks/useIncidents'
 import {
   useFireEventLifecycle,
   useFireEventLifecycleTransitions,
@@ -81,6 +83,7 @@ export function FireEventDetailPanel({
   const priorityQuery = useFireEventPriority(event?.id)
   const lifecycleQuery = useFireEventLifecycle(event?.id)
   const lifecycleTransitionsQuery = useFireEventLifecycleTransitions(event?.id)
+  const incidentQuery = useFireEventIncident(event?.id)
 
   useEffect(() => {
     setTab('resumen')
@@ -221,6 +224,18 @@ export function FireEventDetailPanel({
                     <FireEventPriorityCard
                       assessment={priorityQuery.data?.assessment}
                       isLoading={priorityQuery.isLoading}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+                    Situación operacional
+                  </p>
+                  <div className="mt-2">
+                    <FireEventIncidentSection
+                      data={incidentQuery.data}
+                      isLoading={incidentQuery.isLoading}
                     />
                   </div>
                 </div>

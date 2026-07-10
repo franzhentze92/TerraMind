@@ -5,6 +5,7 @@ import {
   Search,
   AlertCircle,
   Brain,
+  Layers,
   Map,
   TrendingUp,
   FileText,
@@ -47,6 +48,7 @@ const NAV_SECTIONS: NavSection[] = [
     items: [
       { path: '/hallazgos', label: 'Hallazgos', icon: Search },
       { path: '/prioridades', label: 'Prioridades', icon: AlertCircle },
+      { path: '/incidentes', label: 'Incidentes', icon: Layers },
       { path: '/copilot', label: 'Copilot', icon: Brain },
     ],
   },

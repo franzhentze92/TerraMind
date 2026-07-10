@@ -521,6 +521,39 @@ export async function runFirePipeline(
             })
           }
 
+          const incidentEnqueueStart = Date.now()
+          try {
+            const { enqueueIncidentCorrelationJobs } = await import(
+              '@/pipeline/engines/incidents/incident-correlation-jobs.engine'
+            )
+            const incidentEnqueue = await enqueueIncidentCorrelationJobs({
+              limit: 10000,
+              force: false,
+            })
+            stages.incident_enqueue = {
+              status: 'success',
+              duration_ms: Date.now() - incidentEnqueueStart,
+              metrics: {
+                jobs_created: incidentEnqueue.jobs_created,
+                incident_jobs_created: incidentEnqueue.jobs_created,
+                jobs_skipped: incidentEnqueue.jobs_skipped,
+                correlation_model_version: incidentEnqueue.correlation_model_version,
+              },
+            }
+          } catch (err) {
+            stages.incident_enqueue = {
+              status: 'partial',
+              duration_ms: Date.now() - incidentEnqueueStart,
+              error: err instanceof Error ? err.message : 'incident enqueue failed',
+              error_code: 'incident_enqueue_failed',
+              metrics: { incident_jobs_created: 0 },
+            }
+            logStage(pipelineRunId, 'incident_enqueue', {
+              status: 'warning',
+              error: err instanceof Error ? err.message : 'enqueue failed',
+            })
+          }
+
           const findingEnqueueStart = Date.now()
           try {
             const { enqueueFindingJobs } = await import(
