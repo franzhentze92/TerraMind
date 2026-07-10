@@ -26,6 +26,10 @@ dist-ssr
 # TerraMind pipeline store (geo sources are versioned intentionally)
 data/terramind-store.json
 
+# Land cover rasters — demasiado grandes para Git (manifest + SOURCE.md sí van)
+data/geo/sources/land-cover/**/*.tif
+data/geo/sources/land-cover/**/tiles/
+
 # Secrets — nunca commitear
 .env
 .env.local

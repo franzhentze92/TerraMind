@@ -1,0 +1,183 @@
+{
+  "provider": "esa-worldcover",
+  "product": "WorldCover Map",
+  "source_version": "2021-v200",
+  "algorithm_version": "v200",
+  "reference_year": 2021,
+  "doi": "10.5281/zenodo.7254221",
+  "license": "CC-BY-4.0",
+  "resolution_m": 10,
+  "source_crs": "EPSG:4326",
+  "nodata": 0,
+  "s3_bucket": "esa-worldcover",
+  "s3_prefix": "v200/2021/map/",
+  "file_naming": "ESA_WorldCover_10m_2021_v200_{tileId}_Map.tif",
+  "guatemala_bbox_wgs84": {
+    "min_lon": -92.240242471,
+    "max_lon": -88.221497532,
+    "min_lat": 13.739443412,
+    "max_lat": 17.819453371,
+    "source": "hdx-cod-ab gtm_admin0.geojson",
+    "margin_km": 5
+  },
+  "tiles_required": [
+    {
+      "tile_id": "N12W090",
+      "tile_bounds_wgs84": {
+        "min_lon": -90,
+        "max_lon": -87,
+        "min_lat": 12,
+        "max_lat": 15
+      },
+      "s3_key": "v200/2021/map/ESA_WorldCover_10m_2021_v200_N12W090_Map.tif",
+      "s3_uri": "s3://esa-worldcover/v200/2021/map/ESA_WorldCover_10m_2021_v200_N12W090_Map.tif",
+      "size_bytes": 80955299,
+      "size_mb": 77.2,
+      "listed_at": "2026-07-10T09:30:00Z",
+      "listing_method": "aws s3 ls --no-sign-request",
+      "size_bytes_actual": 80955299,
+      "sha256": "e0743bf8b5592ac25856d76b0f49f0d7c30441f654643a2850d1204bb8836683",
+      "status": "validated",
+      "downloaded_at": "2026-07-10T09:41:14.345Z",
+      "local_path": "tiles/ESA_WorldCover_10m_2021_v200_N12W090_Map.tif",
+      "validated_at": "2026-07-10T09:54:25.194Z"
+    },
+    {
+      "tile_id": "N12W093",
+      "tile_bounds_wgs84": {
+        "min_lon": -93,
+        "max_lon": -90,
+        "min_lat": 12,
+        "max_lat": 15
+      },
+      "s3_key": "v200/2021/map/ESA_WorldCover_10m_2021_v200_N12W093_Map.tif",
+      "s3_uri": "s3://esa-worldcover/v200/2021/map/ESA_WorldCover_10m_2021_v200_N12W093_Map.tif",
+      "size_bytes": 34084942,
+      "size_mb": 32.5,
+      "listed_at": "2026-07-10T09:30:00Z",
+      "listing_method": "aws s3 ls --no-sign-request",
+      "size_bytes_actual": 34084942,
+      "sha256": "bfed35ef0b0b0547868adae08207ab49f6e60a1481b72da6f3320c824822a820",
+      "status": "validated",
+      "downloaded_at": "2026-07-10T09:41:27.776Z",
+      "local_path": "tiles/ESA_WorldCover_10m_2021_v200_N12W093_Map.tif",
+      "validated_at": "2026-07-10T09:54:25.278Z"
+    },
+    {
+      "tile_id": "N15W090",
+      "tile_bounds_wgs84": {
+        "min_lon": -90,
+        "max_lon": -87,
+        "min_lat": 15,
+        "max_lat": 18
+      },
+      "s3_key": "v200/2021/map/ESA_WorldCover_10m_2021_v200_N15W090_Map.tif",
+      "s3_uri": "s3://esa-worldcover/v200/2021/map/ESA_WorldCover_10m_2021_v200_N15W090_Map.tif",
+      "size_bytes": 49638907,
+      "size_mb": 47.4,
+      "listed_at": "2026-07-10T09:30:00Z",
+      "listing_method": "aws s3 ls --no-sign-request",
+      "size_bytes_actual": 49638907,
+      "sha256": "3be78a77c1e9eca7ded0982010b731a5d37aaf3bd50e49d6485c16afa68cab45",
+      "status": "validated",
+      "downloaded_at": "2026-07-10T09:41:44.986Z",
+      "local_path": "tiles/ESA_WorldCover_10m_2021_v200_N15W090_Map.tif",
+      "validated_at": "2026-07-10T09:54:25.366Z"
+    },
+    {
+      "tile_id": "N15W093",
+      "tile_bounds_wgs84": {
+        "min_lon": -93,
+        "max_lon": -90,
+        "min_lat": 15,
+        "max_lat": 18
+      },
+      "s3_key": "v200/2021/map/ESA_WorldCover_10m_2021_v200_N15W093_Map.tif",
+      "s3_uri": "s3://esa-worldcover/v200/2021/map/ESA_WorldCover_10m_2021_v200_N15W093_Map.tif",
+      "size_bytes": 94150963,
+      "size_mb": 89.8,
+      "listed_at": "2026-07-10T09:30:00Z",
+      "listing_method": "aws s3 ls --no-sign-request",
+      "size_bytes_actual": 94150963,
+      "sha256": "5d56a3728f930c3a2713e273d089d5b365495e8140024f085a528c7421fcee37",
+      "status": "validated",
+      "downloaded_at": "2026-07-10T09:42:11.332Z",
+      "local_path": "tiles/ESA_WorldCover_10m_2021_v200_N15W093_Map.tif",
+      "validated_at": "2026-07-10T09:54:25.454Z"
+    }
+  ],
+  "tiles_excluded": [
+    {
+      "tile_id": "N18W090",
+      "reason": "Guatemala max_lat 17.82°N < 18°N — fully covered by N15 tiles"
+    },
+    {
+      "tile_id": "N18W093",
+      "reason": "Guatemala max_lat 17.82°N < 18°N — fully covered by N15 tiles"
+    },
+    {
+      "tile_id": "N15W096",
+      "reason": "Guatemala min_lon -92.24°W > -93°W — west edge covered by W093 tiles"
+    }
+  ],
+  "download_summary": {
+    "tile_count": 4,
+    "total_bytes": 258830111,
+    "total_mb": 246.8,
+    "disk_free_gb_at_planning": 30,
+    "download_approved": true,
+    "download_approved_at": "2026-07-10T09:40:51.751Z",
+    "script_version": "land-cover-pipeline-v1",
+    "tools": {
+      "gdal": "GDAL 3.10.0, released 2024/11/01",
+      "aws": "aws-cli/2.34.37 Python/3.14.4 Windows/11 exe/AMD64",
+      "node": "v22.22.0"
+    },
+    "total_bytes_actual": 258830111,
+    "total_mb_actual": 246.8,
+    "download_completed_at": "2026-07-10T09:42:11.332Z",
+    "download_duration_ms": 80801
+  },
+  "artifacts_planned": {
+    "source_cog": "land_cover_gt_source_4326.tif",
+    "analytic_cog": "land_cover_gt_analytic_laea.tif",
+    "analysis_method_version": "laea-zone-stats-v1",
+    "analytic_crs": "LAEA-GT",
+    "analytic_proj4": "+proj=laea +lat_0=15.779448 +lon_0=-90.230870 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs",
+    "estimated_clipped_source_mb": "120-200",
+    "estimated_analytic_mb": "120-200",
+    "estimated_total_storage_mb": "250-400",
+    "git_track_rasters": false
+  },
+  "mapper_version": "esa-worldcover-v200-mapper-v1",
+  "analysis_method_version": "laea-zone-stats-v1",
+  "artifacts": {
+    "source_cog": "processed/land_cover_gt_4326.tif",
+    "analytic_cog": "processed/land_cover_gt_laea.tif",
+    "source_cog_sha256": "fe01b8e8f7b4d59c8635dd6aceb23c4c4232a09dc4b4d6f154459a868e87061f",
+    "analytic_cog_sha256": "9ba159ad57325ba7ed7bc5a786b610bcbc8ea3764d8d38b050de5c1466219d0f",
+    "source_cog_bytes": 104065884,
+    "analytic_cog_bytes": 104764734,
+    "laea_proj4": "+proj=laea +lat_0=15.779 +lon_0=-90.231 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs",
+    "clip_boundary": "hdx-cod-ab gtm_admin0.geojson",
+    "resampling_laea": "near"
+  },
+  "processing": {
+    "build_completed_at": "2026-07-10T09:53:24.431Z",
+    "mosaic_ms": 94,
+    "clip_ms": 418524,
+    "source_cog_ms": 88496,
+    "laea_cog_ms": 109787,
+    "optimization_notes": {
+      "option_a_dual_cog_mb": 199.2,
+      "option_b_on_demand_warp": "Reproyectar ventanas pequeñas desde COG 4326 — evaluar en 7A.2-C"
+    },
+    "validation_completed_at": "2026-07-10T09:54:42.058Z",
+    "national_area_valid_km2": 108231,
+    "national_area_difference_pct": -0.6,
+    "laea_pixel_size_m": [
+      9.076608769089223,
+      9.076608769089223
+    ]
+  }
+}
