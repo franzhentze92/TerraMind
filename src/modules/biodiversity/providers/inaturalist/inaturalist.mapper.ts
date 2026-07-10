@@ -65,6 +65,7 @@ export function mapInaturalistObservation(
     kingdom: obs.taxon?.iconic_taxon_name,
     observedAt: obs.time_observed_at ?? obs.observed_on,
     eventDatePrecision: obs.time_observed_at ? 'instant' : 'day',
+    dwcOccurrenceId: obs.uuid,
     latitude: lat !== undefined && Number.isFinite(lat) ? lat : undefined,
     longitude: lng !== undefined && Number.isFinite(lng) ? lng : undefined,
     coordinateUncertaintyM: obs.positional_accuracy ?? undefined,

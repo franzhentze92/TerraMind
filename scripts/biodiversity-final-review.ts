@@ -1,4 +1,5 @@
 import { config } from 'dotenv'
+import { mkdirSync, writeFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { getBiodiversityService } from '../src/modules/biodiversity/biodiversity.service'
 import { partitionAcceptedOccurrences } from '../src/modules/biodiversity/biodiversity-acceptance'
@@ -234,9 +235,9 @@ function buildDedupShowcase() {
     },
   ])
 
-  const secure = simulated.filter((o) => o.deduplicationReason === 'inat_url_in_gbif')
-  const possible = simulated.filter((o) => o.possibleDuplicate && o.deduplicationReason === 'taxon_date_location')
-  const notMerged = simulated.filter((o) => !o.possibleDuplicate)
+  const secure = simulated.filter((o) => o.possibleDuplicate && o.deduplicationConfidence === 'exact')
+  const candidates = simulated.filter((o) => o.duplicateCandidate)
+  const notMerged = simulated.filter((o) => !o.possibleDuplicate && !o.duplicateCandidate)
 
   return {
     secure_duplicate: secure.map((o) => ({
@@ -246,7 +247,7 @@ function buildDedupShowcase() {
       reason: o.deduplicationReason,
       confidence: 'high',
     })),
-    possible_duplicate: possible.map((o) => ({
+    possible_duplicate: candidates.map((o) => ({
       source: o.source,
       id: o.sourceOccurrenceId,
       duplicate_group_id: o.duplicateGroupId,
@@ -303,22 +304,22 @@ async function main() {
     licenseTotals[k] = (licenseTotals[k] ?? 0) + 1
   }
 
-  console.log(
-    JSON.stringify(
-      {
-        generated_at: new Date().toISOString(),
-        config: { radius_m: RADIUS_M, limit: LIMIT },
-        provider_reports: providerReports,
-        combined_reports: combinedReports,
-        normalized_examples: pickExamples(allItems),
-        deduplication_showcase: buildDedupShowcase(),
-        license_totals_from_live_sample: licenseTotals,
-        health,
-      },
-      null,
-      2,
-    ),
-  )
+  const payload = {
+    generated_at: new Date().toISOString(),
+    config: { radius_m: RADIUS_M, limit: LIMIT },
+    provider_reports: providerReports,
+    combined_reports: combinedReports,
+    normalized_examples: pickExamples(allItems),
+    deduplication_showcase: buildDedupShowcase(),
+    license_totals_from_live_sample: licenseTotals,
+    health,
+  }
+
+  const outDir = resolve(process.cwd(), 'artifacts', 'review')
+  mkdirSync(outDir, { recursive: true })
+  const outPath = resolve(outDir, 'review-output.json')
+  writeFileSync(outPath, `${JSON.stringify(payload, null, 2)}\n`, 'utf8')
+  console.log(JSON.stringify({ written_to: outPath, ...payload }, null, 2))
 }
 
 main().catch((err) => {

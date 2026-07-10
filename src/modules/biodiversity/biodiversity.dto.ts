@@ -116,7 +116,10 @@ export function toPublicOccurrenceDto(occurrence: BiodiversityOccurrence) {
     source_url: occurrence.sourceUrl,
     dataset_title: occurrence.datasetTitle,
     possible_duplicate: occurrence.possibleDuplicate,
+    duplicate_candidate: occurrence.duplicateCandidate ?? false,
     duplicate_group_id: occurrence.duplicateGroupId,
+    deduplication_confidence: occurrence.deduplicationConfidence,
+    deduplication_reason: occurrence.deduplicationReason,
     quality_warnings: occurrence.qualityWarnings,
     fetched_at: occurrence.fetchedAt,
   }

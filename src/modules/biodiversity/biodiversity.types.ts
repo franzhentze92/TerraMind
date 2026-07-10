@@ -105,9 +105,21 @@ export interface BiodiversityOccurrence {
   sourceUrl: string
   datasetTitle?: string
   publishingOrganization?: string
+  /** Darwin Core occurrenceID cuando está disponible. */
+  dwcOccurrenceId?: string
+  /** Referencia externa original (p. ej. URL iNaturalist en GBIF). */
+  sourceReference?: string
+  /** Procedencia iNaturalist detectada en registros GBIF. */
+  gbifInaturalistProvenance?: {
+    isFromInaturalist: boolean
+    signals: string[]
+    inaturalistObservationId?: string
+  }
   recordKind: BiodiversityRecordKind
   possibleDuplicate: boolean
+  duplicateCandidate?: boolean
   duplicateGroupId?: string
+  deduplicationConfidence?: 'exact' | 'high' | 'medium' | 'low'
   deduplicationReason?: string
   fetchedAt: string
   qualityWarnings: string[]

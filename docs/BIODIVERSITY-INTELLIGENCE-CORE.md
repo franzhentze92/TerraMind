@@ -64,15 +64,35 @@ Reglas: respetar `coordinates_obscured`, no reconstruir ubicaciones ocultas, gen
 - Licencia desconocida → warning `unknown_license`.
 - Medios no se descargan; warning `media_license_not_verified` si el registro referencia fotos/audios.
 
-## Deduplicación
+## Deduplicación (7C.1.1)
 
-Prioridad conservadora (marca, no elimina):
+Niveles de confianza:
 
-1. Identificador compartido / dataset iNat en GBIF
-2. URL iNaturalist en referencias GBIF
-3. Taxón + fecha + coordenada generalizada entre fuentes
+| Nivel | Comportamiento |
+|-------|----------------|
+| `exact` / `high` | `possibleDuplicate=true`, `duplicateGroupId` asignado |
+| `medium` / `low` | `duplicateCandidate=true`, sin agrupación automática |
 
-Campos: `possibleDuplicate`, `duplicateGroupId`, `deduplicationReason`.
+Reglas:
+
+- **Seguro:** ID iNaturalist compartido, `occurrenceID`, URL iNat en GBIF, referencia compatible
+- **Probable:** taxón + fecha precisa + coords dentro de tolerancia + procedencia iNat en GBIF
+- **No fusionar:** misma especie y fecha sin evidencia de origen compartido; coords oscurecidas; fechas imprecisas (año/mes)
+
+Los registros GBIF del dataset iNaturalist **no** se marcan como duplicados entre sí solo por compartir dataset.
+
+Procedencia GBIF→iNaturalist: `detectGbifInaturalistProvenance()` (dataset, organización, occurrenceID, references, URL).
+
+## Revisión QA
+
+Regenerar evidencia de revisión (salida local, no commitear):
+
+```bash
+mkdir -p artifacts/review
+npx tsx scripts/biodiversity-final-review.ts > artifacts/review/review-output.json
+```
+
+Ejemplo sanitizado: `docs/biodiversity-review-output.example.json`
 
 ## Caché
 
@@ -89,15 +109,34 @@ Hash determinístico: proveedor + geometría + taxón + fechas + filtros + pági
 
 ## API (preparada, no montada)
 
-Rutas en `server/routes/biodiversity.ts` — **no registradas** en `server/index.ts` hasta revisar seguridad y rate limiting.
+Rutas en `server/routes/biodiversity.ts` — **no registradas** en `server/index.ts`.
+
+### Pendiente antes de montaje
+
+- **Rate limiting** en middleware servidor (cliente ya tiene retry/backoff)
+- **Autenticación** obligatoria (mismo patrón que `/api/environment/fires`)
+- Sin exposición pública anónima
+
+### Límites ya validados (Zod)
+
+- Radio máx **50 km** (`radius_m`)
+- `limit` máx **200**
+- Fechas ISO o `YYYY-MM-DD`
+- Sin geometrías complejas ni consultas nacionales masivas
+- `provider=all` con deduplicación multi-fuente
+
+### Modos de respuesta
+
+| Modo | Uso | Contenido |
+|------|-----|-----------|
+| `summary` | **Preferido para frontend** | Agregados + items sin coordenadas |
+| `detail` | Uso restringido / auditoría | Items con coordenadas solo si `privacy_level=public_exact` |
 
 | Método | Ruta | Descripción |
 |--------|------|-------------|
 | GET | `/api/environment/biodiversity/search` | Búsqueda por lat/lng/radio |
 | GET | `/api/environment/biodiversity/taxa/resolve` | Resolución taxonómica |
 | GET | `/api/environment/biodiversity/health` | Salud del subsistema |
-
-Límites: radio máx 50 km, `limit` máx 200, sin geometrías complejas ni consultas nacionales masivas.
 
 ## CLI
 

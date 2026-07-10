@@ -4,6 +4,10 @@ import type {
   BiodiversityTaxon,
 } from '../../biodiversity.types'
 import { BIODIVERSITY_CONFIG } from '../../config/biodiversity.config'
+import {
+  detectGbifInaturalistProvenance,
+  extractInaturalistIdFromGbifRecord,
+} from '../../biodiversity-gbif-inaturalist-provenance'
 import { evaluateOccurrenceLicense } from '../../biodiversity-license'
 import { applyBiodiversityPrivacyPolicy } from '../../biodiversity-privacy'
 import type {
@@ -95,6 +99,8 @@ export function mapGbifOccurrence(record: GbifOccurrenceRecord, fetchedAt: strin
     sourceUrl: record.references?.startsWith('http')
       ? record.references
       : buildGbifSourceUrl(record.key),
+    sourceReference: record.references,
+    dwcOccurrenceId: record.occurrenceID,
     datasetTitle: record.datasetName,
     publishingOrganization: record.publishingOrg,
     recordKind: inferGbifRecordKind(record),
@@ -106,6 +112,8 @@ export function mapGbifOccurrence(record: GbifOccurrenceRecord, fetchedAt: strin
   if (record.hasGeospatialIssue) {
     occurrence.qualityWarnings.push('has_geospatial_issue')
   }
+
+  occurrence.gbifInaturalistProvenance = detectGbifInaturalistProvenance(occurrence)
 
   return applyBiodiversityPrivacyPolicy(occurrence)
 }
@@ -160,9 +168,7 @@ export function mapGbifSpeciesRecord(record: GbifSpeciesRecord, fetchedAt: strin
 }
 
 export function extractInaturalistIdFromGbif(record: GbifOccurrenceRecord): string | null {
-  if (!record.references) return null
-  const match = record.references.match(INAT_URL_RE)
-  return match?.[1] ?? null
+  return extractInaturalistIdFromGbifRecord(record)
 }
 
 export function encodeGbifCursor(offset: number): string {

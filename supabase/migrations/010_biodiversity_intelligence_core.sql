@@ -1,6 +1,6 @@
 -- 010_biodiversity_intelligence_core.sql
--- PROPUESTA — NO APLICADA
--- Commit 7C.1: núcleo de inteligencia de biodiversidad (GBIF + iNaturalist)
+-- PROPUESTA — NO APLICADA (revisada 7C.1.1)
+-- Núcleo de inteligencia de biodiversidad (GBIF + iNaturalist)
 
 CREATE EXTENSION IF NOT EXISTS postgis;
 
@@ -52,8 +52,10 @@ CREATE TABLE IF NOT EXISTS biodiversity_occurrences (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   source_id uuid NOT NULL REFERENCES biodiversity_sources(id),
   source_occurrence_id text NOT NULL,
+  dwc_occurrence_id text,
   taxon_id uuid REFERENCES biodiversity_taxa(id),
   observed_at timestamptz,
+  event_date_precision text,
   basis_of_record text,
   quality_grade text,
   location geography(Point, 4326),
@@ -73,7 +75,11 @@ CREATE TABLE IF NOT EXISTS biodiversity_occurrences (
   source_dataset_id text,
   publishing_organization text,
   possible_duplicate boolean NOT NULL DEFAULT false,
+  duplicate_candidate boolean NOT NULL DEFAULT false,
   duplicate_group_id text,
+  deduplication_confidence text
+    CHECK (deduplication_confidence IS NULL OR deduplication_confidence IN ('exact', 'high', 'medium', 'low')),
+  deduplication_reason text,
   source_metadata jsonb NOT NULL DEFAULT '{}'::jsonb,
   fetched_at timestamptz NOT NULL DEFAULT now(),
   created_at timestamptz NOT NULL DEFAULT now(),
@@ -90,6 +96,9 @@ CREATE INDEX IF NOT EXISTS idx_biodiversity_occurrences_location
 CREATE INDEX IF NOT EXISTS idx_biodiversity_occurrences_duplicate_group
   ON biodiversity_occurrences (duplicate_group_id)
   WHERE duplicate_group_id IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS idx_biodiversity_occurrences_source_occurrence
+  ON biodiversity_occurrences (source_id, source_occurrence_id);
 
 -- Auditoría de consultas/fetch
 CREATE TABLE IF NOT EXISTS biodiversity_fetch_runs (
@@ -137,23 +146,38 @@ VALUES
   )
 ON CONFLICT (source_code) DO NOTHING;
 
--- RLS: solo lectura autenticada (ajustar según política TerraMind)
+-- RLS habilitada en tablas internas.
+-- Escritura backend-only vía service_role.
+-- Sin SELECT/INSERT/UPDATE/DELETE para anon ni authenticated en tablas crudas.
+-- Lectura pública futura: vistas/DTO dedicadas (pendiente post-7C.1).
 ALTER TABLE biodiversity_sources ENABLE ROW LEVEL SECURITY;
 ALTER TABLE biodiversity_taxa ENABLE ROW LEVEL SECURITY;
 ALTER TABLE biodiversity_occurrences ENABLE ROW LEVEL SECURITY;
 ALTER TABLE biodiversity_fetch_runs ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY biodiversity_sources_read ON biodiversity_sources
-  FOR SELECT TO authenticated USING (true);
+CREATE POLICY biodiversity_sources_service_all ON biodiversity_sources
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
 
-CREATE POLICY biodiversity_taxa_read ON biodiversity_taxa
-  FOR SELECT TO authenticated USING (true);
+CREATE POLICY biodiversity_taxa_service_all ON biodiversity_taxa
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
 
-CREATE POLICY biodiversity_occurrences_read ON biodiversity_occurrences
-  FOR SELECT TO authenticated USING (true);
+CREATE POLICY biodiversity_occurrences_service_all ON biodiversity_occurrences
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
 
-CREATE POLICY biodiversity_fetch_runs_read ON biodiversity_fetch_runs
-  FOR SELECT TO authenticated USING (true);
+CREATE POLICY biodiversity_fetch_runs_service_all ON biodiversity_fetch_runs
+  FOR ALL TO service_role USING (true) WITH CHECK (true);
 
 COMMENT ON TABLE biodiversity_occurrences IS
-  'Registros de presencia reportados; no implica población actual ni ausencia de especie.';
+  'Registros de presencia reportados; no implica población actual ni ausencia de especie. Coordenadas sensibles deben persistirse generalizadas según privacy_level.';
+
+COMMENT ON COLUMN biodiversity_occurrences.source_metadata IS
+  'Metadata mínima de procedencia; no almacenar payloads crudos completos del proveedor.';
+
+COMMENT ON COLUMN biodiversity_occurrences.deduplication_confidence IS
+  'Solo exact/high deben asignar duplicate_group_id; medium/low son candidatos (duplicate_candidate).';
+
+-- Estrategia de retención sugerida (aplicar en job posterior):
+-- - Ocurrencias cacheadas: TTL 12-24 meses según fuente
+-- - Taxa: permanente con upsert
+-- - fetch_runs: retener 90 días
+-- Tamaño estimado: ~1-2 KB/registro + índices GIST (~5-15 GB para sync nacional futuro)
