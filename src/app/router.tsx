@@ -5,6 +5,7 @@ import { CopilotPage } from '@/modules/copilot/pages/CopilotPage'
 import { FindingsPage } from '@/modules/findings/pages/FindingsPage'
 import { FindingDetailPage } from '@/modules/findings/pages/FindingDetailPage'
 import { PrioritiesPage } from '@/modules/priorities/pages/PrioritiesPage'
+import { PriorityDetailPage } from '@/modules/priorities/pages/PriorityDetailPage'
 import { TerritoryPage } from '@/modules/territory/pages/TerritoryPage'
 import { StrategiesPage } from '@/modules/strategies/pages/StrategiesPage'
 import { KnowledgePage } from '@/modules/knowledge/pages/KnowledgePage'
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
       { path: 'hallazgos', element: <FindingsPage /> },
       { path: 'hallazgos/:findingId', element: <FindingDetailPage /> },
       { path: 'prioridades', element: <PrioritiesPage /> },
+      { path: 'prioridades/:priorityId', element: <PriorityDetailPage /> },
       { path: 'estrategias', element: <StrategiesPage /> },
       { path: 'territorio', element: <TerritoryPage /> },
       { path: 'tendencias', element: <TrendsPage /> },

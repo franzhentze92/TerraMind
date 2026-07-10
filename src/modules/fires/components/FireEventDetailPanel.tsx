@@ -17,6 +17,8 @@ import { FireClimateSection } from './FireClimateSection'
 import { FireBiodiversitySection } from './FireBiodiversitySection'
 import { FireRelatedFindings } from '@/modules/findings/components/FireRelatedFindings'
 import { useFireEventFindings } from '@/modules/findings/hooks/useFindings'
+import { FireEventPriorityCard } from '@/modules/priorities/components/FireEventPriorityCard'
+import { useFireEventPriority } from '@/modules/priorities/hooks/usePriorities'
 import {
   buildTerritorySummaryText,
   territoryDisclaimer,
@@ -70,6 +72,7 @@ export function FireEventDetailPanel({
 }: FireEventDetailPanelProps) {
   const [tab, setTab] = useState<DetailTab>('resumen')
   const findingsQuery = useFireEventFindings(event?.id)
+  const priorityQuery = useFireEventPriority(event?.id)
 
   useEffect(() => {
     setTab('resumen')
@@ -196,6 +199,18 @@ export function FireEventDetailPanel({
                 <p className="text-[11px] leading-relaxed text-text-tertiary">
                   {event.evidence_summary}
                 </p>
+
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+                    Evaluación de prioridad
+                  </p>
+                  <div className="mt-2">
+                    <FireEventPriorityCard
+                      assessment={priorityQuery.data?.assessment}
+                      isLoading={priorityQuery.isLoading}
+                    />
+                  </div>
+                </div>
 
                 <div>
                   <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">

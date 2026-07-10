@@ -520,6 +520,36 @@ export async function runFirePipeline(
               error: err instanceof Error ? err.message : 'enqueue failed',
             })
           }
+
+          const priorityEnqueueStart = Date.now()
+          try {
+            const { enqueuePriorityJobs } = await import(
+              '@/pipeline/engines/priorities/priority-jobs.engine'
+            )
+            const priorityEnqueue = await enqueuePriorityJobs({ limit: 10000, force: false })
+            stages.priority_enqueue = {
+              status: 'success',
+              duration_ms: Date.now() - priorityEnqueueStart,
+              metrics: {
+                jobs_created: priorityEnqueue.jobs_created,
+                priority_jobs_created: priorityEnqueue.jobs_created,
+                jobs_skipped: priorityEnqueue.jobs_skipped,
+                priority_model_version: priorityEnqueue.priority_model_version,
+              },
+            }
+          } catch (err) {
+            stages.priority_enqueue = {
+              status: 'partial',
+              duration_ms: Date.now() - priorityEnqueueStart,
+              error: err instanceof Error ? err.message : 'priority enqueue failed',
+              error_code: 'priority_enqueue_failed',
+              metrics: { priority_jobs_created: 0 },
+            }
+            logStage(pipelineRunId, 'priority_enqueue', {
+              status: 'warning',
+              error: err instanceof Error ? err.message : 'enqueue failed',
+            })
+          }
         })(),
         PIPELINE_TIMEOUTS_MS.pipelineTotal,
         'pipeline',

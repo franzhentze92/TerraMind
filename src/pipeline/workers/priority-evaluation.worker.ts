@@ -1,49 +1,41 @@
 import { randomUUID } from 'node:crypto'
 
 import {
-  findingRetryBackoffMinutes,
-  loadFindingWorkerConfig,
-} from '@/pipeline/config/finding-worker.config'
-import { runFindingEvaluationForEvent } from '@/pipeline/engines/findings/finding-evaluation.engine'
+  loadPriorityWorkerConfig,
+  priorityRetryBackoffMinutes,
+} from '@/pipeline/config/priority-worker.config'
+import { runPriorityEvaluationForEvent } from '@/pipeline/engines/priorities/priority-evaluation.engine'
 import {
-  claimFindingJob,
-  completeFindingJob,
-  failFindingJob,
-  rescheduleFindingJob,
-} from '@/pipeline/stores/finding-jobs.store'
-import type { FindingEvaluationJobRow } from '@/pipeline/stores/finding-jobs.types'
+  claimPriorityJob,
+  completePriorityJob,
+  failPriorityJob,
+  reschedulePriorityJob,
+} from '@/pipeline/stores/priority-jobs.store'
+import type { PriorityEvaluationJobRow } from '@/pipeline/stores/priority-jobs.types'
 import { withTimeout } from '@/pipeline/utils/timeout'
 
-export class CompositeFindingWorker {
+export class FindingPriorityWorker {
   private readonly workerId: string
-  private readonly config = loadFindingWorkerConfig()
+  private readonly config = loadPriorityWorkerConfig()
 
   constructor(workerId?: string) {
-    this.workerId = workerId ?? `finding-worker-${randomUUID().slice(0, 8)}`
+    this.workerId = workerId ?? `priority-worker-${randomUUID().slice(0, 8)}`
   }
 
   private async processJob(
-    job: FindingEvaluationJobRow,
+    job: PriorityEvaluationJobRow,
   ): Promise<'completed' | 'rescheduled' | 'failed'> {
     const started = Date.now()
     try {
       await withTimeout(
-        runFindingEvaluationForEvent(job.entity_id),
+        runPriorityEvaluationForEvent(job.entity_id),
         this.config.jobTimeoutMs,
-        'finding_job',
+        'priority_job',
       )
-      await completeFindingJob(job.id)
-      try {
-        const { enqueuePriorityJobForEntity } = await import(
-          '@/pipeline/engines/priorities/priority-jobs.engine'
-        )
-        await enqueuePriorityJobForEntity(job.entity_id)
-      } catch {
-        // priority enqueue is best-effort; findings evaluation already succeeded
-      }
+      await completePriorityJob(job.id)
       console.log(
         JSON.stringify({
-          event: 'finding_worker',
+          event: 'priority_worker',
           job_id: job.id,
           event_id: job.entity_id,
           result: 'completed',
@@ -52,17 +44,16 @@ export class CompositeFindingWorker {
       )
       return 'completed'
     } catch (err) {
-      const message = (err instanceof Error ? err.message : 'finding evaluation failed').slice(
+      const message = (err instanceof Error ? err.message : 'priority evaluation failed').slice(
         0,
         240,
       )
-      const retryable = !message.includes('Perfil no soportado')
 
-      if (retryable && job.attempts < job.max_attempts) {
+      if (job.attempts < job.max_attempts) {
         const availableAt = new Date(
-          Date.now() + findingRetryBackoffMinutes(job.attempts) * 60_000,
+          Date.now() + priorityRetryBackoffMinutes(job.attempts) * 60_000,
         ).toISOString()
-        await rescheduleFindingJob({
+        await reschedulePriorityJob({
           jobId: job.id,
           availableAt,
           errorCode: 'evaluation_failed',
@@ -71,7 +62,7 @@ export class CompositeFindingWorker {
         return 'rescheduled'
       }
 
-      await failFindingJob({
+      await failPriorityJob({
         jobId: job.id,
         errorCode: 'evaluation_failed',
         errorMessage: message,
@@ -87,7 +78,7 @@ export class CompositeFindingWorker {
       jobs_rescheduled: 0,
       jobs_failed: 0,
     }
-    const job = await claimFindingJob(this.workerId, this.config.lockTimeoutMinutes)
+    const job = await claimPriorityJob(this.workerId, this.config.lockTimeoutMinutes)
     if (!job) return metrics
 
     metrics.jobs_claimed = 1
