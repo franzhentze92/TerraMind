@@ -10,7 +10,7 @@ describe('biodiversity-dashboard.dto', () => {
     const result = parseBiodiversityDashboardFilters(new URLSearchParams())
     expect(result.ok).toBe(true)
     if (result.ok) {
-      expect(result.data.period).toBe('30d')
+      expect(result.data.period).toBe('5y')
       expect(result.data.source).toBe('all')
       expect(result.data.zone).toBe('all')
     }
@@ -45,7 +45,8 @@ describe('biodiversity-dashboard.dto', () => {
       quality: 'research',
       zone: 'maya',
     })
-    expect(qs).toContain('period=5y')
+    expect(qs).not.toContain('period=5y')
+    expect(qs).toContain('source=gbif')
     expect(qs).toContain('taxon=birds')
     expect(qs).toContain('zone=maya')
   })

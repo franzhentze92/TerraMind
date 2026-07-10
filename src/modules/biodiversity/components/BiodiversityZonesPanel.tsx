@@ -1,5 +1,5 @@
 import type { BiodiversityDashboardZoneItem } from '@/modules/biodiversity/types/biodiversity-dashboard.types'
-import { DATA_STATUS_LABELS } from '@/modules/biodiversity/api/biodiversity-page-filters'
+import { COVERAGE_LABELS, DATA_STATUS_LABELS } from '@/modules/biodiversity/api/biodiversity-page-filters'
 import { Badge } from '@/shared/components/Badge'
 import { cn } from '@/shared/utils/cn'
 
@@ -50,22 +50,30 @@ export function BiodiversityZonesPanel({
                 <p className="text-sm font-medium text-text-primary">{zone.zone_name}</p>
                 <p className="text-xs text-text-tertiary">{zone.region_label}</p>
               </div>
-              {zone.data_status !== 'success' && (
-                <Badge variant="warning" className="shrink-0 text-[10px]">
-                  {DATA_STATUS_LABELS[zone.data_status] ?? zone.data_status}
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <Badge variant="default" className="text-[10px]">
+                  {COVERAGE_LABELS[zone.coverage_label] ?? zone.coverage_label}
                 </Badge>
-              )}
+                {zone.data_status !== 'success' && (
+                  <Badge variant="warning" className="text-[10px]">
+                    {DATA_STATUS_LABELS[zone.data_status] ?? zone.data_status}
+                  </Badge>
+                )}
+              </div>
             </div>
             <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-text-secondary">
               <span>{zone.species_count} especies</span>
               <span>·</span>
               <span>{zone.observations_count} obs.</span>
               <span>·</span>
-              <span>{zone.recent_count} recientes</span>
+              <span>{zone.recent_count} recientes (30d)</span>
+            </div>
+            <div className="mt-1 text-[10px] text-text-tertiary">
+              GBIF {zone.source_distribution.gbif} · iNat {zone.source_distribution.inaturalist}
             </div>
             {zone.top_taxonomic_groups.length > 0 && (
               <p className="mt-1 text-[10px] text-text-tertiary">
-                {zone.top_taxonomic_groups.join(', ')}
+                Grupos: {zone.top_taxonomic_groups.join(', ')}
               </p>
             )}
           </button>

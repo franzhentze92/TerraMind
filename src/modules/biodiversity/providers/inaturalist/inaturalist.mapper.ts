@@ -1,24 +1,10 @@
 import type { BiodiversityOccurrence, BiodiversityTaxon } from '../../biodiversity.types'
 import { evaluateOccurrenceLicense } from '../../biodiversity-license'
 import { applyBiodiversityPrivacyPolicy } from '../../biodiversity-privacy'
+import { buildInaturalistVisualMedia } from '../../biodiversity-visual-extract'
 import type { InatObservation, InatTaxon } from './inaturalist.types'
 
-const LICENSE_MAP: Record<string, string> = {
-  'cc0': 'CC0-1.0',
-  'cc-by': 'CC-BY-4.0',
-  'cc-by-nc': 'CC-BY-NC-4.0',
-  'cc-by-sa': 'CC-BY-SA-4.0',
-  'cc-by-nd': 'CC-BY-ND-4.0',
-  'cc-by-nc-sa': 'CC-BY-NC-SA-4.0',
-  'cc-by-nc-nd': 'CC-BY-NC-ND-4.0',
-}
-
-export function mapInatLicenseCode(code?: string | null): string | undefined {
-  if (!code) return undefined
-  const normalized = code.toLowerCase().trim()
-  return LICENSE_MAP[normalized] ?? code
-}
-
+import { mapInatLicenseCode } from './inaturalist-license'
 export function mapInaturalistTaxon(taxon: InatTaxon, fetchedAt: string): BiodiversityTaxon {
   return {
     source: 'inaturalist',
@@ -88,6 +74,9 @@ export function mapInaturalistObservation(
   if (obs.quality_grade === 'casual') {
     occurrence.qualityWarnings.push('casual_grade')
   }
+
+  const visualMedia = buildInaturalistVisualMedia(obs, license)
+  if (visualMedia) occurrence.visualMedia = visualMedia
 
   return applyBiodiversityPrivacyPolicy(occurrence)
 }

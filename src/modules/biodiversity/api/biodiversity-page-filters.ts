@@ -8,7 +8,7 @@ import type {
 } from '@/modules/biodiversity/types/biodiversity-dashboard.types'
 
 export const DEFAULT_BIODIVERSITY_FILTERS: BiodiversityDashboardFilters = {
-  period: '30d',
+  period: '5y',
   source: 'all',
   taxon: 'all',
   quality: 'all',
@@ -52,7 +52,7 @@ export function parseBiodiversityPageFilters(
   searchParams: URLSearchParams,
 ): BiodiversityDashboardFilters {
   return {
-    period: pickEnum(searchParams.get('period'), VALID_PERIODS, '30d'),
+    period: pickEnum(searchParams.get('period'), VALID_PERIODS, '5y'),
     source: pickEnum(searchParams.get('source'), VALID_SOURCES, 'all'),
     taxon: pickEnum(searchParams.get('taxon'), VALID_TAXA, 'all'),
     quality: pickEnum(searchParams.get('quality'), VALID_QUALITY, 'all'),
@@ -62,7 +62,7 @@ export function parseBiodiversityPageFilters(
 
 export function filtersToQueryString(filters: BiodiversityDashboardFilters): string {
   const params = new URLSearchParams()
-  if (filters.period !== '30d') params.set('period', filters.period)
+  if (filters.period !== '5y') params.set('period', filters.period)
   if (filters.source !== 'all') params.set('source', filters.source)
   if (filters.taxon !== 'all') params.set('taxon', filters.taxon)
   if (filters.quality !== 'all') params.set('quality', filters.quality)
@@ -81,7 +81,7 @@ export function buildBiodiversidadPath(
 
 export function countActiveBiodiversityFilters(filters: BiodiversityDashboardFilters): number {
   let n = 0
-  if (filters.period !== '30d') n++
+  if (filters.period !== '5y') n++
   if (filters.source !== 'all') n++
   if (filters.taxon !== 'all') n++
   if (filters.quality !== 'all') n++
@@ -119,6 +119,13 @@ export const QUALITY_LABELS: Record<BiodiversityQualityFilter, string> = {
   with_coords: 'Con coordenadas',
   generalized: 'Generalizadas',
   exclude_captive: 'Sin cautiverio',
+}
+
+export const COVERAGE_LABELS: Record<string, string> = {
+  alta: 'Cobertura alta',
+  media: 'Cobertura media',
+  limitada: 'Cobertura limitada',
+  parcial: 'Resultado parcial',
 }
 
 export const DATA_STATUS_LABELS: Record<string, string> = {

@@ -47,6 +47,8 @@ export interface BiodiversitySearchQuery {
   limit?: number
   cursor?: string
   mode?: 'summary' | 'detail'
+  /** Prioriza registros con imagen (GBIF StillImage / iNat con fotos). */
+  preferVisualMedia?: boolean
 }
 
 /** Taxón normalizado. */
@@ -123,6 +125,13 @@ export interface BiodiversityOccurrence {
   deduplicationReason?: string
   fetchedAt: string
   qualityWarnings: string[]
+  /** Media visual utilizable; no exponer en DTOs agregados estándar. */
+  visualMedia?: {
+    imageUrl: string
+    thumbnailUrl: string
+    imageLicense?: string
+    gallery?: Array<{ imageUrl: string; thumbnailUrl: string; imageLicense?: string }>
+  }
 }
 
 /** Resultado paginado de búsqueda. */
@@ -185,6 +194,7 @@ export interface BiodiversityProviderHealth {
 export interface BiodiversityCombinedSearchResult {
   items: BiodiversityOccurrence[]
   byProvider: Partial<Record<BiodiversityProviderId, BiodiversitySearchResult>>
+  providerErrors: Partial<Record<BiodiversityProviderId, string>>
   quality: BiodiversityDataQuality[]
   nextCursor?: string
   deduplicatedCount: number

@@ -58,6 +58,10 @@ function buildInatSearchParams(query: BiodiversitySearchQuery, page: number, per
     params.captive = false
   }
 
+  if (query.preferVisualMedia) {
+    params.photos = true
+  }
+
   return params
 }
 

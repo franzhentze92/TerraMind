@@ -49,6 +49,7 @@ function buildGbifSearchParams(query: BiodiversitySearchQuery, offset: number, l
   if (query.scientificName) params.scientificName = query.scientificName
   if (query.observedFrom) params.eventDate = `${query.observedFrom},${query.observedTo ?? '*'}`
   if (query.qualityFilters?.excludeGeospatialIssues) params.hasGeospatialIssue = false
+  if (query.preferVisualMedia) params.mediaType = 'StillImage'
 
   if (query.geometry) {
     params.geometry = query.geometry

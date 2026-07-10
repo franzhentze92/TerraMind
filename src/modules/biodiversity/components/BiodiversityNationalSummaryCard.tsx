@@ -78,7 +78,7 @@ export function BiodiversityNationalSummaryCard({
           <div>
             <p className="text-sm font-semibold text-text-primary">Biodiversidad documentada</p>
             <p className="text-xs text-text-secondary">
-              Observaciones GBIF + iNaturalist · {ns.zones_monitored} zonas monitoreadas
+              Zonas monitoreadas · GBIF + iNaturalist · {ns.period_label}
             </p>
           </div>
         </div>
@@ -90,30 +90,18 @@ export function BiodiversityNationalSummaryCard({
       </div>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-3 lg:grid-cols-6">
-        <Metric label="Especies" value={ns.species_count} />
-        <Metric label="Observaciones" value={ns.observations_count} />
+        <Metric label="Especies (muestra)" value={ns.species_count} />
+        <Metric
+          label={ns.truncated ? 'Obs. (mín.)' : 'Obs. período'}
+          value={ns.observations_count}
+        />
         <Metric label="Recientes 30d" value={ns.recent_30d_count} />
-        <Metric label="Zonas" value={ns.zones_monitored} />
+        <Metric label="Territorios" value={ns.zones_monitored} />
         <Metric label="Fuentes" value={ns.sources_active.length} />
         <Metric label="Generalizados" value={ns.generalized_count} />
       </div>
 
-      {data.top_zone && (
-        <div className="mt-5 rounded-lg border border-border-subtle bg-surface-1/50 p-4">
-          <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-            Mayor riqueza documentada
-          </p>
-          <p className="mt-1 text-sm font-medium text-text-primary">{data.top_zone.zone_name}</p>
-          <p className="mt-1 text-xs text-text-secondary">
-            {data.top_zone.species_count} especie(s) · {data.top_zone.observations_count}{' '}
-            observación(es) en la muestra
-          </p>
-        </div>
-      )}
-
-      <p className="mt-4 text-sm leading-relaxed text-text-secondary">{ns.narrative}</p>
-
-      <p className="mt-3 text-xs text-text-tertiary">{data.disclaimer}</p>
+      <p className="mt-4 text-sm leading-relaxed text-text-secondary">{ns.card_narrative}</p>
 
       <Link
         to="/biodiversidad"

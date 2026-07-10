@@ -18,7 +18,7 @@ describe('biodiversity-page-filters', () => {
     const filters = parseBiodiversityPageFilters(
       new URLSearchParams('period=invalid&taxon=birds'),
     )
-    expect(filters.period).toBe('30d')
+    expect(filters.period).toBe('5y')
     expect(filters.taxon).toBe('birds')
   })
 
@@ -30,6 +30,6 @@ describe('biodiversity-page-filters', () => {
       quality: 'all',
       zone: 'maya',
     })
-    expect(path).toBe('/biodiversidad?period=5y&taxon=birds&zone=maya')
+    expect(path).toBe('/biodiversidad?taxon=birds&zone=maya')
   })
 })

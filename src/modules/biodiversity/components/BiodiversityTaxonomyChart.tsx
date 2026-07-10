@@ -20,7 +20,6 @@ export function BiodiversityTaxonomyChart({
 
   return (
     <div className={className}>
-      <p className="mb-3 text-xs font-medium text-text-secondary">Distribución taxonómica</p>
       <div className="space-y-2">
         {entries.map(([group, count]) => (
           <div key={group}>

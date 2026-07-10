@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { MapContainer, TileLayer, CircleMarker, Popup, ScaleControl, ZoomControl } from 'react-leaflet'
 import type { BiodiversityDashboardZoneItem } from '@/modules/biodiversity/types/biodiversity-dashboard.types'
+import { formatResearchGradeLabel } from '@/modules/biodiversity/biodiversity-visual-status'
 import {
   GUATEMALA_MAP_BOUNDS,
   GUATEMALA_MAP_CENTER,
@@ -35,7 +36,11 @@ function zoneColor(zone: BiodiversityDashboardZoneItem, layer: BiodiversityMapLa
     return '#6b7280'
   }
   if (layer === 'quality') {
-    if (zone.research_grade_pct >= 50) return '#3b82f6'
+    if (zone.source_distribution.inaturalist === 0) {
+      if (zone.generalized_count > 0) return '#f97316'
+      return '#94a3b8'
+    }
+    if ((zone.research_grade_pct ?? 0) >= 50) return '#3b82f6'
     if (zone.generalized_count > 0) return '#f97316'
     return '#94a3b8'
   }
@@ -123,7 +128,13 @@ export function BiodiversityZonesMap({
                 <div className="text-xs">
                   <p className="font-semibold">{zone.zone_name}</p>
                   <p>{zone.species_count} especies · {zone.observations_count} obs.</p>
-                  <p>{zone.recent_count} recientes · {zone.research_grade_pct}% research</p>
+                  <p>
+                    {zone.recent_count} recientes ·{' '}
+                    {formatResearchGradeLabel(
+                      zone.research_grade_pct,
+                      zone.source_distribution.inaturalist,
+                    )}
+                  </p>
                 </div>
               </Popup>
             </CircleMarker>
@@ -131,10 +142,29 @@ export function BiodiversityZonesMap({
         })}
       </MapContainer>
 
-      <div className="absolute bottom-3 left-3 rounded-md border border-border-subtle bg-surface-1/90 px-2 py-1 text-[10px] text-text-tertiary">
-        {layer === 'richness' && 'Capa: riqueza documentada'}
-        {layer === 'recent' && 'Capa: actividad reciente'}
-        {layer === 'quality' && 'Capa: calidad de datos'}
+      <div className="absolute bottom-3 left-3 max-w-[220px] rounded-md border border-border-subtle bg-surface-1/95 px-3 py-2 text-[10px] text-text-secondary">
+        <p className="font-medium text-text-primary">Leyenda</p>
+        {layer === 'richness' && (
+          <>
+            <p className="mt-1">Tamaño del círculo: especies documentadas</p>
+            <p>Color: riqueza relativa en la muestra</p>
+            <p className="mt-1 text-text-tertiary">Verde alto · Índigo medio · Gris bajo</p>
+          </>
+        )}
+        {layer === 'recent' && (
+          <>
+            <p className="mt-1">Tamaño del círculo: especies documentadas</p>
+            <p>Color: observaciones recientes (30 días)</p>
+            <p className="mt-1 text-text-tertiary">Verde ≥10 · Amarillo 1–9 · Gris 0</p>
+          </>
+        )}
+        {layer === 'quality' && (
+          <>
+            <p className="mt-1">Tamaño del círculo: especies documentadas</p>
+            <p>Color: calidad iNaturalist o generalización</p>
+            <p className="mt-1 text-text-tertiary">Azul ≥50% research · Naranja generalizados · Gris sin iNat</p>
+          </>
+        )}
       </div>
     </div>
   )

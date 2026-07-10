@@ -15,10 +15,12 @@ describe('biodiversity-dashboard-narrative', () => {
       topZoneSpecies: 8,
       generalizedCount: 2,
       dataStatus: 'success',
+      periodLabel: 'los últimos 5 años',
+      truncated: false,
     })
     expect(narrative).toContain('documentaron')
+    expect(narrative).toContain('12 especies distintas')
     expect(narrative).not.toMatch(/inventario completo/i)
-    expect(narrative).not.toMatch(/ausencia biológica/i)
     expect(narrative).toContain('Mayor riqueza documentada')
   })
 
@@ -32,20 +34,24 @@ describe('biodiversity-dashboard-narrative', () => {
       topZoneSpecies: 0,
       generalizedCount: 0,
       dataStatus: 'no_recent_observations',
+      periodLabel: 'los últimos 30 días',
+      truncated: false,
     })
     expect(narrative).toContain('no se recuperaron observaciones')
     expect(narrative).toContain('no ausencia biológica')
   })
 
-  it('zone narrative avoids extinction risk claims', () => {
+  it('zone narrative avoids extinction risk and notes low coverage', () => {
     const narrative = buildZoneBiodiversityNarrative({
-      zoneName: 'Acatenango',
-      speciesCount: 5,
-      observationsCount: 20,
-      recentCount: 2,
-      periodLabel: 'los últimos 90 días',
+      zoneName: 'Manchón Guamuchal',
+      speciesCount: 2,
+      observationsCount: 4,
+      recentCount: 0,
+      periodLabel: 'los últimos 30 días',
+      truncated: false,
+      lowCoverage: true,
     })
-    expect(narrative).toContain('Acatenango')
+    expect(narrative).toContain('Baja cobertura de observación')
     expect(narrative).toContain('riesgo de extinción')
     expect(narrative).toMatch(/no se infiere/i)
   })

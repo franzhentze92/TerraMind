@@ -10,6 +10,7 @@ import {
 } from '../../biodiversity-gbif-inaturalist-provenance'
 import { evaluateOccurrenceLicense } from '../../biodiversity-license'
 import { applyBiodiversityPrivacyPolicy } from '../../biodiversity-privacy'
+import { buildGbifVisualMedia } from '../../biodiversity-visual-extract'
 import type {
   GbifOccurrenceRecord,
   GbifSpeciesMatchResponse,
@@ -114,6 +115,9 @@ export function mapGbifOccurrence(record: GbifOccurrenceRecord, fetchedAt: strin
   }
 
   occurrence.gbifInaturalistProvenance = detectGbifInaturalistProvenance(occurrence)
+
+  const visualMedia = buildGbifVisualMedia(record)
+  if (visualMedia) occurrence.visualMedia = visualMedia
 
   return applyBiodiversityPrivacyPolicy(occurrence)
 }

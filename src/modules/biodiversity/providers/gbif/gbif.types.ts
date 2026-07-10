@@ -48,7 +48,7 @@ export interface GbifOccurrenceRecord {
   publishingOrg?: string
   issues?: string[]
   references?: string
-  media?: Array<{ identifier?: string; type?: string }>
+  media?: Array<{ identifier?: string; type?: string }> | { identifier?: string; type?: string }
   individualCount?: number
   organismQuantity?: string
   degreeOfEstablishment?: string

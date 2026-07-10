@@ -40,22 +40,24 @@ export class BiodiversityService {
     validateSearchQuery(query)
     const providers = getProviders(query.providers)
     const limit = Math.min(query.limit ?? 50, BIODIVERSITY_CONFIG.maxLimit)
+    const perProviderLimit =
+      providers.length > 1 ? Math.max(10, Math.ceil(limit / providers.length)) : limit
 
-    const results = await mapWithConcurrency(
-      providers,
-      BIODIVERSITY_CONFIG.maxConcurrency,
-      async (provider) => {
-        try {
-          const result = await provider.searchOccurrences({ ...query, limit })
-          failureCounts[provider.id] = 0
-          lastSuccess[provider.id] = new Date().toISOString()
-          return result
-        } catch (err) {
-          failureCounts[provider.id] = (failureCounts[provider.id] ?? 0) + 1
-          throw err
-        }
-      },
-    )
+    const results: BiodiversitySearchResult[] = []
+    const providerErrors: Partial<Record<BiodiversityProviderId, string>> = {}
+
+    await mapWithConcurrency(providers, BIODIVERSITY_CONFIG.maxConcurrency, async (provider) => {
+      try {
+        const result = await provider.searchOccurrences({ ...query, limit: perProviderLimit })
+        failureCounts[provider.id] = 0
+        lastSuccess[provider.id] = new Date().toISOString()
+        results.push(result)
+      } catch (err) {
+        failureCounts[provider.id] = (failureCounts[provider.id] ?? 0) + 1
+        providerErrors[provider.id] =
+          err instanceof Error ? err.message : 'Error desconocido del proveedor'
+      }
+    })
 
     const allOccurrences = results.flatMap((r) => r.occurrences)
     const deduplicated = markBiodiversityDuplicates(allOccurrences).slice(0, limit)
@@ -66,6 +68,7 @@ export class BiodiversityService {
     return {
       items: deduplicated,
       byProvider,
+      providerErrors,
       quality: results.map((r) => buildBiodiversityDataQuality(r.provider, r.occurrences)),
       nextCursor: results.find((r) => r.nextCursor)?.nextCursor,
       deduplicatedCount: deduplicated.filter((o) => o.possibleDuplicate).length,

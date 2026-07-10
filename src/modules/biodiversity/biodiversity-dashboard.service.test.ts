@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { BiodiversityOccurrence } from './biodiversity.types'
+import { buildBiodiversitySearchAggregate } from './biodiversity-aggregate'
 import {
   __test,
   createBiodiversityDashboardService,
@@ -35,6 +36,7 @@ function mockService(
     searchOccurrences: vi.fn().mockResolvedValue({
       items: occurrences,
       byProvider: { gbif: { truncated: false } },
+      providerErrors: {},
       quality: [],
       generatedAt: new Date().toISOString(),
       disclaimer: 'test',
@@ -86,7 +88,15 @@ describe('biodiversity-dashboard.service', () => {
   it('marks partial when providers fail', async () => {
     const service = createBiodiversityDashboardService(
       mockService([], {
-        searchOccurrences: vi.fn().mockRejectedValue(new Error('gbif timeout')),
+        searchOccurrences: vi.fn().mockResolvedValue({
+          items: [],
+          byProvider: {},
+          providerErrors: { gbif: 'gbif timeout' },
+          quality: [],
+          generatedAt: new Date().toISOString(),
+          disclaimer: 'test',
+          deduplicatedCount: 0,
+        }),
       }),
     )
     const dto = await service.getDashboardSummary(
@@ -115,6 +125,44 @@ describe('biodiversity-dashboard.service', () => {
     })
     expect(detail?.zone_code).toBe('maya')
     expect(detail?.quality.notes).toBeDefined()
+  })
+
+  it('computes coordinate completeness and inat research grade', () => {
+    const withCoords = occ({ latitude: 14.5, longitude: -90.5 })
+    const obscured = occ({
+      coordinatesObscured: true,
+      privacyLevel: 'sensitive_generalized',
+      latitude: 14.5,
+      longitude: -90.5,
+    })
+    const inatResearch = occ({
+      source: 'inaturalist',
+      sourceOccurrenceId: 'inat-1',
+      qualityGrade: 'research',
+    })
+    const sample = [withCoords, obscured, inatResearch]
+    const agg = __test.buildQualitySummary(
+      buildBiodiversitySearchAggregate(sample),
+      false,
+      sample.length,
+    )
+    expect(agg.coordinate_completeness_pct).toBe(100)
+    expect(agg.inaturalist_research_grade).toEqual({ count: 1, total: 1 })
+  })
+
+  it('builds normalized taxonomic distribution labels', () => {
+    const dist = __test.buildTaxonomicDistributionUi([
+      occ({ kingdom: 'Plantae' }),
+      occ({ className: 'Aves' }),
+    ])
+    expect(dist.Plantas).toBe(1)
+    expect(dist.Aves).toBe(1)
+  })
+
+  it('assigns limited coverage for small samples', () => {
+    expect(__test.resolveCoverageLabel({ observations: 4, truncated: false, partial: false })).toBe(
+      'limitada',
+    )
   })
 
   it('returns null for unknown zone', async () => {
