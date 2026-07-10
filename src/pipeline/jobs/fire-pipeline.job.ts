@@ -428,6 +428,37 @@ export async function runFirePipeline(
               error: err instanceof Error ? err.message : 'enqueue failed',
             })
           }
+
+          const climateEnqueueStart = Date.now()
+          try {
+            const { enqueueClimateJobs } = await import(
+              '@/pipeline/engines/fire/context/climate-jobs.engine'
+            )
+            const climateEnqueue = await enqueueClimateJobs({ limit: 10000, force: false })
+            stages.climate_enqueue = {
+              status: 'success',
+              duration_ms: Date.now() - climateEnqueueStart,
+              metrics: {
+                jobs_created: climateEnqueue.jobs_created,
+                climate_jobs_created: climateEnqueue.jobs_created,
+                jobs_skipped: climateEnqueue.jobs_skipped,
+                events_unchanged: climateEnqueue.events_unchanged,
+                context_version: climateEnqueue.context_version,
+              },
+            }
+          } catch (err) {
+            stages.climate_enqueue = {
+              status: 'partial',
+              duration_ms: Date.now() - climateEnqueueStart,
+              error: err instanceof Error ? err.message : 'climate enqueue failed',
+              error_code: 'climate_enqueue_failed',
+              metrics: { climate_jobs_created: 0 },
+            }
+            logStage(pipelineRunId, 'climate_enqueue', {
+              status: 'warning',
+              error: err instanceof Error ? err.message : 'enqueue failed',
+            })
+          }
         })(),
         PIPELINE_TIMEOUTS_MS.pipelineTotal,
         'pipeline',

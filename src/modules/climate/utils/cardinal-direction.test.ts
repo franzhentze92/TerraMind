@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { degreesToCardinal } from './cardinal-direction'
+import { degreesToCardinal, windTowardCardinal } from './cardinal-direction'
 
 describe('degreesToCardinal', () => {
   it('maps cardinal and intercardinal directions', () => {
@@ -14,5 +14,12 @@ describe('degreesToCardinal', () => {
   it('returns null for invalid input', () => {
     expect(degreesToCardinal(null)).toBeNull()
     expect(degreesToCardinal(Number.NaN)).toBeNull()
+  })
+})
+
+describe('windTowardCardinal', () => {
+  it('returns opposite direction of wind origin', () => {
+    expect(windTowardCardinal(0)).toBe('S')
+    expect(windTowardCardinal(225)).toBe('NE')
   })
 })

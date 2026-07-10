@@ -13,6 +13,7 @@ import {
 import { FireEvidenceTimeline } from './FireEvidenceTimeline'
 import { FireLandCoverSection } from './FireLandCoverSection'
 import { FirePopulationSection } from './FirePopulationSection'
+import { FireClimateSection } from './FireClimateSection'
 import {
   buildTerritorySummaryText,
   territoryDisclaimer,
@@ -23,7 +24,7 @@ import {
   proximityLabelText,
 } from '@/modules/fires/utils/proximity-label'
 
-type DetailTab = 'resumen' | 'evidencia' | 'analisis' | 'territorio'
+type DetailTab = 'resumen' | 'evidencia' | 'analisis' | 'territorio' | 'condiciones'
 
 interface FireEventDetailPanelProps {
   event?: FireEventDetailDto
@@ -38,6 +39,7 @@ const TABS: { id: DetailTab; label: string }[] = [
   { id: 'resumen', label: 'Resumen' },
   { id: 'evidencia', label: 'Evidencia' },
   { id: 'territorio', label: 'Territorio' },
+  { id: 'condiciones', label: 'Condiciones' },
   { id: 'analisis', label: 'Análisis' },
 ]
 
@@ -343,6 +345,15 @@ export function FireEventDetailPanel({
                 <FirePopulationSection
                   context={event.population_context}
                   enrichment={event.population_enrichment}
+                />
+              </section>
+            )}
+
+            {tab === 'condiciones' && (
+              <section>
+                <FireClimateSection
+                  context={event.climate_context}
+                  enrichment={event.climate_enrichment}
                 />
               </section>
             )}

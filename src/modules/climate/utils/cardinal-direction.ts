@@ -26,3 +26,9 @@ export function degreesToCardinal(degrees: number | null | undefined): CardinalD
   const index = Math.round(normalized / 22.5) % 16
   return CARDINALS[index]
 }
+
+/** Dirección hacia la que se desplaza el viento (opuesta al origen meteorológico). */
+export function windTowardCardinal(fromDegrees: number | null | undefined): CardinalDirection | null {
+  if (fromDegrees === null || fromDegrees === undefined || !Number.isFinite(fromDegrees)) return null
+  return degreesToCardinal((fromDegrees + 180) % 360)
+}

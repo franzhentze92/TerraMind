@@ -101,6 +101,8 @@ export interface FireEventDetailDto extends FireEventListItemDto {
   land_cover_enrichment: LandCoverEnrichmentStateDto | null
   population_context: PopulationContextDto | null
   population_enrichment: PopulationEnrichmentStateDto | null
+  climate_context: ClimateContextDto | null
+  climate_enrichment: ClimateEnrichmentStateDto | null
   generated_at: string
 }
 
@@ -294,6 +296,86 @@ export type PopulationEnrichmentQueueStatus =
 
 export interface PopulationEnrichmentStateDto {
   status: PopulationEnrichmentQueueStatus
+  message: string | null
+}
+
+export type ClimateContextStatus = 'complete' | 'partial' | 'unavailable' | 'error' | 'stale'
+
+export interface ClimateSourceDto {
+  provider: string
+  model: string
+  data_type: 'modelled_weather'
+  generated_at: string
+  timezone: string
+}
+
+export interface ClimateNumericRangeDto {
+  mean: number | null
+  min?: number | null
+  max?: number | null
+}
+
+export interface ClimateWindDirectionDto {
+  degrees: number | null
+  cardinal: string | null
+  toward_cardinal: string | null
+}
+
+export interface ClimateEventConditionsDto {
+  matched_time: string | null
+  temperature_c?: ClimateNumericRangeDto
+  relative_humidity_pct?: ClimateNumericRangeDto
+  wind_speed_kmh?: ClimateNumericRangeDto
+  wind_gust_kmh?: ClimateNumericRangeDto
+  wind_direction?: ClimateWindDirectionDto
+  precipitation_mm?: ClimateNumericRangeDto
+  cloud_cover_pct?: ClimateNumericRangeDto
+}
+
+export interface ClimateAntecedentDto {
+  precipitation_previous_24h_mm: number | null
+  precipitation_previous_7d_mm: number | null
+  precipitation_previous_30d_mm: number | null
+  dry_days_consecutive: number | null
+  max_temperature_previous_24h_c: number | null
+  min_relative_humidity_previous_24h_pct: number | null
+}
+
+export interface ClimateForecastDto {
+  available: boolean
+  precipitation_next_24h_mm: number | null
+  precipitation_next_72h_mm: number | null
+  max_temperature_next_24h_c: number | null
+  min_relative_humidity_next_24h_pct: number | null
+  max_wind_speed_next_24h_kmh: number | null
+  max_wind_gust_next_24h_kmh: number | null
+}
+
+export interface ClimateContextDto {
+  status: ClimateContextStatus
+  source: ClimateSourceDto
+  event_conditions: ClimateEventConditionsDto
+  antecedent: ClimateAntecedentDto
+  forecast: ClimateForecastDto
+  spatial_variability: {
+    point_count: number
+    level: 'low' | 'moderate' | 'high'
+  }
+  temporal_alignment: 'exact' | 'partial' | 'mismatch'
+  geometry_source: 'detections_sample' | 'event_centroid_fallback'
+  warnings: string[]
+  disclaimer: string
+}
+
+export type ClimateEnrichmentQueueStatus =
+  | 'queued'
+  | 'processing'
+  | 'complete'
+  | 'failed'
+  | 'unavailable'
+
+export interface ClimateEnrichmentStateDto {
+  status: ClimateEnrichmentQueueStatus
   message: string | null
 }
 

@@ -12,6 +12,10 @@ import {
   buildPopulationContextDto,
   buildPopulationEnrichmentState,
 } from '@/modules/fires/utils/population-context.dto'
+import {
+  buildClimateContextDto,
+  buildClimateEnrichmentState,
+} from '@/modules/fires/utils/climate-context.dto'
 import type { FireEventContextRow } from '@/pipeline/stores/territorial.store'
 import {
   getLandCoverContext,
@@ -19,10 +23,12 @@ import {
 } from '@/pipeline/stores/land-cover.store'
 import { getActiveLandCoverJobForEvent } from '@/pipeline/stores/land-cover-jobs.store'
 import { getActivePopulationJobForEvent } from '@/pipeline/stores/population-jobs.store'
+import { getActiveClimateJobForEvent } from '@/pipeline/stores/climate-jobs.store'
 import {
   getLatestPopulationContext,
   getPopulationZones,
 } from '@/pipeline/stores/population.store'
+import { getLatestClimateContext } from '@/pipeline/stores/climate.store'
 import { getSupabaseAdmin } from '@/pipeline/stores/supabase.client'
 
 const EVENT_SELECT = `
@@ -154,6 +160,13 @@ export async function getFireEventDetail(eventId: string): Promise<FireEventDeta
     activePopulationJob,
   )
 
+  const climateRow = await getLatestClimateContext(eventId)
+  const climate_context = buildClimateContextDto(climateRow, {
+    eventLastLinkedAt: lastLinkedAt,
+  })
+  const activeClimateJob = climate_context ? null : await getActiveClimateJobForEvent(eventId)
+  const climate_enrichment = buildClimateEnrichmentState(climate_context, activeClimateJob)
+
   const detail: FireEventDetailDto = {
     ...base,
     estimated_area_ha: toNumber(eventRow.estimated_area_ha as number | string | null),
@@ -173,6 +186,8 @@ export async function getFireEventDetail(eventId: string): Promise<FireEventDeta
     land_cover_enrichment,
     population_context,
     population_enrichment,
+    climate_context,
+    climate_enrichment,
     generated_at: generatedAt,
   }
 
