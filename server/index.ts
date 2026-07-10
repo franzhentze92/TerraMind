@@ -7,6 +7,7 @@ import { verifyMapKey } from '@/pipeline/connectors/firms.connector'
 import { handlePreflight } from './http/cors.js'
 import { jsonResponse } from './http/json.js'
 import { handleFireRoutes } from './routes/fires.js'
+import { handleClimateRoutes } from './routes/climate.js'
 
 config({ path: resolve(process.cwd(), '.env') })
 
@@ -19,6 +20,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
   const pathname = url.pathname
 
   if (await handleFireRoutes(req, res, pathname, url.searchParams)) return
+  if (await handleClimateRoutes(req, res, pathname, url.searchParams)) return
 
   if (pathname === '/api/health' && req.method === 'GET') {
     jsonResponse(req, res, { status: 'ok', service: 'terramind-pipeline' })
