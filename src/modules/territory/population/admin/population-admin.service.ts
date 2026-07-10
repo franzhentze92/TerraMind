@@ -3,6 +3,13 @@ import { existsSync } from 'node:fs'
 import { buildAdminRasterComparison } from '@/modules/territory/population/admin/population-admin-compare'
 import { departmentCodeToAdm1Pcode } from '@/modules/territory/population/admin/population-admin-codes'
 import {
+  createSupabasePopulationAdminStore,
+  warmPopulationAdminCache,
+} from '@/modules/territory/population/admin/population-admin-supabase.store'
+import {
+  countPopulationAdminInSupabase,
+} from '@/modules/territory/population/providers/ine/population-supabase-seed'
+import {
   INE_ADMIN_STATS_PATH,
   loadAdminStatisticsFromDisk,
   loadSettlementsFromDisk,
@@ -362,4 +369,36 @@ export function computeMunicipalAdjustmentFactor(
   if (officialYear !== rasterYear) return null
   if (!Number.isFinite(rasterSum) || rasterSum <= 0) return null
   return officialPopulation / rasterSum
+}
+
+let cachedAdminService: PopulationAdminService | null = null
+
+function hasSupabaseEnv(): boolean {
+  return Boolean(process.env.SUPABASE_URL?.trim() && process.env.SUPABASE_SERVICE_ROLE_KEY?.trim())
+}
+
+/**
+ * Runtime store: Supabase si hay datos sembrados; JSON local solo como fallback de desarrollo.
+ */
+export async function resolvePopulationAdminStore(): Promise<PopulationAdminStore> {
+  if (hasSupabaseEnv()) {
+    try {
+      const count = await countPopulationAdminInSupabase()
+      if (count >= 40) {
+        const store = createSupabasePopulationAdminStore()
+        await warmPopulationAdminCache(store)
+        return store
+      }
+    } catch {
+      /* fallback local */
+    }
+  }
+  return createLocalPopulationAdminStore()
+}
+
+export async function resolvePopulationAdminService(): Promise<PopulationAdminService> {
+  if (cachedAdminService) return cachedAdminService
+  const store = await resolvePopulationAdminStore()
+  cachedAdminService = createPopulationAdminService(store)
+  return cachedAdminService
 }

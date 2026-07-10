@@ -397,6 +397,37 @@ export async function runFirePipeline(
               error: err instanceof Error ? err.message : 'enqueue failed',
             })
           }
+
+          const populationEnqueueStart = Date.now()
+          try {
+            const { enqueuePopulationJobs } = await import(
+              '@/pipeline/engines/fire/context/population-jobs.engine'
+            )
+            const populationEnqueue = await enqueuePopulationJobs({ limit: 10000, force: false })
+            stages.population_enqueue = {
+              status: 'success',
+              duration_ms: Date.now() - populationEnqueueStart,
+              metrics: {
+                jobs_created: populationEnqueue.jobs_created,
+                population_jobs_created: populationEnqueue.jobs_created,
+                jobs_skipped: populationEnqueue.jobs_skipped,
+                events_unchanged: populationEnqueue.events_unchanged,
+                context_version: populationEnqueue.context_version,
+              },
+            }
+          } catch (err) {
+            stages.population_enqueue = {
+              status: 'partial',
+              duration_ms: Date.now() - populationEnqueueStart,
+              error: err instanceof Error ? err.message : 'population enqueue failed',
+              error_code: 'population_enqueue_failed',
+              metrics: { population_jobs_created: 0 },
+            }
+            logStage(pipelineRunId, 'population_enqueue', {
+              status: 'warning',
+              error: err instanceof Error ? err.message : 'enqueue failed',
+            })
+          }
         })(),
         PIPELINE_TIMEOUTS_MS.pipelineTotal,
         'pipeline',

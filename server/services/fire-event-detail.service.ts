@@ -8,12 +8,21 @@ import type { FireEventDetailDto, FireDepartmentOptionDto } from '@/modules/fire
 import { buildProtectedAreaContextDto } from '@/modules/fires/utils/protected-area-context.dto'
 import { buildLandCoverContextDto } from '@/modules/fires/utils/land-cover-context.dto'
 import { buildLandCoverEnrichmentState } from '@/modules/fires/utils/land-cover-enrichment-state'
+import {
+  buildPopulationContextDto,
+  buildPopulationEnrichmentState,
+} from '@/modules/fires/utils/population-context.dto'
 import type { FireEventContextRow } from '@/pipeline/stores/territorial.store'
 import {
   getLandCoverContext,
   getLandCoverZones,
 } from '@/pipeline/stores/land-cover.store'
 import { getActiveLandCoverJobForEvent } from '@/pipeline/stores/land-cover-jobs.store'
+import { getActivePopulationJobForEvent } from '@/pipeline/stores/population-jobs.store'
+import {
+  getLatestPopulationContext,
+  getPopulationZones,
+} from '@/pipeline/stores/population.store'
 import { getSupabaseAdmin } from '@/pipeline/stores/supabase.client'
 
 const EVENT_SELECT = `
@@ -129,6 +138,22 @@ export async function getFireEventDetail(eventId: string): Promise<FireEventDeta
     activeLandCoverJob,
   )
 
+  const populationRow = await getLatestPopulationContext(eventId)
+  const populationZones = populationRow ? await getPopulationZones(populationRow.id) : []
+  const lastLinkedAt = detections.length
+    ? detections[detections.length - 1]?.acquired_at_utc
+    : null
+  const population_context = buildPopulationContextDto(populationRow, populationZones, {
+    eventLastLinkedAt: lastLinkedAt,
+  })
+  const activePopulationJob = population_context
+    ? null
+    : await getActivePopulationJobForEvent(eventId)
+  const population_enrichment = buildPopulationEnrichmentState(
+    population_context,
+    activePopulationJob,
+  )
+
   const detail: FireEventDetailDto = {
     ...base,
     estimated_area_ha: toNumber(eventRow.estimated_area_ha as number | string | null),
@@ -146,6 +171,8 @@ export async function getFireEventDetail(eventId: string): Promise<FireEventDeta
     protected_area_context,
     land_cover_context,
     land_cover_enrichment,
+    population_context,
+    population_enrichment,
     generated_at: generatedAt,
   }
 

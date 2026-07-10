@@ -12,6 +12,7 @@ import {
 } from '@/modules/fires/utils/fire-interpretation'
 import { FireEvidenceTimeline } from './FireEvidenceTimeline'
 import { FireLandCoverSection } from './FireLandCoverSection'
+import { FirePopulationSection } from './FirePopulationSection'
 import {
   buildTerritorySummaryText,
   territoryDisclaimer,
@@ -337,6 +338,11 @@ export function FireEventDetailPanel({
                 <FireLandCoverSection
                   context={event.land_cover_context}
                   enrichment={event.land_cover_enrichment}
+                />
+
+                <FirePopulationSection
+                  context={event.population_context}
+                  enrichment={event.population_enrichment}
                 />
               </section>
             )}

@@ -99,6 +99,8 @@ export interface FireEventDetailDto extends FireEventListItemDto {
   protected_area_context: ProtectedAreaContextDto | null
   land_cover_context: LandCoverContextDto | null
   land_cover_enrichment: LandCoverEnrichmentStateDto | null
+  population_context: PopulationContextDto | null
+  population_enrichment: PopulationEnrichmentStateDto | null
   generated_at: string
 }
 
@@ -191,6 +193,79 @@ export type LandCoverEnrichmentQueueStatus =
 
 export interface LandCoverEnrichmentStateDto {
   status: LandCoverEnrichmentQueueStatus
+  message: string | null
+}
+
+export type PopulationContextStatus =
+  | 'complete'
+  | 'partial'
+  | 'unavailable'
+  | 'error'
+  | 'stale'
+
+export interface PopulationSourceDto {
+  name: string
+  product: string
+  reference_year: number
+  resolution_m: number
+  type: 'modelled_spatial_population'
+}
+
+export interface PopulationZoneDto {
+  radius_m: number
+  estimated_population: number
+  validation_estimate?: number
+  difference_pct?: number
+  density_per_km2: number
+  data_coverage_pct: number
+  warnings: string[]
+}
+
+export interface PopulationOfficialDepartmentDto {
+  name: string
+  official_population: number
+  reference_year: number
+  statistic_type: 'census' | 'projection'
+  source: string
+}
+
+export interface PopulationOfficialContextDto {
+  department: PopulationOfficialDepartmentDto | null
+  municipality: PopulationOfficialDepartmentDto | null
+  temporal_alignment: 'exact' | 'partial' | 'nearest' | 'mismatch'
+}
+
+export interface PopulationSettlementDto {
+  name: string
+  type: string
+  distance_m: number
+  source: string
+  department?: string
+  municipality?: string
+}
+
+export interface PopulationContextDto {
+  status: PopulationContextStatus
+  source: PopulationSourceDto
+  generated_at: string
+  context_version: string
+  geometry_source: 'detections' | 'event_centroid_fallback'
+  zones: PopulationZoneDto[]
+  official_context: PopulationOfficialContextDto
+  nearest_settlements: PopulationSettlementDto[]
+  warnings: string[]
+  disclaimer: string
+}
+
+export type PopulationEnrichmentQueueStatus =
+  | 'queued'
+  | 'processing'
+  | 'complete'
+  | 'failed'
+  | 'unavailable'
+
+export interface PopulationEnrichmentStateDto {
+  status: PopulationEnrichmentQueueStatus
   message: string | null
 }
 

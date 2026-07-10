@@ -12,6 +12,7 @@ Módulo territorial genérico de TerraMind para estimar y analizar **población 
 | **7D.1B PopulationService** | **Completada** — raster operativo, dual_use |
 | Migración 012 | **Aplicada** (2026-07-10) |
 | **7D.2 INE + asentamientos** | **Completada** — ver `docs/reports/POPULATION-INE-IMPORT-AUDIT.md` |
+| **7D.3 contexto poblacional eventos** | **Completada** — worker + API + UI Territorio |
 | Ajuste raster / factores municipales | **No implementado** (reconciliación pendiente) |
 | Adaptadores / API / UI | **Pendiente** (7D.3–7D.4) |
 

@@ -12,6 +12,13 @@ export const POPULATION_WARNING_CODES: readonly PopulationWarningCode[] = [
   'nodata_inside_geometry',
   'official_total_mismatch',
   'official_year_mismatch',
+  'official_year_mismatch',
+  'validation_source_unavailable',
+  'official_context_unavailable',
+  'municipality_official_data_unavailable',
+  'settlement_dataset_limited_to_municipal_seats',
+  'centroid_fallback',
+  'large_model_difference',
   'missing_admin_code',
   'settlement_source_unavailable',
   'adjustment_not_applied',
@@ -47,6 +54,12 @@ const WARNING_SEVERITY: Partial<Record<PopulationWarningCode, PopulationWarningS
   adjustment_not_applied: 'info',
   settlement_source_unavailable: 'info',
   official_year_mismatch: 'warning',
+  validation_source_unavailable: 'warning',
+  official_context_unavailable: 'info',
+  municipality_official_data_unavailable: 'info',
+  settlement_dataset_limited_to_municipal_seats: 'info',
+  centroid_fallback: 'warning',
+  large_model_difference: 'warning',
 }
 
 export function populationWarning(
