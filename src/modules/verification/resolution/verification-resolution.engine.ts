@@ -630,6 +630,9 @@ export function derivePlanResolution(
   } else if (counts.satisfied > 0 && counts.open + counts.inconclusive + counts.insufficient > 0) {
     derived_status = 'partially_satisfied'
     reasons.push('Mezcla de necesidades satisfechas y pendientes')
+  } else if (counts.partially_satisfied > 0 && counts.satisfied === 0) {
+    derived_status = 'partially_satisfied'
+    reasons.push('Necesidades parcialmente satisfechas sin cierre total')
   } else if (counts.open > 0 || counts.insufficient > 0) {
     derived_status = 'in_progress'
     reasons.push('Necesidades aún abiertas o con evidencia insuficiente')

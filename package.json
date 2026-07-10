@@ -94,6 +94,7 @@
     "population:audit-confidence": "tsx scripts/population-audit-confidence.ts",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e:fire": "vitest run src/pipeline/e2e",
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
