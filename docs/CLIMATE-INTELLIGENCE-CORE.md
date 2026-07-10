@@ -147,6 +147,18 @@ npm run climate:status
 
 Nunca fusionar valores de proveedores distintos sin registrar procedencia.
 
+## Pendientes no bloqueantes
+
+### Elevación registrada (`registered_elevation_m`)
+
+Las 23 ubicaciones de referencia tienen `elevation_m` / `registered_elevation_m` en
+`null`. Open-Meteo resuelve elevación del modelo (`provider_elevation_m`); la presión
+superficial es coherente con la altitud del modelo (ej. Quetzaltenango ~1533 m, ~847 hPa).
+
+**TODO:** Poblar `registered_elevation_m` para las 23 ubicaciones usando una fuente
+documentada, idealmente DEM nacional o global (SRTM/Copernicus), y comparar contra
+`provider_elevation_m` para activar warnings de `elevation_difference_m`.
+
 ## Merge
 
 1. Rebase contra `main` actual (`b092e59+`)
