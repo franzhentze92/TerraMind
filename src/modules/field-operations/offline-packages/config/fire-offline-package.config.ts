@@ -1,5 +1,10 @@
 import type { MissionType } from '@/modules/missions/missions.types'
 import type { OfflineFormSchema, OfflinePackagePermission } from '@/modules/field-operations/offline-packages/offline-package.types'
+import {
+  FIRE_FIELD_FORM_SCHEMAS,
+  TASK_TYPE_SCHEMA_MAP,
+  toPackageFormSchema,
+} from '@/modules/field-operations/field-forms/config/fire-field-form.config'
 
 export const FIRE_OFFLINE_PACKAGE_MODEL_VERSION = '1.0.0'
 
@@ -164,5 +169,16 @@ export const SAFETY_INSTRUCTIONS = [
 export const DEFAULT_EXPECTED_ACCURACY_M = 25
 
 export function formsForMissionType(missionType: string): OfflineFormSchema[] {
-  return MISSION_TYPE_FORMS[missionType as MissionType] ?? [FIELD_OBSERVATION_FORM]
+  const embedded = FIRE_FIELD_FORM_SCHEMAS.map(toPackageFormSchema)
+  if (missionType === 'georeferenced_photo_collection') {
+    return [GEO_PHOTO_FORM, ...embedded]
+  }
+  if ((OFFLINE_CAPABLE_MISSION_TYPES as readonly string[]).includes(missionType)) {
+    return embedded
+  }
+  return embedded.filter((s) => s.schema_id === 'field_visual_observation')
+}
+
+export function schemaIdForTaskType(taskType: string): string | null {
+  return TASK_TYPE_SCHEMA_MAP[taskType] ?? null
 }

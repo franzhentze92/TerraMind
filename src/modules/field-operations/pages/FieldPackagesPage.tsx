@@ -82,12 +82,13 @@ export function FieldPackagesPage() {
                   Errores: {pkg.integrity_errors.join(', ')}
                 </p>
               )}
-              <p className="mt-2 text-xs text-text-tertiary">
-                {openable
-                  ? executable
-                    ? 'Listo para consulta offline.'
-                    : 'Solo modo histórico — vigencia expirada.'
-                  : 'No abrir — integridad comprometida.'}
+              <p className="mt-3">
+                <Link
+                  to={`/campo/paquetes/${pkg.package_id}`}
+                  className="text-xs text-accent hover:underline"
+                >
+                  Abrir paquete →
+                </Link>
               </p>
             </article>
           )

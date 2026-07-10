@@ -10,6 +10,7 @@ import {
   SAFETY_INSTRUCTIONS,
   SENSITIVE_FIELD_PATHS,
   formsForMissionType,
+  schemaIdForTaskType,
 } from '@/modules/field-operations/offline-packages/config/fire-offline-package.config'
 import { assertSafeOfflinePackageCopy, scanOfflinePackagePayloads } from '@/modules/field-operations/offline-packages/offline-package-copy-guard'
 import { canonicalJson, buildManifestFiles, buildSignedManifest } from '@/modules/field-operations/offline-packages/offline-package-canonical'
@@ -361,7 +362,7 @@ export function buildOfflinePackage(input: OfflinePackageBuildInput & {
     dependencies: index > 0 ? [String(sortedTasks[index - 1]?.id)] : [],
     blockers: [],
     initial_status: String(task.status ?? 'pending'),
-    form_schema_id: forms[0]?.schema_id ?? null,
+    form_schema_id: schemaIdForTaskType(String(task.task_type)),
   }))
 
   const evidenceSnapshots = sortedEvidence.map((req) => ({

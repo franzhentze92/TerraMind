@@ -60,6 +60,8 @@
     "offline-packages:worker": "tsx scripts/offline-package-worker.ts",
     "offline-packages:status": "tsx scripts/offline-package-status.ts",
     "offline-packages:audit": "tsx scripts/offline-package-audit.ts",
+    "field-forms:validate-schemas": "tsx scripts/field-forms-validate-schemas.ts",
+    "field-forms:audit": "tsx scripts/field-forms-audit.ts",
     "land-cover:plan-tiles": "tsx scripts/land-cover-plan-tiles.ts",
     "land-cover:download": "tsx scripts/land-cover-download.ts",
     "land-cover:build": "tsx scripts/land-cover-build.ts",
