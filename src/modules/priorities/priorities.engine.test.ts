@@ -207,3 +207,211 @@ describe('fire priority engine', () => {
     expect(containsForbiddenPriorityCopy('Revisar últimas detecciones')).toBe(false)
   })
 })
+
+/** Fixtures sintéticos: demuestran que todos los niveles del modelo son alcanzables. */
+function caseAFindings(): CompositeFinding[] {
+  return [
+    finding('thermal_activity_in_protected_area', {
+      severity_label: 'elevated_attention',
+      confidence: { level: 'high', reasons: [] },
+    }),
+    finding('thermal_activity_on_forest_cover', {
+      source_domains: ['land_cover'],
+      confidence: { level: 'high', reasons: [] },
+    }),
+    finding('dry_conditions_around_thermal_event', {
+      source_domains: ['climate'],
+      confidence: { level: 'high', reasons: [] },
+    }),
+    finding('strong_wind_during_thermal_event', {
+      source_domains: ['climate'],
+      confidence: { level: 'high', reasons: [] },
+    }),
+    finding('nearby_population_with_reliable_estimate', {
+      source_domains: ['population'],
+      confidence: { level: 'high', reasons: [] },
+    }),
+    finding('documented_biodiversity_near_event', {
+      source_domains: ['biodiversity'],
+      confidence: { level: 'high', reasons: [] },
+    }),
+    finding('multi_context_attention', {
+      source_domains: ['protected_areas', 'land_cover', 'biodiversity'],
+      confidence: { level: 'high', reasons: [] },
+    }),
+  ]
+}
+
+describe('fire priority model v1.0.0 — synthetic level reachability', () => {
+  it('Case A: evento reciente con evidencia completa alcanza high_attention o superior', () => {
+    const result = evaluate(caseAFindings(), {
+      status: 'active',
+      validation_status: 'no_validado',
+      detection_count: 14,
+      persistence_hours: 10,
+      last_detected_at: '2026-07-10T19:55:00.000Z',
+      context_availability: {
+        protected_area: 'complete',
+        land_cover: 'complete',
+        population: 'complete',
+        climate: 'complete',
+        biodiversity: 'complete',
+      },
+    })
+
+    expect(['high_attention', 'priority_attention']).toContain(result.assessment.attention_level)
+    expect(result.assessment.attention_score).toBeGreaterThanOrEqual(60)
+    expect(result.assessment.score_explanation.decay.decay_points).toBeLessThan(3)
+  })
+
+  it('Case B: alta severidad potencial con incertidumbre eleva verificación sin elevar acción', () => {
+    const result = evaluate(
+      [
+        finding('thermal_activity_in_protected_area', {
+          severity_label: 'elevated_attention',
+          confidence: { level: 'low', reasons: ['partial'] },
+        }),
+        finding('thermal_activity_on_forest_cover', {
+          source_domains: ['land_cover'],
+          confidence: { level: 'low', reasons: ['partial'] },
+        }),
+        finding('nearby_population_with_high_uncertainty', {
+          source_domains: ['population'],
+          confidence: { level: 'low', reasons: ['divergence'] },
+        }),
+        finding('biodiversity_context_limited', {
+          source_domains: ['biodiversity'],
+          confidence: { level: 'low', reasons: ['partial provider'] },
+        }),
+      ],
+      {
+        context_availability: {
+          protected_area: 'complete',
+          land_cover: 'partial',
+          population: 'partial',
+          climate: 'missing',
+          biodiversity: 'partial',
+        },
+      },
+    )
+
+    expect(result.assessment.attention_score).toBeGreaterThanOrEqual(45)
+    expect(['recommended', 'high_priority']).toContain(result.assessment.verification_level)
+    expect(result.assessment.verification_score).toBeGreaterThanOrEqual(40)
+    expect(result.assessment.verification_score).toBeGreaterThan(result.assessment.action_score)
+    expect(result.assessment.action_score).toBeLessThanOrEqual(55)
+  })
+
+  it('Case C: evento antiguo y aislado queda en routine con acción none', () => {
+    const result = evaluate([finding('thermal_activity_near_protected_area')], {
+      status: 'monitoring',
+      detection_count: 1,
+      persistence_hours: 0.5,
+      last_detected_at: '2026-07-07T20:00:00.000Z',
+      context_availability: {
+        protected_area: 'complete',
+        land_cover: 'missing',
+        population: 'missing',
+        climate: 'missing',
+        biodiversity: 'missing',
+      },
+    })
+
+    expect(result.assessment.attention_level).toBe('routine')
+    expect(result.assessment.action_level).toBe('none')
+    expect(['not_required', 'useful']).toContain(result.assessment.verification_level)
+    expect(result.assessment.score_explanation.decay.applied).toBe(true)
+  })
+
+  it('Case D: evento confirmado puede superar action cap y alcanzar operational_attention', () => {
+    const unconfirmed = evaluate(caseAFindings(), {
+      validation_status: 'no_validado',
+      detection_count: 14,
+      persistence_hours: 10,
+      last_detected_at: '2026-07-10T19:55:00.000Z',
+      context_availability: {
+        protected_area: 'complete',
+        land_cover: 'complete',
+        population: 'complete',
+        climate: 'complete',
+        biodiversity: 'complete',
+      },
+    })
+
+    const confirmed = evaluate(caseAFindings(), {
+      validation_status: 'confirmado',
+      detection_count: 14,
+      persistence_hours: 10,
+      last_detected_at: '2026-07-10T19:55:00.000Z',
+      context_availability: {
+        protected_area: 'complete',
+        land_cover: 'complete',
+        population: 'complete',
+        climate: 'complete',
+        biodiversity: 'complete',
+      },
+    })
+
+    expect(unconfirmed.assessment.action_score).toBeLessThanOrEqual(55)
+    expect(confirmed.assessment.action_score).toBeGreaterThan(unconfirmed.assessment.action_score)
+    expect(confirmed.assessment.action_level).toBe('operational_attention')
+    expect(confirmed.assessment.score_explanation.confidence_modifiers.action_cap).toBe(100)
+  })
+
+  it('priority_attention es alcanzable con concurrencia máxima y persistencia fuerte', () => {
+    const result = evaluate(caseAFindings(), {
+      status: 'active',
+      validation_status: 'confirmado',
+      detection_count: 24,
+      persistence_hours: 18,
+      last_detected_at: '2026-07-10T19:59:00.000Z',
+      context_availability: {
+        protected_area: 'complete',
+        land_cover: 'complete',
+        population: 'complete',
+        climate: 'complete',
+        biodiversity: 'complete',
+      },
+    })
+
+    expect(result.assessment.attention_level).toBe('priority_attention')
+    expect(result.assessment.attention_score).toBeGreaterThanOrEqual(75)
+  })
+
+  it('verification high_priority es alcanzable bajo incertidumbre extrema sin confirmación', () => {
+    const uncertainCaseA = caseAFindings().map((f) => ({
+      ...f,
+      confidence: { level: 'low' as const, reasons: ['evidencia limitada'] },
+    }))
+
+    const result = evaluate(
+      [
+        ...uncertainCaseA,
+        finding('nearby_population_with_high_uncertainty', {
+          source_domains: ['population'],
+          confidence: { level: 'low', reasons: [] },
+        }),
+        finding('biodiversity_context_limited', {
+          source_domains: ['biodiversity'],
+          confidence: { level: 'low', reasons: [] },
+        }),
+      ],
+      {
+        detection_count: 10,
+        persistence_hours: 6,
+        last_detected_at: '2026-07-10T19:30:00.000Z',
+        context_availability: {
+          protected_area: 'partial',
+          land_cover: 'partial',
+          population: 'partial',
+          climate: 'partial',
+          biodiversity: 'partial',
+        },
+      },
+    )
+
+    expect(result.assessment.verification_level).toBe('high_priority')
+    expect(result.assessment.verification_score).toBeGreaterThanOrEqual(60)
+    expect(result.assessment.action_score).toBeLessThanOrEqual(55)
+  })
+})
