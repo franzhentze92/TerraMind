@@ -207,6 +207,7 @@ export function FireAnalysisPage() {
                 eventListItems={items}
                 showDetections={showDetections}
                 selectedEventId={eventId}
+                selectedEventLandCover={eventQuery.data?.land_cover_context}
                 isLoading={geoJsonQuery.isLoading}
                 isError={geoJsonQuery.isError}
                 onSelectEvent={handleSelectEvent}

@@ -196,6 +196,26 @@ export async function getLandCoverContext(eventId: string): Promise<LandCoverCon
   return (data as LandCoverContextRow | null) ?? null
 }
 
+export async function getLandCoverZones(
+  eventId: string,
+  contextVersion?: string,
+): Promise<LandCoverZoneRow[]> {
+  const supabase = getSupabaseAdmin()
+  let query = supabase
+    .from('fire_event_land_cover_zones')
+    .select('*')
+    .eq('event_id', eventId)
+    .order('radius_m', { ascending: true })
+
+  if (contextVersion) {
+    query = query.eq('context_version', contextVersion)
+  }
+
+  const { data, error } = await query
+  if (error) throw new Error(error.message)
+  return (data as LandCoverZoneRow[]) ?? []
+}
+
 export async function persistLandCoverAnalysis(
   eventId: string,
   analysis: LandCoverAnalysis,

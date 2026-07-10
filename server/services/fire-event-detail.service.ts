@@ -6,7 +6,12 @@ import {
 import { mapEventRowToDto } from '@/modules/fires/api/fire-api.mappers'
 import type { FireEventDetailDto, FireDepartmentOptionDto } from '@/modules/fires/types/fire.dto'
 import { buildProtectedAreaContextDto } from '@/modules/fires/utils/protected-area-context.dto'
+import { buildLandCoverContextDto } from '@/modules/fires/utils/land-cover-context.dto'
 import type { FireEventContextRow } from '@/pipeline/stores/territorial.store'
+import {
+  getLandCoverContext,
+  getLandCoverZones,
+} from '@/pipeline/stores/land-cover.store'
 import { getSupabaseAdmin } from '@/pipeline/stores/supabase.client'
 
 const EVENT_SELECT = `
@@ -109,6 +114,12 @@ export async function getFireEventDetail(eventId: string): Promise<FireEventDeta
     contextRow as FireEventContextRow | null,
   )
 
+  const landCoverRow = await getLandCoverContext(eventId)
+  const landCoverZones = landCoverRow
+    ? await getLandCoverZones(eventId, landCoverRow.context_version)
+    : []
+  const land_cover_context = buildLandCoverContextDto(landCoverRow, landCoverZones)
+
   const detail: FireEventDetailDto = {
     ...base,
     estimated_area_ha: toNumber(eventRow.estimated_area_ha as number | string | null),
@@ -124,6 +135,7 @@ export async function getFireEventDetail(eventId: string): Promise<FireEventDeta
       multisatellite: base.satellite_count >= 2,
     }),
     protected_area_context,
+    land_cover_context,
     generated_at: generatedAt,
   }
 

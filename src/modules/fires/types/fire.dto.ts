@@ -97,6 +97,7 @@ export interface FireEventDetailDto extends FireEventListItemDto {
   evidence_summary: string
   interpretation: string
   protected_area_context: ProtectedAreaContextDto | null
+  land_cover_context: LandCoverContextDto | null
   generated_at: string
 }
 
@@ -127,6 +128,57 @@ export interface ProtectedAreaContextDto {
   source_name: string
   source_version: string
   generated_at: string | null
+}
+
+export type LandCoverContextStatus = 'complete' | 'partial' | 'unavailable' | 'error'
+
+export interface LandCoverSourceDto {
+  name: string
+  version: string
+  year: number
+  resolution_m: number
+}
+
+export interface LandCoverClassCountDto {
+  class: string
+  label: string
+  count: number
+  percentage: number
+}
+
+export interface LandCoverClassAreaDto {
+  class: string
+  label: string
+  percentage: number
+  area_ha: number | null
+}
+
+export interface LandCoverPointEvidenceDto {
+  detections_sampled: number
+  dominant_class: string | null
+  mixed: boolean
+  class_distribution: LandCoverClassCountDto[]
+}
+
+export interface LandCoverZoneDto {
+  radius_m: number
+  dominant_class: string | null
+  dominant_label: string | null
+  class_distribution: LandCoverClassAreaDto[]
+  valid_pixel_count: number
+  data_coverage_pct: number | null
+  analyzed_area_ha: number | null
+}
+
+export interface LandCoverContextDto {
+  status: LandCoverContextStatus
+  source: LandCoverSourceDto
+  generated_at: string
+  context_version: string
+  point_evidence: LandCoverPointEvidenceDto
+  zones: LandCoverZoneDto[]
+  warnings: string[]
+  disclaimer: string
 }
 
 export interface FireDepartmentOptionDto {

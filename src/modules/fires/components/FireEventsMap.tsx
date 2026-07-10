@@ -17,6 +17,7 @@ import type {
   FireEventListItemDto,
   FireEventsGeoJsonDto,
   FireEventGeoJsonFeature,
+  LandCoverContextDto,
 } from '@/modules/fires/types/fire.dto'
 import {
   DETECTION_MARKER_STYLE,
@@ -38,6 +39,7 @@ import {
 import { riskLevelLabel } from '@/modules/fires/utils/format'
 import { sourceProductDisplayName } from '@/modules/fires/utils/source-labels'
 import { FireMapLegend } from '@/modules/fires/components/FireMapLegend'
+import { buildLandCoverMapSnippet } from '@/modules/fires/utils/land-cover-summary'
 import { cn } from '@/shared/utils/cn'
 
 interface FireEventsMapProps {
@@ -46,6 +48,7 @@ interface FireEventsMapProps {
   eventListItems?: FireEventListItemDto[]
   showDetections: boolean
   selectedEventId?: string
+  selectedEventLandCover?: LandCoverContextDto | null
   isLoading?: boolean
   isError?: boolean
   onSelectEvent: (eventId: string) => void
@@ -180,6 +183,7 @@ export function FireEventsMap({
   eventListItems,
   showDetections,
   selectedEventId,
+  selectedEventLandCover,
   isLoading,
   isError,
   onSelectEvent,
@@ -224,6 +228,17 @@ export function FireEventsMap({
         .map((s) => sourceProductDisplayName(s))
         .join(', ')
       const btnId = `popup-btn-${eventId}`
+      const landCoverHtml =
+        eventId === selectedEventId && selectedEventLandCover
+          ? (() => {
+              const snippet = buildLandCoverMapSnippet(selectedEventLandCover)
+              if (!snippet) return ''
+              return `<div style="margin-top:8px;padding-top:8px;border-top:1px solid #e5e7eb;color:#4b5563;white-space:pre-line">${snippet
+                .split('\n')
+                .map((line) => `<div>${line}</div>`)
+                .join('')}</div>`
+            })()
+          : ''
       el.innerHTML = `
         <div style="font-size:12px;line-height:1.5">
           <strong>${p.department_name ?? 'Sin departamento'}</strong>
@@ -239,6 +254,7 @@ export function FireEventsMap({
             ${sources ? `<span title="${listItem?.source_products.join(', ') ?? ''}">Fuentes: ${sources}</span>` : ''}
             <span>Última det.: ${formatGuatemalaDateTime(p.last_detected_at)}</span>
           </div>
+          ${landCoverHtml}
           <button id="${btnId}" type="button" style="margin-top:8px;font-size:12px;font-weight:500;color:#2563eb;background:none;border:none;padding:0;cursor:pointer">
             Ver detalle
           </button>
@@ -276,7 +292,7 @@ export function FireEventsMap({
 
         {eventsGeoJson && eventsGeoJson.features.length > 0 && (
           <GeoJSON
-            key={`events-${eventsGeoJson.generated_at}-${selectedEventId ?? 'none'}`}
+            key={`events-${eventsGeoJson.generated_at}-${selectedEventId ?? 'none'}-${selectedEventLandCover?.generated_at ?? 'no-lc'}`}
             data={eventsGeoJson as GeoJSON.FeatureCollection}
             style={eventStyle}
             onEachFeature={onEachEvent}

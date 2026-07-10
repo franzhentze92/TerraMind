@@ -11,6 +11,7 @@ import {
   validationStatusLabel,
 } from '@/modules/fires/utils/fire-interpretation'
 import { FireEvidenceTimeline } from './FireEvidenceTimeline'
+import { FireLandCoverSection } from './FireLandCoverSection'
 import {
   buildTerritorySummaryText,
   territoryDisclaimer,
@@ -332,6 +333,8 @@ export function FireEventDetailPanel({
                     </p>
                   )}
                 </div>
+
+                <FireLandCoverSection context={event.land_cover_context} />
               </section>
             )}
 
