@@ -1,6 +1,6 @@
 -- TerraMind — Commit 7A.2-F: Jobs de enriquecimiento de cobertura del suelo
 -- =============================================================================
--- Numeración: 011 (010_biodiversity_intelligence_core.sql existe en repo, no aplicada)
+-- Numeración: 011 (010 biodiversity core · 012 population · 013 observation media en repo, no aplicadas)
 -- Rollback: DROP FUNCTION claim_land_cover_enrichment_job; DROP TABLE land_cover_enrichment_jobs;
 -- =============================================================================
 

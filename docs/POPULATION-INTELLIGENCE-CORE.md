@@ -7,9 +7,9 @@ Módulo territorial genérico de TerraMind para estimar y analizar **población 
 | Fase | Estado |
 |------|--------|
 | Investigación de fuentes | Completada |
-| Arquitectura y tipos | Completada (rama `feature/population-intelligence-core`) |
+| Arquitectura y tipos | Completada en `main` |
 | **7D.1A WorldPop audit** | **Completada** — ver `docs/reports/population-worldpop-2020-audit.md` |
-| Migración 011 | Propuesta — **no aplicada** |
+| Migración 012 | Propuesta — **no aplicada** |
 | PopulationService operativo | **Pendiente** (7D.1B) |
 | Datos administrativos INE | **Pendiente** (7D.2) |
 | Adaptadores / API / UI | **Pendiente** (7D.3–7D.4) |
@@ -347,7 +347,7 @@ Métricas: p50, p95, memoria, apertura raster, ventana, zonal, caché.
 ## Rollback
 
 1. Rama/worktree aislado — no merge a `main` hasta aprobación.
-2. Migración 011 no aplicada — rollback = no ejecutar SQL.
+2. Migración 012 no aplicada — rollback = no ejecutar SQL.
 3. Rasters en almacenamiento externo versionado — eliminar artifact + hash.
 4. `entity_population_*` — truncate por `context_version` si se requiere recomputar.
 

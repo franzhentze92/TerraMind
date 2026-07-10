@@ -3,13 +3,10 @@
 Módulo climático reutilizable de TerraMind. **No está acoplado a incendios** ni modifica
 `fire_event_context`, scheduler FIRMS, score ni UI de fuego.
 
-## Rama de trabajo
+## Integración en main
 
-```text
-feature/climate-intelligence-core
-worktree: ../terramind-climate
-base: main @ b092e59 (rebased)
-```
+Climate Intelligence Core está integrado en el proyecto principal (`main`).
+La rama histórica `feature/climate-intelligence-core` ya fue mergeada.
 
 ## Numeración de migraciones
 

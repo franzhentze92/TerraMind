@@ -1,4 +1,4 @@
--- 011_population_intelligence_core.sql
+-- 012_population_intelligence_core.sql
 -- PROPUESTA — NO APLICADA (7D.1 diseño)
 -- Núcleo de inteligencia poblacional territorial genérico
 

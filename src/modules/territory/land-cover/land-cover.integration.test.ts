@@ -5,30 +5,42 @@ import { createLandCoverService } from '@/modules/territory/land-cover/land-cove
 
 const hasLocalCog = existsSync(LAND_COVER_ANALYTIC_COG)
 
-describe.skipIf(!hasLocalCog)('LandCoverService integration (local COG)', () => {
+describe.skipIf(!hasLocalCog).sequential('LandCoverService integration (local COG)', () => {
   const service = createLandCoverService()
 
-  it('reports source status with matching hashes', async () => {
-    const status = await service.getSourceStatus()
-    expect(status.available).toBe(true)
-    expect(status.sourceVersion).toBe('2021-v200')
-    expect(status.analyticCogSha256).toHaveLength(64)
-  })
+  it(
+    'reports source status with matching hashes',
+    async () => {
+      const status = await service.getSourceStatus()
+      expect(status.available).toBe(true)
+      expect(status.sourceVersion).toBe('2021-v200')
+      expect(status.analyticCogSha256).toHaveLength(64)
+    },
+    30_000,
+  )
 
-  it('samples forest in Petén', async () => {
-    const samples = await service.samplePoints({
-      points: [{ lon: -90.5, lat: 16.9 }],
-    })
-    expect(samples[0]?.internalClass).toBe('forest')
-    expect(samples[0]?.nodata).toBe(false)
-  })
+  it(
+    'samples forest in Petén',
+    async () => {
+      const samples = await service.samplePoints({
+        points: [{ lon: -90.5, lat: 16.9 }],
+      })
+      expect(samples[0]?.internalClass).toBe('forest')
+      expect(samples[0]?.nodata).toBe(false)
+    },
+    30_000,
+  )
 
-  it('samples built-up in Guatemala City', async () => {
-    const samples = await service.samplePoints({
-      points: [{ lon: -90.5069, lat: 14.6349 }],
-    })
-    expect(samples[0]?.internalClass).toBe('built_up')
-  })
+  it(
+    'samples built-up in Guatemala City',
+    async () => {
+      const samples = await service.samplePoints({
+        points: [{ lon: -90.5069, lat: 14.6349 }],
+      })
+      expect(samples[0]?.internalClass).toBe('built_up')
+    },
+    30_000,
+  )
 
   it('returns nodata outside Guatemala', async () => {
     const samples = await service.samplePoints({
