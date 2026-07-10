@@ -490,6 +490,36 @@ export async function runFirePipeline(
               error: err instanceof Error ? err.message : 'enqueue failed',
             })
           }
+
+          const findingEnqueueStart = Date.now()
+          try {
+            const { enqueueFindingJobs } = await import(
+              '@/pipeline/engines/findings/finding-jobs.engine'
+            )
+            const findingEnqueue = await enqueueFindingJobs({ limit: 10000, force: false })
+            stages.finding_enqueue = {
+              status: 'success',
+              duration_ms: Date.now() - findingEnqueueStart,
+              metrics: {
+                jobs_created: findingEnqueue.jobs_created,
+                finding_jobs_created: findingEnqueue.jobs_created,
+                jobs_skipped: findingEnqueue.jobs_skipped,
+                rule_set_version: findingEnqueue.rule_set_version,
+              },
+            }
+          } catch (err) {
+            stages.finding_enqueue = {
+              status: 'partial',
+              duration_ms: Date.now() - findingEnqueueStart,
+              error: err instanceof Error ? err.message : 'finding enqueue failed',
+              error_code: 'finding_enqueue_failed',
+              metrics: { finding_jobs_created: 0 },
+            }
+            logStage(pipelineRunId, 'finding_enqueue', {
+              status: 'warning',
+              error: err instanceof Error ? err.message : 'enqueue failed',
+            })
+          }
         })(),
         PIPELINE_TIMEOUTS_MS.pipelineTotal,
         'pipeline',

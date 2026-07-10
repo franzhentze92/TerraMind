@@ -15,6 +15,8 @@ import { FireLandCoverSection } from './FireLandCoverSection'
 import { FirePopulationSection } from './FirePopulationSection'
 import { FireClimateSection } from './FireClimateSection'
 import { FireBiodiversitySection } from './FireBiodiversitySection'
+import { FireRelatedFindings } from '@/modules/findings/components/FireRelatedFindings'
+import { useFireEventFindings } from '@/modules/findings/hooks/useFindings'
 import {
   buildTerritorySummaryText,
   territoryDisclaimer,
@@ -67,6 +69,7 @@ export function FireEventDetailPanel({
   className,
 }: FireEventDetailPanelProps) {
   const [tab, setTab] = useState<DetailTab>('resumen')
+  const findingsQuery = useFireEventFindings(event?.id)
 
   useEffect(() => {
     setTab('resumen')
@@ -193,6 +196,18 @@ export function FireEventDetailPanel({
                 <p className="text-[11px] leading-relaxed text-text-tertiary">
                   {event.evidence_summary}
                 </p>
+
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+                    Hallazgos relacionados
+                  </p>
+                  <div className="mt-2">
+                    <FireRelatedFindings
+                      findings={findingsQuery.data?.items}
+                      isLoading={findingsQuery.isLoading}
+                    />
+                  </div>
+                </div>
               </section>
             )}
 

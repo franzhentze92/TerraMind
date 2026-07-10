@@ -3,6 +3,7 @@ import { AppShell } from '@/shared/layouts'
 import { NationalSituationPage } from '@/modules/national-center/pages/NationalSituationPage'
 import { CopilotPage } from '@/modules/copilot/pages/CopilotPage'
 import { FindingsPage } from '@/modules/findings/pages/FindingsPage'
+import { FindingDetailPage } from '@/modules/findings/pages/FindingDetailPage'
 import { PrioritiesPage } from '@/modules/priorities/pages/PrioritiesPage'
 import { TerritoryPage } from '@/modules/territory/pages/TerritoryPage'
 import { StrategiesPage } from '@/modules/strategies/pages/StrategiesPage'
@@ -26,6 +27,7 @@ export const router = createBrowserRouter([
       { path: 'biodiversidad', element: <BiodiversityAnalysisPage /> },
       { path: 'copilot', element: <CopilotPage /> },
       { path: 'hallazgos', element: <FindingsPage /> },
+      { path: 'hallazgos/:findingId', element: <FindingDetailPage /> },
       { path: 'prioridades', element: <PrioritiesPage /> },
       { path: 'estrategias', element: <StrategiesPage /> },
       { path: 'territorio', element: <TerritoryPage /> },
