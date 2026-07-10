@@ -96,7 +96,37 @@ export interface FireEventDetailDto extends FireEventListItemDto {
   detections: FireEventDetectionDto[]
   evidence_summary: string
   interpretation: string
+  protected_area_context: ProtectedAreaContextDto | null
   generated_at: string
+}
+
+export type ProtectedAreaContextStatus = 'complete' | 'partial' | 'unavailable' | 'error'
+
+export interface ProtectedAreaIntersectDto {
+  display_name: string
+  general_name: string | null
+  specific_name: string | null
+  feature_type: string | null
+}
+
+export interface ProtectedAreaNearestDto {
+  display_name: string
+  general_name: string | null
+  specific_name: string | null
+  distance_m: number | null
+  proximity_label: 'dentro' | 'muy_cerca' | 'cerca' | 'entorno_proximo' | 'distante'
+}
+
+export interface ProtectedAreaContextDto {
+  status: ProtectedAreaContextStatus
+  inside_protected_area: boolean | null
+  detections_inside_count: number
+  intersecting_areas: ProtectedAreaIntersectDto[]
+  nearest_area: ProtectedAreaNearestDto | null
+  diagnostic_geometry_intersects_protected_area: boolean | null
+  source_name: string
+  source_version: string
+  generated_at: string | null
 }
 
 export interface FireDepartmentOptionDto {

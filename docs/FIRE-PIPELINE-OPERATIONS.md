@@ -1,7 +1,7 @@
 # Operación del pipeline FIRMS — TerraMind
 
 Este documento describe el scheduler automático del pipeline de incendios:
-ingesta FIRMS → geografía → clustering → actualización de estados.
+ingesta FIRMS → geografía → clustering → actualización de estados → áreas protegidas.
 
 ## Flujo
 
@@ -10,6 +10,7 @@ runFireIngestion()
   → classify_fire_detections_geography (incremental)
   → runClusterPipeline({ dryRun: false })
   → fire_events_refresh_temporal_status_metrics()
+  → protected_area_enrichment (incremental)
 ```
 
 Cada corrida se registra en `fire_pipeline_runs` con métricas por etapa.

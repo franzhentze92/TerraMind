@@ -5,6 +5,8 @@ import {
 } from '@/modules/fires/utils/fire-interpretation'
 import { mapEventRowToDto } from '@/modules/fires/api/fire-api.mappers'
 import type { FireEventDetailDto, FireDepartmentOptionDto } from '@/modules/fires/types/fire.dto'
+import { buildProtectedAreaContextDto } from '@/modules/fires/utils/protected-area-context.dto'
+import type { FireEventContextRow } from '@/pipeline/stores/territorial.store'
 import { getSupabaseAdmin } from '@/pipeline/stores/supabase.client'
 
 const EVENT_SELECT = `
@@ -71,6 +73,14 @@ export async function getFireEventDetail(eventId: string): Promise<FireEventDeta
 
   if (linksError) throw new Error(linksError.message)
 
+  const { data: contextRow, error: contextError } = await supabase
+    .from('fire_event_context')
+    .select('*')
+    .eq('event_id', eventId)
+    .maybeSingle()
+
+  if (contextError) throw new Error(contextError.message)
+
   const base = mapEventRowToDto(eventRow)
   const detections = (links ?? [])
     .map((link) => {
@@ -95,6 +105,10 @@ export async function getFireEventDetail(eventId: string): Promise<FireEventDeta
     .filter((d): d is NonNullable<typeof d> => d !== null)
     .sort((a, b) => a.acquired_at_utc.localeCompare(b.acquired_at_utc))
 
+  const protected_area_context = await buildProtectedAreaContextDto(
+    contextRow as FireEventContextRow | null,
+  )
+
   const detail: FireEventDetailDto = {
     ...base,
     estimated_area_ha: toNumber(eventRow.estimated_area_ha as number | string | null),
@@ -109,6 +123,7 @@ export async function getFireEventDetail(eventId: string): Promise<FireEventDeta
       persistence_hours: base.persistence_hours,
       multisatellite: base.satellite_count >= 2,
     }),
+    protected_area_context,
     generated_at: generatedAt,
   }
 

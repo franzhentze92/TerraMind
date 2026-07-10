@@ -11,8 +11,17 @@ import {
   validationStatusLabel,
 } from '@/modules/fires/utils/fire-interpretation'
 import { FireEvidenceTimeline } from './FireEvidenceTimeline'
+import {
+  buildTerritorySummaryText,
+  territoryDisclaimer,
+  territoryStatusLabel,
+} from '@/modules/fires/utils/protected-area-summary'
+import {
+  formatDistanceM,
+  proximityLabelText,
+} from '@/modules/fires/utils/proximity-label'
 
-type DetailTab = 'resumen' | 'evidencia' | 'analisis'
+type DetailTab = 'resumen' | 'evidencia' | 'analisis' | 'territorio'
 
 interface FireEventDetailPanelProps {
   event?: FireEventDetailDto
@@ -26,6 +35,7 @@ interface FireEventDetailPanelProps {
 const TABS: { id: DetailTab; label: string }[] = [
   { id: 'resumen', label: 'Resumen' },
   { id: 'evidencia', label: 'Evidencia' },
+  { id: 'territorio', label: 'Territorio' },
   { id: 'analisis', label: 'Análisis' },
 ]
 
@@ -216,6 +226,112 @@ export function FireEventDetailPanel({
                     </div>
                   </details>
                 )}
+              </section>
+            )}
+
+            {tab === 'territorio' && (
+              <section className="space-y-4">
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+                    Áreas protegidas
+                  </p>
+                  {event.protected_area_context ? (
+                    <div className="mt-3 space-y-3 text-sm">
+                      <p className="leading-relaxed text-text-secondary">
+                        {buildTerritorySummaryText(event.protected_area_context)}
+                      </p>
+                      {territoryDisclaimer(event.protected_area_context.inside_protected_area) && (
+                        <p className="text-[11px] leading-relaxed text-text-tertiary">
+                          {territoryDisclaimer(event.protected_area_context.inside_protected_area)}
+                        </p>
+                      )}
+                      <dl className="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                          <dt className="text-text-tertiary">Estado</dt>
+                          <dd className="text-text-primary">
+                            {territoryStatusLabel(event.protected_area_context.inside_protected_area)}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-text-tertiary">Detecciones dentro</dt>
+                          <dd className="font-mono text-text-primary">
+                            {event.protected_area_context.detections_inside_count}
+                          </dd>
+                        </div>
+                        <div className="col-span-2">
+                          <dt className="text-text-tertiary">Áreas intersectadas</dt>
+                          <dd className="text-text-secondary">
+                            {event.protected_area_context.intersecting_areas.length > 0
+                              ? event.protected_area_context.intersecting_areas
+                                  .map((a) => a.display_name)
+                                  .join(', ')
+                              : 'Ninguna'}
+                          </dd>
+                        </div>
+                        <div className="col-span-2">
+                          <dt className="text-text-tertiary">
+                            {event.protected_area_context.inside_protected_area
+                              ? 'Área protegida asociada'
+                              : 'Área protegida más cercana'}
+                          </dt>
+                          <dd className="text-text-secondary">
+                            {event.protected_area_context.inside_protected_area
+                              ? event.protected_area_context.intersecting_areas
+                                  .map((a) => a.display_name)
+                                  .join(', ') || '—'
+                              : event.protected_area_context.nearest_area?.display_name ?? '—'}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-text-tertiary">Distancia</dt>
+                          <dd className="font-mono text-text-primary">
+                            {formatDistanceM(
+                              event.protected_area_context.nearest_area?.distance_m,
+                            )}
+                          </dd>
+                        </div>
+                        <div>
+                          <dt className="text-text-tertiary">Proximidad</dt>
+                          <dd className="text-text-secondary">
+                            {event.protected_area_context.nearest_area
+                              ? proximityLabelText(
+                                  event.protected_area_context.nearest_area.proximity_label,
+                                )
+                              : '—'}
+                          </dd>
+                        </div>
+                        {event.protected_area_context.diagnostic_geometry_intersects_protected_area && (
+                          <div className="col-span-2">
+                            <dt className="text-text-tertiary">Superposición diagnóstica</dt>
+                            <dd className="text-[11px] text-text-tertiary">
+                              El buffer de visualización (~375 m) intersecta un área protegida.
+                              Esto no confirma presencia satelital dentro del polígono.
+                            </dd>
+                          </div>
+                        )}
+                        <div className="col-span-2">
+                          <dt className="text-text-tertiary">Fuente</dt>
+                          <dd className="text-text-secondary">
+                            {event.protected_area_context.source_name} (
+                            {event.protected_area_context.source_version})
+                          </dd>
+                        </div>
+                        <div className="col-span-2">
+                          <dt className="text-text-tertiary">Fecha del contexto</dt>
+                          <dd className="text-text-secondary">
+                            {event.protected_area_context.generated_at
+                              ? formatGuatemalaDateTime(event.protected_area_context.generated_at)
+                              : '—'}
+                          </dd>
+                        </div>
+                      </dl>
+                    </div>
+                  ) : (
+                    <p className="mt-2 text-sm text-text-tertiary">
+                      Contexto territorial no calculado.
+                    </p>
+                  )}
+                </div>
               </section>
             )}
 

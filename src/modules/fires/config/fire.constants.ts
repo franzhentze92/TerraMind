@@ -24,3 +24,6 @@ export const FIRE_DEFAULT_PERIOD: FirePeriodPreset = '48h'
 
 export const FIRE_AREA_DISCLAIMER =
   'Representación espacial aproximada del cluster. No corresponde a área quemada ni superficie afectada confirmada.'
+
+export const PROTECTED_AREAS_SOURCE_NAME = 'CONAP SIGAP 2025'
+export const PROTECTED_AREAS_SOURCE_VERSION = 'SIGAP_08122025_IP'

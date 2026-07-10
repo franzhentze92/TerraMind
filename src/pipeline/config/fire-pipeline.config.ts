@@ -5,6 +5,7 @@ export const PIPELINE_TIMEOUTS_MS = {
   ingestionTotal: 3 * 60_000,
   geography: 60_000,
   clustering: 2 * 60_000,
+  protectedAreaEnrichment: 60_000,
   pipelineTotal: 7 * 60_000,
 } as const
 

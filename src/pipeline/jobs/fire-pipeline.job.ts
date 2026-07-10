@@ -23,6 +23,10 @@ import { StageTimeoutError, withTimeout } from '@/pipeline/utils/timeout'
 import { isTransientError, withRetry } from '@/pipeline/utils/retry'
 import type { GeographyClassifyMetrics } from '@/pipeline/engines/fire/geography.engine'
 import type { ClusterDryRunResult } from '@/pipeline/stores/fire-event.types'
+import {
+  ProtectedAreasLayerUnavailableError,
+  runProtectedAreasEnrichment,
+} from '@/pipeline/engines/fire/context/protected-areas.engine'
 
 export interface FirePipelineRunOptions {
   triggerType: FirePipelineTriggerType
@@ -298,6 +302,11 @@ export async function runFirePipeline(
               duration_ms: 0,
               metrics: { reason: 'ingestion_failed_or_empty' },
             }
+            stages.protected_area_enrichment = {
+              status: 'skipped',
+              duration_ms: 0,
+              metrics: { reason: 'ingestion_failed_or_empty' },
+            }
           }
 
           const statusStart = Date.now()
@@ -320,6 +329,42 @@ export async function runFirePipeline(
               error_code: err instanceof StageTimeoutError ? 'timeout' : 'status_refresh_failed',
             }
             throw err
+          }
+
+          const enrichStart = Date.now()
+          try {
+            const enrich = await withTimeout(
+              runProtectedAreasEnrichment({ limit: 10000, force: false }),
+              PIPELINE_TIMEOUTS_MS.protectedAreaEnrichment,
+              'protected_area_enrichment',
+            )
+            stages.protected_area_enrichment = {
+              status: enrich.events_failed > 0 ? 'partial' : 'success',
+              duration_ms: Date.now() - enrichStart,
+              metrics: {
+                events_considered: enrich.events_considered,
+                events_enriched: enrich.events_enriched,
+                events_unchanged: enrich.events_unchanged,
+                events_failed: enrich.events_failed,
+                inside_protected_area_count: enrich.inside_protected_area_count,
+                context_version: enrich.context_version,
+              },
+            }
+          } catch (err) {
+            const isUnavailable = err instanceof ProtectedAreasLayerUnavailableError
+            stages.protected_area_enrichment = {
+              status: isUnavailable ? 'partial' : 'failed',
+              duration_ms: Date.now() - enrichStart,
+              error: err instanceof Error ? err.message : 'protected area enrichment failed',
+              error_code: err instanceof StageTimeoutError
+                ? 'timeout'
+                : isUnavailable
+                  ? 'layer_unavailable'
+                  : 'protected_area_enrichment_failed',
+            }
+            if (!isUnavailable) {
+              throw err
+            }
           }
         })(),
         PIPELINE_TIMEOUTS_MS.pipelineTotal,

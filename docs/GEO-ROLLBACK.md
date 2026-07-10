@@ -31,3 +31,28 @@ DROP FUNCTION IF EXISTS public.normalize_boundary(geometry);
 ```
 
 Los artefactos en `data/geo/sources/` permanecen en disco.
+
+## Rollback Commit 7A.1 (áreas protegidas SIGAP)
+
+```sql
+-- 1. Contexto territorial de eventos
+DELETE FROM public.fire_event_context;
+
+-- 2. Features y capa SIGAP
+DELETE FROM public.territorial_features
+WHERE layer_id IN (
+  SELECT id FROM public.territorial_layers WHERE layer_code = 'gt_protected_areas'
+);
+
+DELETE FROM public.territorial_layers WHERE layer_code = 'gt_protected_areas';
+
+-- 3. Funciones
+DROP FUNCTION IF EXISTS public.fire_enrich_protected_area_context(uuid, text, jsonb);
+DROP FUNCTION IF EXISTS public.territorial_upsert_feature(text, text, text, text, text, jsonb, jsonb);
+DROP FUNCTION IF EXISTS public.territorial_normalize_geometry(jsonb);
+
+-- 4. Tablas (solo si se revierte migración completa)
+DROP TABLE IF EXISTS public.fire_event_context;
+DROP TABLE IF EXISTS public.territorial_features;
+DROP TABLE IF EXISTS public.territorial_layers;
+```
