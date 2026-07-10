@@ -171,7 +171,7 @@ export class InaturalistBiodiversityProvider implements BiodiversityProvider {
     try {
       await inaturalistFetchJson<InatObservationSearchResponse>(
         '/observations',
-        { place_id: 6971, per_page: 1 },
+        { lat: 14.63, lng: -90.51, radius: 1, per_page: 1 },
         'inat-health',
       )
       const health: BiodiversityProviderHealth = {
