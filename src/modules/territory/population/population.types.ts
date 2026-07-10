@@ -24,6 +24,7 @@ export type PopulationWarningCode =
   | 'partial_coverage'
   | 'nodata_inside_geometry'
   | 'official_total_mismatch'
+  | 'official_year_mismatch'
   | 'missing_admin_code'
   | 'settlement_source_unavailable'
   | 'adjustment_not_applied'
@@ -146,6 +147,8 @@ export interface AdministrativePopulationContext {
   source: string
   referenceYear: number
   semantics: 'official_administrative_population'
+  temporalAlignment?: 'exact' | 'nearest' | 'mismatch' | 'partial'
+  warnings?: PopulationWarning[]
 }
 
 export interface NearestSettlement {

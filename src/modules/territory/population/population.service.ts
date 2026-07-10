@@ -36,6 +36,8 @@ import {
   dedupeWarnings,
   populationWarning,
 } from '@/modules/territory/population/population-warnings'
+import { createPopulationAdminService, type PopulationAdminService } from '@/modules/territory/population/admin/population-admin.service'
+import { findNearestSettlements } from '@/modules/territory/population/admin/settlement-index'
 import {
   getLocalPopulationSourceStatus,
   type LocalPopulationSourceStatus,
@@ -77,6 +79,7 @@ export class PopulationServiceError extends Error {
 
 export interface PopulationServiceOptions {
   rasterEngine?: PopulationRasterEngine
+  adminService?: PopulationAdminService
 }
 
 const MAX_BUFFER_RADIUS_M = 50_000
@@ -212,6 +215,7 @@ export function createPopulationService(
   options: PopulationServiceOptions = {},
 ): PopulationService {
   const raster = options.rasterEngine ?? createPopulationRasterEngine()
+  const admin = options.adminService ?? createPopulationAdminService()
   let cachedStatus: LocalPopulationSourceStatus | null = null
   let cachedStatusAt = 0
   const STATUS_TTL_MS = 30_000
@@ -507,19 +511,20 @@ export function createPopulationService(
       if (!input.departmentCode && !input.municipalityCode) {
         throw new PopulationServiceError('Se requiere departmentCode o municipalityCode.')
       }
-      return {
-        status: 'not_available',
-        reason: 'INE administrative data not imported',
-        source: 'ine_guatemala',
-        referenceYear: input.referenceYear ?? 2020,
-        semantics: 'official_administrative_population',
-      }
+      return admin.getAdministrativeContext(input)
     },
 
-    async getNearestSettlements() {
-      throw new PopulationServiceNotReadyError(
-        'Asentamientos: fuente INE lugares poblados pendiente de carga (7D.2).',
-      )
+    async getNearestSettlements(input) {
+      const settlements = findNearestSettlements({
+        geometry: input.geometry,
+        limit: input.limit,
+      })
+      if (!settlements.length) {
+        throw new PopulationServiceNotReadyError(
+          'Sin asentamientos cargados. Ejecutar population:import-ine --apply.',
+        )
+      }
+      return settlements
     },
   }
 }

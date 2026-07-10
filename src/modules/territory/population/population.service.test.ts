@@ -147,17 +147,21 @@ describe('PopulationService (7D.1B)', () => {
     expect(comparison.percentageDifference).toBe(30)
   })
 
-  it('getAdministrativeContext returns not_available', async () => {
+  it('getAdministrativeContext returns INE data when available', async () => {
     const service = createPopulationService({ rasterEngine: mockEngine() })
-    const ctx = await service.getAdministrativeContext({ departmentCode: 'GT01' })
-    expect(ctx.status).toBe('not_available')
-    expect(ctx.reason).toContain('INE')
+    const ctx = await service.getAdministrativeContext({ departmentCode: '13', referenceYear: 2020 })
+    expect(ctx.status).toBe('available')
+    expect(ctx.department?.adminName).toMatch(/Huehuetenango/i)
+    expect(ctx.semantics).toBe('official_administrative_population')
   })
 
-  it('getNearestSettlements remains deferred', async () => {
+  it('getNearestSettlements returns ranked settlements', async () => {
     const service = createPopulationService({ rasterEngine: mockEngine() })
-    await expect(
-      service.getNearestSettlements({ geometry: { type: 'Point', coordinates: [0, 0] } }),
-    ).rejects.toBeInstanceOf(PopulationServiceNotReadyError)
+    const settlements = await service.getNearestSettlements({
+      geometry: { type: 'Point', coordinates: [-91.4761, 15.3147] },
+      limit: 3,
+    })
+    expect(settlements.length).toBeGreaterThan(0)
+    expect(settlements[0]?.distanceM).toBeGreaterThanOrEqual(0)
   })
 })

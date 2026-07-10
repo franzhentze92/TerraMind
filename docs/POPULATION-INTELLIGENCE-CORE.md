@@ -9,9 +9,10 @@ Módulo territorial genérico de TerraMind para estimar y analizar **población 
 | Investigación de fuentes | Completada |
 | Arquitectura y tipos | Completada en `main` |
 | **7D.1A WorldPop audit** | **Completada** — ver `docs/reports/POPULATION-WORLDPOP-2020-AUDIT.md` |
-| Migración 012 | Propuesta — **no aplicada** |
-| PopulationService operativo | **Pendiente** (7D.1B) |
-| Datos administrativos INE | **Pendiente** (7D.2) |
+| **7D.1B PopulationService** | **Completada** — raster operativo, dual_use |
+| Migración 012 | **Aplicada** (2026-07-10) |
+| **7D.2 INE + asentamientos** | **Completada** — ver `docs/reports/POPULATION-INE-IMPORT-AUDIT.md` |
+| Ajuste raster / factores municipales | **No implementado** (reconciliación pendiente) |
 | Adaptadores / API / UI | **Pendiente** (7D.3–7D.4) |
 
 ## Problema
@@ -347,7 +348,7 @@ Métricas: p50, p95, memoria, apertura raster, ventana, zonal, caché.
 ## Rollback
 
 1. Rama/worktree aislado — no merge a `main` hasta aprobación.
-2. Migración 012 no aplicada — rollback = no ejecutar SQL.
+2. Migración 012 aplicada — rollback SQL en `docs/reports/POPULATION-INE-IMPORT-AUDIT.md`.
 3. Rasters en almacenamiento externo versionado — eliminar artifact + hash.
 4. `entity_population_*` — truncate por `context_version` si se requiere recomputar.
 

@@ -11,6 +11,7 @@ export const POPULATION_WARNING_CODES: readonly PopulationWarningCode[] = [
   'partial_coverage',
   'nodata_inside_geometry',
   'official_total_mismatch',
+  'official_year_mismatch',
   'missing_admin_code',
   'settlement_source_unavailable',
   'adjustment_not_applied',
@@ -45,6 +46,7 @@ const WARNING_SEVERITY: Partial<Record<PopulationWarningCode, PopulationWarningS
   geometry_too_large: 'warning',
   adjustment_not_applied: 'info',
   settlement_source_unavailable: 'info',
+  official_year_mismatch: 'warning',
 }
 
 export function populationWarning(
