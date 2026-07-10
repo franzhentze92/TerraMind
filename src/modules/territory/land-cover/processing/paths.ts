@@ -14,7 +14,10 @@ export const GUATEMALA_ADM0_GEOJSON = resolve(
   'data/geo/sources/hdx-cod-ab-guatemala/2025-10-30-v01/extracted/gtm_admin0.geojson',
 )
 
+/** Área de referencia derivada del boundary operativo HDX (no usar 108,889 km²). */
+export const GUATEMALA_BOUNDARY_AREA_SQKM_PROPERTY = 'area_sqkm' as const
+
 export const LAEA_PROJ4 =
   '+proj=laea +lat_0=15.779 +lon_0=-90.231 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs'
 
-export const GUATEMALA_NATIONAL_AREA_KM2 = 108_889
+export const LAND_COVER_TEMP_DIR_PREFIX = 'terramind-land-cover-'

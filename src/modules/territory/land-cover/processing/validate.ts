@@ -3,11 +3,11 @@ import { resolve } from 'node:path'
 import { gdalInfoJson } from '@/modules/territory/land-cover/processing/gdal'
 import { loadManifest, saveManifest } from '@/modules/territory/land-cover/processing/manifest-io'
 import {
-  GUATEMALA_NATIONAL_AREA_KM2,
   LAND_COVER_ANALYTIC_COG,
   LAND_COVER_SOURCE_COG,
   LAND_COVER_TILES_DIR,
 } from '@/modules/territory/land-cover/processing/paths'
+import { readBoundaryReferenceAreaSqkm } from '@/modules/territory/land-cover/audit/boundary-area'
 import {
   classPercentages,
   parseGdalInfoJson,
@@ -113,8 +113,11 @@ export async function validateLandCoverArtifacts(): Promise<ValidateResult> {
   const pixelAreaM2 = pixelW * pixelH
   const breakdown = classPercentages(laea_cog, pixelAreaM2)
   const totalValidKm2 = breakdown.reduce((s, r) => s + r.area_km2, 0)
+  const boundaryReferenceKm2 = readBoundaryReferenceAreaSqkm('laea')
   const diffPct =
-    ((totalValidKm2 - GUATEMALA_NATIONAL_AREA_KM2) / GUATEMALA_NATIONAL_AREA_KM2) * 100
+    boundaryReferenceKm2 > 0
+      ? ((totalValidKm2 - boundaryReferenceKm2) / boundaryReferenceKm2) * 100
+      : 0
 
   manifest.processing = {
     ...(manifest.processing as Record<string, unknown> | undefined),
@@ -143,7 +146,7 @@ export async function validateLandCoverArtifacts(): Promise<ValidateResult> {
     },
     national_area_laea: {
       total_valid_km2: Math.round(totalValidKm2 * 10) / 10,
-      national_reference_km2: GUATEMALA_NATIONAL_AREA_KM2,
+      national_reference_km2: Math.round(boundaryReferenceKm2 * 10) / 10,
       difference_pct: Math.round(diffPct * 100) / 100,
       class_breakdown: breakdown.map((b) => ({
         code: b.code,

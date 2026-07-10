@@ -1,9 +1,8 @@
-# Cobertura del suelo — TerraMind (Commit 7A.2)
+# Cobertura del suelo — TerraMind (Commits 7A.2-A/B/C)
 
-Documento de diseño aprobado con correcciones arquitectónicas.  
-**Estado:** planificación — raster **no descargado** aún.
+**Estado:** raster nacional preparado · `LandCoverService` operativo (7A.2-C) · migración `009` **no aplicada**.
 
-## 1. Fuente aprobada
+## 1. Fuente
 
 | Campo | Valor |
 |-------|-------|
@@ -12,228 +11,187 @@ Documento de diseño aprobado con correcciones arquitectónicas.
 | Licencia | CC BY 4.0 |
 | Resolución nominal | 10 m |
 | Año referencia | **2021** |
-| CRS fuente | EPSG:4326 (WGS84 geográfico) |
+| CRS fuente | EPSG:4326 |
 | Clases | 11 (+ nodata 0) |
-| Manglar | Clase 95 — separada |
+| Manglar | Clase **95** — separada de humedal **90** |
 
-**Semántica:** land cover (cobertura física), no land use (uso legal).  
-**Precisión:** ~76.7% accuracy global (validación v200). 10 m ≠ exactitud posicional de 10 m.
+**Semántica:** land cover (cobertura física), no land use (uso legal).
 
-## 2. Arquitectura de módulos
+## 2. Arquitectura (7A.2-C)
 
 ```text
-src/modules/territory/land-cover/          ← servicio genérico
+src/modules/territory/land-cover/
   land-cover.types.ts
   land-cover-taxonomy.ts
   land-cover.service.ts
-  land-cover-raster.ts                     ← Commit 7A.2-C
+  land-cover-context-version.ts
+  land-cover-warnings.ts
+  raster/
+    land-cover-raster-engine.ts
+    raster-artifacts.ts
+    raster-distribution.ts
+    raster-geometry.ts
+    raster-point-sampler.ts
+    raster-zone-analyzer.ts
+    raster-temp.ts
+  audit/
+    land-cover-audit.ts
+    land-cover-benchmark.ts
+    boundary-area.ts
   providers/esa-worldcover/
-    esa-worldcover.mapper.ts
-    esa-worldcover.manifest.ts
-    esa-worldcover.provider.ts             ← Commit 7A.2-C
+  processing/          ← pipeline descarga/COG (7A.2-B)
 
 src/pipeline/engines/fire/context/
-  fire-land-cover.adapter.ts               ← adaptador delgado incendios
-
-src/modules/fires/                           ← solo DTO/UI (Commit 7A.2-E)
-  utils/land-cover-context.dto.ts
+  fire-land-cover.adapter.ts   ← stub (7A.2-D)
 ```
 
-### API interna del servicio
+### API interna
 
 ```typescript
-LandCoverService.samplePoints(points)
-LandCoverService.analyzeGeometry(geometry)
-LandCoverService.analyzeBuffers({ points, zone_radii_m, unify_zone_buffers: true })
 LandCoverService.getSourceStatus()
+LandCoverService.samplePoints({ points })
+LandCoverService.analyzeGeometry({ geometry, geometryCrs })
+LandCoverService.analyzeBuffers({ points, radiiMeters, unifyBuffers })
 ```
 
-Reutilizable por: eventos térmicos, municipios, áreas protegidas, parcelas, cuerpos de agua.
+Reutilizable por: incendios, municipios, áreas protegidas, parcelas, cuerpos de agua.
 
-## 3. Dos conceptos de análisis
+### Buffers múltiples
 
-### A. `point_distribution`
-Clases en las **detecciones FIRMS reales** (o centroide con warning `centroid_fallback_used`).
+1. Puntos WGS84 → reproyección LAEA (`ogr2ogr -t_srs`)
+2. `ST_Union(ST_Buffer(geometry, radius_m))` por radio (SQLite/GEOS)
+3. Recorte raster con `gdalwarp -cutline -cutline_srs LAEA -crop_to_cutline`
+4. Histograma GDAL → distribución por clase (nodata excluido)
 
-### B. `zone_distribution`
-Composición del **entorno unificado** por radio. Para varias detecciones:
+**CRS buffers:** LAEA Guatemala (`lat_0=15.779`, `lon_0=-90.231`)  
+**Unión:** `ogr-st-union-laea-meters`  
+**Resampling:** `near` (categórico)
 
-```sql
-ST_UnaryUnion(
-  ST_Collect(
-    ST_Buffer(detection.location::geography, radius_m)::geometry
-  )
-)
-```
+## 3. Artefactos locales
 
-Un solo muestreo raster por radio — sin doble conteo de buffers superpuestos.
+| Archivo | CRS | Tamaño | Uso |
+|---------|-----|--------|-----|
+| `processed/land_cover_gt_4326.tif` | EPSG:4326 | ~99 MB | Muestreo de puntos |
+| `processed/land_cover_gt_laea.tif` | LAEA-GT | ~100 MB | Estadísticas zonales / % área |
 
-## 4. Estrategia de área de píxeles
+Boundary de recorte: `data/geo/sources/hdx-cod-ab-guatemala/.../gtm_admin0.geojson`
 
-### Problema
-EPSG:4326: área de píxel varía con latitud. Conteo simple × resolución² introduce error en porcentajes nacionales y por buffer.
+## 4. Auditoría de área nacional (7A.2-C)
 
-### Opciones evaluadas
+Referencia operativa TerraMind = **boundary ADM0 versionado**, no 108,889 km² (constante obsoleta).
 
-| Opción | Veredicto |
-|--------|-----------|
-| A. Conteo simple en EPSG:4326 | ❌ Error latitudinal no documentado |
-| B. UTM 16N para todo Guatemala | ❌ Este (88°W) está en UTM 15N; oeste en 16N |
-| C. UTM por zona (15N + 16N) | ⚠️ Viable pero complejo en bordes |
-| D. **LAEA centrado en Guatemala** | ✅ **Recomendado** |
-| E. Área geodésica por fila en 4326 | ✅ Alternativa sin segundo COG; más lento |
+| Métrica | km² |
+|---------|-----|
+| HDX `area_sqkm` (propiedad GeoJSON) | 108,231.37 |
+| Boundary geodésico (esfera WGS84) | 108,853.66 |
+| Boundary LAEA planar (`ST_Area`) | **108,238.90** |
+| Raster LAEA válido (máscara ADM0) | **108,231.33** |
+| **Δ raster − boundary LAEA** | **−7.57 (−0.007%)** |
 
-### Decisión: **D — COG analítico LAEA**
+**Explicación del Δ:** rasterización de borde + resolución ~9.08 m + recorte previo al COG.  
+~27,048 píxeles válidos fuera del boundary (~2.23 km²) en el COG sin máscara final.  
+Nodata dentro del boundary: **0**.
 
-| Artefacto | CRS | Uso |
-|-----------|-----|-----|
-| `land_cover_gt_source_4326.tif` | EPSG:4326 | Inmutable, muestreo de puntos |
-| `land_cover_gt_analytic_laea.tif` | LAEA custom | Estadísticas de zona / porcentajes |
+## 5. Auditoría de clases nacionales
 
-**Proj4 analítico (Guatemala centroid):**
+Distribución validada sobre COG LAEA enmascarado con ADM0 (solo píxeles válidos):
+
+| Clase | % | km² |
+|-------|---|-----|
+| Bosque (10) | 62.6 | 67,777 |
+| Pastizal (30) | 27.2 | 29,396 |
+| Cultivo (40) | 4.2 | 4,541 |
+| Matorral (20) | 3.5 | 3,803 |
+| Urbano (50) | 1.3 | 1,380 |
+| Agua (80) | 0.6 | 662 |
+| Humedal (90) | 0.2 | 269 |
+| Manglar (95) | 0.2 | 244 |
+| Desnudo (60) | 0.1 | 157 |
+| **Suma** | **99.9%** | — |
+
+Integridad: mismos códigos en COG 4326 y LAEA; sin códigos inventados; manglar ≠ humedal.
+
+## 6. Puntos de control manual
+
+| Punto | Lat/Lon | Código | Clase | ¿Razonable? |
+|-------|---------|--------|-------|-------------|
+| Petén central | 16.9, −90.5 | 10 | forest | ✓ |
+| Costa sur agrícola | 14.0, −91.0 | 40 | cropland | ✓ |
+| Altiplano | 15.03, −91.72 | 20 | shrubland | ✓ |
+| Ciudad de Guatemala | 14.63, −90.51 | 50 | built_up | ✓ |
+| Manglares Pacífico | 13.95, −90.65 | 95 | mangrove | ✓ |
+| Lago de Atitlán | 14.7, −91.2 | 80 | permanent_water | ✓ |
+| Fuera de GT | 15.0, −87.5 | — | nodata | ✓ |
+
+## 7. Benchmark dual COG (7A.2-C)
+
+Warm-up ~2.3 s · 10 repeticiones · radios 500 m / 1 km / 3 km · buffers unificados.
+
+| Caso | Estrategia | p50 | p95 |
+|------|------------|-----|-----|
+| 1 punto | LAEA directo | 1.7 s | 1.9 s |
+| 1 punto | Warp 4326→LAEA | 1.9 s | 2.0 s |
+| 5 puntos | LAEA directo | 40.3 s | 46.2 s |
+| 5 puntos | Warp on-demand | 44.4 s | 50.1 s |
+| 3 puntos | LAEA directo | 28.3 s | 33.0 s |
+| 3 puntos | Warp on-demand | 28.2 s | 34.6 s |
+
+- Δ distribución máx entre estrategias: ~0.5%
+- Δ área máx: ~2.1 ha
+
+**Decisión 7A.2-C:** rendimiento **equivalente** en mediana. **Conservar ambos COG** por ahora:
+- LAEA simplifica áreas métricas y evita reproyección por consulta.
+- Warp on-demand es viable (~100 MB menos) si la carga operativa en 7A.2-D lo justifica.
+
+## 8. `context_version`
+
+Hash SHA-256 (16 hex) de:
 
 ```text
-+proj=laea +lat_0=15.779448 +lon_0=-90.230870 +x_0=0 +y_0=0 +datum=WGS84 +units=m +no_defs
+source_version | raster_hash | mapper_version | analysis_method_version |
+radii_sorted | nodata_policy | area_strategy | buffer_union_method
 ```
 
-| Métrica | Valor esperado |
-|---------|----------------|
-| Distorsión de área nacional | < 0.5% vs geodésico |
-| Impacto en % por buffer | Despreciable a escala 500 m–3 km |
-| Costo one-time warp | ~2–5 min (GDAL 3.10, 4 tiles) |
-| Píxel analítico | ~10 m equivalente (resample bilinear/nearest documentado) |
+## 9. Warnings
 
-**Por qué no EPSG:6933 (EASE-Grid 2.0):** diseñado para grillas globales gruesas; remuestrear 10 m nacional introduce artefactos innecesarios.
+`source_unavailable` · `raster_hash_mismatch` · `point_nodata` · `point_outside_coverage` · `incomplete_zone_coverage` · `mixed_point_classes` · `outdated_source_year` · `invalid_geometry` · `raster_processing_failed`
 
-## 5. Modelo de datos (extensible)
+## 10. Comandos
 
-### `fire_event_land_cover_context`
-
-| Campo | Tipo | Notas |
-|-------|------|-------|
-| event_id | uuid PK | |
-| context_version | text | hash compuesto (ver §8) |
-| source_layer_id | uuid FK | territorial_layers |
-| source_version | text | 2021-v200 |
-| reference_year | int | 2021 |
-| point_distribution | jsonb | clases en detecciones |
-| status | text | complete/partial/unavailable/error |
-| warnings | jsonb | códigos |
-| generated_at / updated_at | timestamptz | |
-
-**No** columnas rígidas por radio. Resúmenes 1 km (forest_pct, etc.) son **vistas derivadas** de zones, no fuente de verdad.
-
-### `fire_event_land_cover_zones`
-
-| Campo | Tipo |
-|-------|------|
-| id | uuid PK |
-| event_id | uuid FK |
-| radius_m | int |
-| dominant_class | text |
-| class_distribution | jsonb |
-| herbaceous_wetland_pct | numeric |
-| mangrove_pct | numeric |
-| valid_pixel_count | int |
-| nodata_pixel_count | int |
-| data_coverage_pct | numeric |
-| analyzed_area_ha | numeric |
-| context_version | text |
-| generated_at | timestamptz |
-
-**Unique:** `(event_id, radius_m, context_version)`
-
-`total_wetland_related_pct` = derivado en DTO/UI, no almacenado como única cifra de humedal.
-
-## 6. Tiles Guatemala — verificados (sin descarga)
-
-BBox HDX `gtm_admin0`: 13.74°N–17.82°N, 92.24°W–88.22°W
-
-| Tile ID | S3 URI | Tamaño |
-|---------|--------|--------|
-| N12W090 | `s3://esa-worldcover/v200/2021/map/ESA_WorldCover_10m_2021_v200_N12W090_Map.tif` | 77.2 MB |
-| N12W093 | `s3://esa-worldcover/v200/2021/map/ESA_WorldCover_10m_2021_v200_N12W093_Map.tif` | 32.5 MB |
-| N15W090 | `s3://esa-worldcover/v200/2021/map/ESA_WorldCover_10m_2021_v200_N15W090_Map.tif` | 47.4 MB |
-| N15W093 | `s3://esa-worldcover/v200/2021/map/ESA_WorldCover_10m_2021_v200_N15W093_Map.tif` | 89.8 MB |
-
-| Métrica | Valor |
-|---------|-------|
-| Tiles | **4** (no 6–9) |
-| Descarga total | **246.8 MB** |
-| Disco libre (planificación) | ~30 GB |
-| COG recortado estimado | 120–200 MB |
-| COG analítico LAEA estimado | 120–200 MB |
-| Almacenamiento total estimado | 250–400 MB |
-
-Ver `data/geo/sources/land-cover/esa-worldcover/2021-v200/manifest.json`.
-
-## 7. `context_version`
-
-Hash SHA-256 truncado de:
-
-```text
-source_version | cog_sha256 | mapper_version | analysis_method_version | radii | nodata_policy
+```bash
+npm run land-cover:download    # idempotente (7A.2-B)
+npm run land-cover:build
+npm run land-cover:validate
+npm run land-cover:audit       # 7A.2-C
+npm run land-cover:benchmark   # 7A.2-C (~25 min Windows)
+npm test
 ```
 
-Ejemplo: `2021-v200|abc…|esa-worldcover-v200-mapper-v1|laea-zone-stats-v1|0,500,1000,3000|exclude-zero`
+## 11. Pruebas
 
-## 8. Warnings
+- **Unitarias:** mapper, context_version, warnings, servicio con mocks
+- **Integración:** `describe.skipIf(!COG)` — no descarga en CI
+- Timeout extendido para buffers GDAL (~2 min)
 
-- `source_unavailable`
-- `point_nodata`
-- `incomplete_zone_coverage` (data_coverage_pct < 95%)
-- `mixed_point_classes`
-- `centroid_fallback_used`
-- `low_confidence_for_point_interpretation`
-- `outdated_source_year` (siempre presente como recordatorio 2021 vs 2026)
+## 12. Limitaciones
 
-## 9. UI (Territorio)
+| Tema | Nota |
+|------|------|
+| WorldCover 2021 | Snapshot histórico; no condición actual 2026 |
+| GDAL Windows | `proj.db` ausente — warnings PROJ; operaciones funcionan con proj4 explícito |
+| Subprocess | ~1–40 s por evento multi-buffer; no apto para consulta por píxel |
+| Alternativa futura | Python+rasterio, microservicio raster, o precomputación si >100 eventos/min |
 
-Sección **Cobertura del suelo** con:
-
-- Año del producto: **2021**
-- Cobertura en detecciones
-- Composición del entorno (500 m, 1 km, 3 km)
-- `herbaceous_wetland_pct` y `mangrove_pct` separados
-- Disclaimer temporal + clasificación
-
-Texto ejemplo:
-
-> Según ESA WorldCover 2021, las detecciones se encuentran sobre cobertura clasificada como cultivo.
-
-## 10. Commits planificados
+## 13. Commits
 
 | Commit | Alcance |
 |--------|---------|
-| **7A.2-A** | manifest + plan-tiles + docs + tipos (este paso) |
-| **7A.2-B** | descarga + mosaic + COG fuente + validación + SHA256 |
-| **7A.2-C** | LandCoverService + raster GDAL + LAEA |
-| **7A.2-D** | adaptador incendios + persistencia + CLI enrich |
-| **7A.2-E** | API + UI + pruebas + 5 eventos |
-| **7A.2-F** | scheduler (flag `LAND_COVER_ENRICHMENT_ENABLED=false` → true) |
+| 7A.2-A | planificación |
+| 7A.2-B | descarga + COG (`a6bc7c4`) |
+| **7A.2-C** | auditoría + benchmark + LandCoverService |
+| 7A.2-D | adaptador incendios + persistencia |
+| 7A.2-E | API + UI |
+| 7A.2-F | scheduler |
 
-**No modificar** `fire-pipeline.job.ts` hasta 7A.2-F.
-
-## 11. Riesgos Windows / GDAL
-
-| Riesgo | Mitigación |
-|--------|------------|
-| GDAL 3.10 CLI disponible | ✅ Verificado en entorno |
-| `rasterio` no instalado | Usar subprocess `gdalwarp`, `gdalinfo`, o añadir `gdal-async` |
-| Paths con espacios | Usar rutas absolutas entrecomilladas |
-| Memoria mosaic 4 tiles | ~250 MB descarga; warp streaming con GDAL_CACHEMAX |
-| Lock S3 lento | Descarga secuencial con reintentos |
-| Sin Python rasterio | Node + GDAL CLI es suficiente para MVP |
-
-## 12. Rollback
-
-1. `territorial_layers.is_active = false` para `gt_land_cover`
-2. No borrar contextos derivados salvo purge explícito
-3. Eliminar COGs locales; manifest permanece
-4. Migración down: drop zones + context tables
-
-## 13. Conflictos con agente climático
-
-- No tocar `src/sources/climate/**`
-- No modificar `fire-pipeline.job.ts` en fases A–E
-- Rama recomendada: `feature/7a2-land-cover`
+**No aplicado:** `009_land_cover_context.sql`  
+**No tocar:** Climate Core · `fire-pipeline.job.ts` hasta 7A.2-F

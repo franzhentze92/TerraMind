@@ -26,6 +26,8 @@
     "land-cover:download": "tsx scripts/land-cover-download.ts",
     "land-cover:build": "tsx scripts/land-cover-build.ts",
     "land-cover:validate": "tsx scripts/land-cover-validate.ts",
+    "land-cover:audit": "tsx scripts/land-cover-audit.ts",
+    "land-cover:benchmark": "tsx scripts/land-cover-benchmark.ts",
     "biodiversity:search": "tsx scripts/biodiversity-search.ts",
     "biodiversity:taxon": "tsx scripts/biodiversity-taxon.ts",
     "biodiversity:status": "tsx scripts/biodiversity-status.ts",
