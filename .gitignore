@@ -30,7 +30,11 @@ data/terramind-store.json
 data/geo/sources/land-cover/**/*.tif
 data/geo/sources/land-cover/**/tiles/
 
-# Review artifacts (regenerable; ver docs/BIODIVERSITY-INTELLIGENCE-CORE.md)
+# Population rasters — fuera de Git (manifest + SOURCE.md sí van)
+data/population/**/*.tif
+data/population/**/raw/
+data/population/**/_clip_temp/
+
 artifacts/review/
 review-output.json
 
