@@ -1,9 +1,14 @@
-import type { PopulationWarning, PopulationWarningCode } from './population.types'
+import type {
+  PopulationWarning,
+  PopulationWarningCode,
+  PopulationWarningSeverity,
+} from './population.types'
 
 export const POPULATION_WARNING_CODES: readonly PopulationWarningCode[] = [
   'source_unavailable',
   'outdated_reference_year',
   'incomplete_coverage',
+  'partial_coverage',
   'nodata_inside_geometry',
   'official_total_mismatch',
   'missing_admin_code',
@@ -11,13 +16,48 @@ export const POPULATION_WARNING_CODES: readonly PopulationWarningCode[] = [
   'adjustment_not_applied',
   'raster_processing_failed',
   'geometry_outside_coverage',
+  'fallback_to_wgs84',
+  'checksum_invalid',
+  'constrained_unconstrained_large_difference',
+  'resolution_limit',
+  'geometry_too_small',
+  'geometry_too_large',
+  'invalid_geometry',
+  'transform_failed',
+  'raster_read_failed',
 ] as const
+
+const WARNING_SEVERITY: Partial<Record<PopulationWarningCode, PopulationWarningSeverity>> = {
+  source_unavailable: 'error',
+  raster_processing_failed: 'error',
+  checksum_invalid: 'error',
+  invalid_geometry: 'error',
+  transform_failed: 'error',
+  raster_read_failed: 'error',
+  geometry_outside_coverage: 'warning',
+  incomplete_coverage: 'warning',
+  partial_coverage: 'warning',
+  nodata_inside_geometry: 'warning',
+  fallback_to_wgs84: 'warning',
+  constrained_unconstrained_large_difference: 'warning',
+  resolution_limit: 'info',
+  geometry_too_small: 'info',
+  geometry_too_large: 'warning',
+  adjustment_not_applied: 'info',
+  settlement_source_unavailable: 'info',
+}
 
 export function populationWarning(
   code: PopulationWarningCode,
   message: string,
+  options?: { severity?: PopulationWarningSeverity; technicalDetails?: string },
 ): PopulationWarning {
-  return { code, message }
+  return {
+    code,
+    severity: options?.severity ?? WARNING_SEVERITY[code] ?? 'warning',
+    message,
+    ...(options?.technicalDetails ? { technicalDetails: options.technicalDetails } : {}),
+  }
 }
 
 export function collectPopulationZoneWarnings(input: {
@@ -92,4 +132,16 @@ export function collectAdministrativeWarnings(input: {
     }
   }
   return warnings
+}
+
+export function dedupeWarnings(warnings: PopulationWarning[]): PopulationWarning[] {
+  const seen = new Set<string>()
+  const out: PopulationWarning[] = []
+  for (const w of warnings) {
+    const key = `${w.code}|${w.message}`
+    if (seen.has(key)) continue
+    seen.add(key)
+    out.push(w)
+  }
+  return out
 }

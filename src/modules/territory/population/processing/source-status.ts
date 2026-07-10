@@ -36,6 +36,7 @@ export interface LocalPopulationSourceStatus extends PopulationSourceStatus {
   }>
   totalPopulation?: number
   primaryVariant?: 'constrained' | 'unconstrained' | 'dual_use'
+  validationRasterHash?: string
   generatedAt?: string
 }
 
@@ -95,7 +96,14 @@ export async function getLocalPopulationSourceStatus(): Promise<LocalPopulationS
     }
 
     if (!rawAvailable || !wgs84CogAvailable) filesAvailable = false
-    if (!variantChecksumValid) checksumValid = false
+    if (!variantChecksumValid) {
+      checksumValid = false
+      if (rawAvailable) {
+        warnings.push(
+          populationWarning('checksum_invalid', `Checksum inválido para raster ${variant}.`),
+        )
+      }
+    }
     if (!wgs84CogAvailable || !variantPopulation) cogValid = false
 
     const manifest = existsSync(POPULATION_MANIFEST_PATH)
@@ -155,6 +163,7 @@ export async function getLocalPopulationSourceStatus(): Promise<LocalPopulationS
     variants,
     totalPopulation,
     primaryVariant,
+    validationRasterHash: manifestChecksums.unconstrained,
     generatedAt,
   }
 }

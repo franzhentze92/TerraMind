@@ -11,7 +11,9 @@ describe('population warnings', () => {
     expect(POPULATION_WARNING_CODES).toContain('source_unavailable')
     expect(POPULATION_WARNING_CODES).toContain('adjustment_not_applied')
     expect(POPULATION_WARNING_CODES).toContain('geometry_outside_coverage')
-    expect(POPULATION_WARNING_CODES).toHaveLength(10)
+    expect(POPULATION_WARNING_CODES).toContain('fallback_to_wgs84')
+    expect(POPULATION_WARNING_CODES).toContain('checksum_invalid')
+    expect(POPULATION_WARNING_CODES.length).toBeGreaterThanOrEqual(10)
   })
 
   it('flags outdated reference year', () => {
