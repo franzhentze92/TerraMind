@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 
 import { createHttpSyncTransport } from '@/modules/field-operations/field-sync/api/field-sync-api'
+import { createMockSyncTransport } from '@/modules/field-operations/field-sync/api/field-sync-mock-transport'
+import { FIELD_REAL_SYNC_ENABLED } from '@/modules/field-operations/field-mobile/config/fire-field-mobile.config'
 import {
   cancelSyncSession,
   computeSyncProgress,
@@ -16,7 +18,7 @@ import { OfflinePackageRepository } from '@/modules/field-operations/offline-pac
 const evidenceRepo = OfflineEvidenceRepository.createDefault()
 const syncRepo = FieldSyncRepository.createDefault()
 const packageRepo = OfflinePackageRepository.createDefault()
-const transport = createHttpSyncTransport()
+const transport = FIELD_REAL_SYNC_ENABLED ? createHttpSyncTransport() : createMockSyncTransport()
 
 function tabId() {
   return `tab-${Math.random().toString(36).slice(2, 10)}`

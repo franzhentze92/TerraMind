@@ -21,8 +21,13 @@ import { VerificationsPage } from '@/modules/verification/pages/VerificationsPag
 import { MissionsPage } from '@/modules/missions/pages/MissionsPage'
 import { MissionDetailPage } from '@/modules/missions/pages/MissionDetailPage'
 import { AssignmentsPage } from '@/modules/missions/pages/AssignmentsPage'
+import { FieldCampoLayout } from '@/modules/field-operations/field-mobile/components/FieldCampoLayout'
+import { FieldCampoHomePage } from '@/modules/field-operations/pages/FieldCampoHomePage'
+import { FieldConflictsPage } from '@/modules/field-operations/pages/FieldConflictsPage'
+import { FieldMissionsPage } from '@/modules/field-operations/pages/FieldMissionsPage'
 import { FieldPackagesPage } from '@/modules/field-operations/pages/FieldPackagesPage'
 import { FieldPackageDetailPage } from '@/modules/field-operations/pages/FieldPackageDetailPage'
+import { FieldSyncPage } from '@/modules/field-operations/pages/FieldSyncPage'
 import { FieldTaskFormPage } from '@/modules/field-operations/pages/FieldTaskFormPage'
 import { PendingEvidencePage } from '@/modules/field-operations/pages/PendingEvidencePage'
 
@@ -47,10 +52,20 @@ export const router = createBrowserRouter([
       { path: 'misiones', element: <MissionsPage /> },
       { path: 'misiones/:missionId', element: <MissionDetailPage /> },
       { path: 'operaciones/asignaciones', element: <AssignmentsPage /> },
-      { path: 'campo/paquetes', element: <FieldPackagesPage /> },
-      { path: 'campo/paquetes/:packageId', element: <FieldPackageDetailPage /> },
-      { path: 'campo/paquetes/:packageId/tareas/:taskId', element: <FieldTaskFormPage /> },
-      { path: 'campo/evidencia-pendiente', element: <PendingEvidencePage /> },
+      {
+        path: 'campo',
+        element: <FieldCampoLayout />,
+        children: [
+          { index: true, element: <FieldCampoHomePage /> },
+          { path: 'misiones', element: <FieldMissionsPage /> },
+          { path: 'paquetes', element: <FieldPackagesPage /> },
+          { path: 'paquetes/:packageId', element: <FieldPackageDetailPage /> },
+          { path: 'paquetes/:packageId/tareas/:taskId', element: <FieldTaskFormPage /> },
+          { path: 'evidencia-pendiente', element: <PendingEvidencePage /> },
+          { path: 'sincronizacion', element: <FieldSyncPage /> },
+          { path: 'conflictos', element: <FieldConflictsPage /> },
+        ],
+      },
       { path: 'estrategias', element: <StrategiesPage /> },
       { path: 'territorio', element: <TerritoryPage /> },
       { path: 'tendencias', element: <TrendsPage /> },

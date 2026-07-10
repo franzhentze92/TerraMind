@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
 
+import { FIELD_REAL_SYNC_ENABLED } from '@/modules/field-operations/field-mobile/config/fire-field-mobile.config'
+import { labelSyncStatus, t } from '@/modules/field-operations/field-mobile/i18n/field-mobile-i18n'
 import { usePendingSyncBundles } from '@/modules/field-operations/field-sync/hooks/useFieldSync'
 
 export function PendingEvidencePage() {
@@ -17,7 +19,9 @@ export function PendingEvidencePage() {
         </Link>
         <h1 className="mt-2 text-xl font-medium text-text-primary">Evidencia pendiente</h1>
         <p className="mt-1 text-sm text-text-secondary">
-          Sincronización resumible e idempotente hacia evidence submissions (8B.7D). La evidencia local se conserva hasta confirmación remota.
+          {FIELD_REAL_SYNC_ENABLED
+            ? 'Sincronización resumible e idempotente hacia evidence submissions (8B.7D).'
+            : `${t('work_local_only', 'es')} — transport simulado hasta 8B.7F y staging confirmado.`}
         </p>
       </div>
 
@@ -52,7 +56,7 @@ export function PendingEvidencePage() {
                       </p>
                     </div>
                     <span className="rounded bg-accent/10 px-2 py-1 text-xs text-accent">
-                      {session?.status ?? b.status}
+                      {labelSyncStatus(session?.status ?? b.status)}
                     </span>
                   </div>
                   <p className="mt-2 text-xs text-text-secondary">
@@ -78,8 +82,8 @@ export function PendingEvidencePage() {
                         void sync.syncNow(b).then((r) => {
                           setMessage(
                             r.ok
-                              ? 'Sincronización completada — submission en ready_for_validation.'
-                              : `Sincronización no completada: ${r.reason ?? 'error'}`,
+                              ? t('received_by_server', 'es')
+                              : `${t('needs_review', 'es')}: ${r.reason ?? 'error'}`,
                           )
                         })
                       }}
