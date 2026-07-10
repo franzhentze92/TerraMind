@@ -24,6 +24,9 @@ import type {
   SamplePointInput,
 } from '@/modules/territory/population/population.types'
 import { populationWarning } from '@/modules/territory/population/population-warnings'
+import {
+  getLocalPopulationSourceStatus,
+} from '@/modules/territory/population/processing/source-status'
 import { WORLDPOP_ANALYSIS_METHOD_VERSION } from '@/modules/territory/population/providers/worldpop/worldpop.manifest'
 
 export interface PopulationService {
@@ -93,7 +96,7 @@ export function createPopulationService(): PopulationService {
 
   return {
     async getSourceStatus() {
-      return unavailableStatus(notReadyWarnings)
+      return getLocalPopulationSourceStatus()
     },
 
     async samplePoint() {

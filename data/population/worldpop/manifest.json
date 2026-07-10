@@ -1,0 +1,151 @@
+{
+  "manifest_version": "population-pipeline-v1",
+  "reference_year": 2020,
+  "adjustment_policy": "Reconciliar solo con proyección INE del mismo año del raster; sin proyección municipal válida → sin ajuste.",
+  "downloads": [
+    {
+      "variant": "constrained",
+      "official_url": "https://data.worldpop.org/GIS/Population/Global_2015_2030/R2025A/2020/GTM/v1/100m/constrained/gtm_pop_2020_CN_100m_R2025A_v1.tif",
+      "local_path": "raw/gtm_pop_2020_cn_100m_constrained.tif",
+      "expected_size_bytes": 17033231,
+      "status": "downloaded",
+      "size_bytes_actual": 17033231,
+      "sha256": "1a02c33697869df9efcd08ef49a58f151b2b01932adf5e962cf9fc5b567722a0",
+      "downloaded_at": "2026-07-10T11:37:21.023Z"
+    },
+    {
+      "variant": "unconstrained",
+      "official_url": "https://data.worldpop.org/GIS/Population/Global_2000_2020/2020/GTM/gtm_ppp_2020.tif",
+      "local_path": "raw/gtm_ppp_2020_unconstrained.tif",
+      "expected_size_bytes": 60271574,
+      "status": "downloaded",
+      "size_bytes_actual": 60271574,
+      "sha256": "9e2d2dfc0b5c8db7af8fd08ba9459e90bb56012ae2735e089701f95bbb28a0f7",
+      "downloaded_at": "2026-07-10T11:40:05.946Z"
+    }
+  ],
+  "tools": {
+    "gdal": "GDAL 3.10.0, released 2024/11/01",
+    "aws": "aws-cli/2.34.37 Python/3.14.4 Windows/11 exe/AMD64",
+    "node": "v22.22.0"
+  },
+  "download_completed_at": "2026-07-10T11:40:05.946Z",
+  "download_duration_ms": 200777,
+  "conservation": [
+    {
+      "variant": "constrained",
+      "raw_sum": 17170496,
+      "wgs84_clip_sum": 17196427,
+      "wgs84_cog_sum": 17196427,
+      "laea_cog_sum": 17150264,
+      "diff_wgs84_clip_pct": 0.15,
+      "diff_laea_pct": 0.27,
+      "outside_adm0_population": 0,
+      "nodata_inside_adm0_pixels": 0
+    },
+    {
+      "variant": "unconstrained",
+      "raw_sum": 17251094,
+      "wgs84_clip_sum": 17692858,
+      "wgs84_cog_sum": 17692858,
+      "laea_cog_sum": 18595106,
+      "diff_wgs84_clip_pct": 2.56,
+      "diff_laea_pct": 5.1,
+      "outside_adm0_population": 0,
+      "nodata_inside_adm0_pixels": 0
+    }
+  ],
+  "artifacts": {
+    "constrained_wgs84_cog": ".\\data\\population\\worldpop\\processed\\gtm_worldpop_2020_constrained_wgs84_cog.tif",
+    "constrained_laea_cog": ".\\data\\population\\worldpop\\processed\\gtm_worldpop_2020_constrained_laea_cog.tif",
+    "constrained_wgs84_sha256": "40990abb3b95a64e5e31068b2de6c8e0b0056e5056cde65898acee3c808de0a8",
+    "constrained_laea_sha256": "c561f5b52348f9effd3a3b4d633a8643df6e84474b95153a731fbea511ebd57a",
+    "resampling_laea": "sum",
+    "resampling_clip": "none (same CRS cutline crop)",
+    "unconstrained_wgs84_cog": ".\\data\\population\\worldpop\\processed\\gtm_worldpop_2020_unconstrained_wgs84_cog.tif",
+    "unconstrained_wgs84_sha256": "0dadbae9f605fc4e8fdf02d02ff08db9e8768e230ed0fd4664318986150c13e4",
+    "unconstrained_laea_skipped": true,
+    "unconstrained_laea_skip_reason": "Conservación LAEA 5.1% > 1.5% — usar WGS84 COG para auditoría."
+  },
+  "prepare_completed_at": "2026-07-10T11:46:16.969Z",
+  "audit": {
+    "completed_at": "2026-07-10T11:49:01.790Z",
+    "national": {
+      "constrained": 17196427,
+      "unconstrained": 17692858,
+      "ineProjection2020": 17980803,
+      "ineCensus2018Separate": 14901286,
+      "deltaConstrainedVsIne2020Pct": 4.36,
+      "deltaUnconstrainedVsIne2020Pct": 1.6
+    },
+    "recommended_primary_variant": "dual_use"
+  },
+  "recommended_primary_variant": "dual_use",
+  "benchmark": {
+    "completed_at": "2026-07-10T11:49:05.309Z",
+    "radii_m": [
+      500,
+      1000,
+      3000,
+      5000
+    ],
+    "scenarios": [
+      {
+        "scenario": "national_inspect_constrained",
+        "variant": "constrained",
+        "crs": "EPSG:4326",
+        "coldStartMs": 76,
+        "warmMs": [
+          64,
+          66,
+          75,
+          100,
+          69
+        ],
+        "p50Ms": 69,
+        "p95Ms": 100
+      },
+      {
+        "scenario": "national_inspect_constrained",
+        "variant": "constrained",
+        "crs": "LAEA-GT",
+        "coldStartMs": 76,
+        "warmMs": [
+          78,
+          95,
+          67,
+          71,
+          69
+        ],
+        "p50Ms": 71,
+        "p95Ms": 95
+      },
+      {
+        "scenario": "national_inspect_unconstrained",
+        "variant": "unconstrained",
+        "crs": "EPSG:4326",
+        "coldStartMs": 68,
+        "warmMs": [
+          67,
+          64,
+          65,
+          69,
+          63
+        ],
+        "p50Ms": 65,
+        "p95Ms": 69
+      },
+      {
+        "scenario": "adm1_metadata_read",
+        "variant": "constrained",
+        "crs": "EPSG:4326",
+        "coldStartMs": 110,
+        "warmMs": [
+          110
+        ],
+        "p50Ms": 110,
+        "p95Ms": 110
+      }
+    ]
+  }
+}

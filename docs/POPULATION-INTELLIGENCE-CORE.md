@@ -7,9 +7,9 @@ Módulo territorial genérico de TerraMind para estimar y analizar **población 
 | Fase | Estado |
 |------|--------|
 | Investigación de fuentes | Completada |
-| Arquitectura y tipos | Diseño en rama `feature/population-intelligence-core` |
+| Arquitectura y tipos | Completada (rama `feature/population-intelligence-core`) |
+| **7D.1A WorldPop audit** | **Completada** — ver `docs/reports/population-worldpop-2020-audit.md` |
 | Migración 011 | Propuesta — **no aplicada** |
-| Descarga raster nacional | **Pendiente** (7D.1A) |
 | PopulationService operativo | **Pendiente** (7D.1B) |
 | Datos administrativos INE | **Pendiente** (7D.2) |
 | Adaptadores / API / UI | **Pendiente** (7D.3–7D.4) |
@@ -225,6 +225,27 @@ ST_UnaryUnion(
 ```
 
 Equivalente en aplicación: unir buffers en CRS métrico (LAEA-GT) antes de zonal stats. **No sumar** buffers superpuestos por separado.
+
+## Política de reconciliación INE (7D.1A)
+
+- **No** reconciliar WorldPop 2020 contra Censo 2018 directamente.
+- Usar **proyección INE 2020** (nacional y departamental) para comparación año-compatible.
+- Sin proyección municipal válida → `adjustment_not_applied`, conservar raw estimate.
+- Nunca presentar Δ 2018 vs 2020 como discrepancia del raster sin separar crecimiento y metodología.
+
+## Resultado auditoría 7D.1A (resumen)
+
+| Producto | Suma nacional (ADM0) | Δ vs INE 2020 |
+|----------|----------------------|---------------|
+| Constrained R2025A | ~17.20 M | ~4.4% |
+| Unconstrained 2020 | ~17.69 M | ~1.6% |
+| INE proyección 2020 | 17.98 M | — |
+
+**Recomendación: Opción C (dual_use)** — constrained para exposición urbana/buffers; unconstrained como validación nacional; Petén y zonas rurales requieren criterio local (unconstrained sobreestima Petén ~37% vs INE departamental).
+
+Scripts: `npm run population:download-worldpop|prepare-worldpop|audit-worldpop|benchmark-worldpop`
+
+Datos locales: `data/population/worldpop/` (fuera de Git excepto manifest/SOURCE.md).
 
 ## Reconciliación INE (diseño — no implementada)
 

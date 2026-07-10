@@ -27,11 +27,14 @@ describe('population source registry', () => {
 })
 
 describe('createPopulationService (stub)', () => {
-  it('returns unavailable source status without raster', async () => {
+  it('returns source status from local datasets', async () => {
     const service = createPopulationService()
     const status = await service.getSourceStatus()
-    expect(status.isReady).toBe(false)
-    expect(status.warnings.some((w) => w.code === 'source_unavailable')).toBe(true)
+    expect(status.sourceCode).toBe('worldpop')
+    expect(status.semantics).toBe('modelled_spatial_population')
+    if (status.isReady) {
+      expect(status.totalPopulation).toBeGreaterThan(0)
+    }
   })
 
   it('analyzeBuffers returns design skeleton with default radii', async () => {

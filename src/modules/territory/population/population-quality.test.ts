@@ -32,11 +32,11 @@ describe('zonal statistics helpers', () => {
 })
 
 describe('municipal adjustment factor', () => {
-  it('returns null for invalid sums', () => {
-    expect(computeMunicipalAdjustmentFactor(1000, 0)).toBeNull()
+  it('returns null when reference years differ', () => {
+    expect(computeMunicipalAdjustmentFactor(10_000, 8_000, 2018, 2020)).toBeNull()
   })
 
-  it('computes factor when valid', () => {
-    expect(computeMunicipalAdjustmentFactor(10_000, 8_000)).toBe(1.25)
+  it('computes factor when years match', () => {
+    expect(computeMunicipalAdjustmentFactor(10_000, 8_000, 2020, 2020)).toBe(1.25)
   })
 })

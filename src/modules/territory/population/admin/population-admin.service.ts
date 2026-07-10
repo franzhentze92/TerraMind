@@ -53,13 +53,19 @@ export function createPopulationAdminService(
 
 /**
  * Factor de reconciliación municipal (diseño — no aplicar hasta 7D.2+).
+ *
+ * Política 7D.1A: usar proyección INE del mismo año que el raster (p. ej. 2020).
+ * Sin proyección municipal válida → null (adjustment_not_applied).
  */
 export function computeMunicipalAdjustmentFactor(
-  officialPopulation: number,
+  officialPopulationSameYear: number,
   rawRasterSum: number,
+  referenceYear: number,
+  rasterReferenceYear: number,
 ): number | null {
-  if (rawRasterSum <= 0 || officialPopulation <= 0) return null
-  return officialPopulation / rawRasterSum
+  if (referenceYear !== rasterReferenceYear) return null
+  if (rawRasterSum <= 0 || officialPopulationSameYear <= 0) return null
+  return officialPopulationSameYear / rawRasterSum
 }
 
 export function applyMunicipalAdjustment(

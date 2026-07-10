@@ -124,4 +124,7 @@ COMMENT ON COLUMN entity_population_context.official_population_context IS
   'JSON con official_administrative_population (INE) separado de modelled_spatial.';
 
 COMMENT ON TABLE entity_population_zones IS
-  'Resultados por radio; adjusted_population solo tras reconciliación INE documentada.';
+  'Resultados por radio; adjusted_population solo tras reconciliación INE mismo año que raster.';
+
+COMMENT ON COLUMN entity_population_zones.adjustment_factor IS
+  'factor = proyección_INE_año_raster / suma_raster_municipio; NULL si años incompatibles o sin dato municipal.';
