@@ -17,7 +17,7 @@ export function useBiodiversityNationalSummary() {
     queryKey: ['biodiversity', 'national-summary'],
     queryFn: () =>
       biodiversityApi.getDashboardSummary({
-        period: '30d',
+        period: '5y',
         source: 'all',
         taxon: 'all',
         quality: 'all',
@@ -46,6 +46,29 @@ export function useBiodiversityHealth() {
   return useQuery({
     queryKey: ['biodiversity', 'health'],
     queryFn: () => biodiversityApi.getHealth(),
+    staleTime: 120_000,
+    retry: 1,
+  })
+}
+
+export function useBiodiversityVisualSummary(filters: BiodiversityDashboardFilters) {
+  return useQuery({
+    queryKey: ['biodiversity', 'visual', filters],
+    queryFn: () => biodiversityApi.getVisualSummary(filters),
+    staleTime: 120_000,
+    retry: 2,
+  })
+}
+
+export function useBiodiversityVisualDetail(
+  source: string | undefined,
+  occurrenceId: string | undefined,
+  filters: BiodiversityDashboardFilters,
+) {
+  return useQuery({
+    queryKey: ['biodiversity', 'visual-detail', source, occurrenceId, filters],
+    queryFn: () => biodiversityApi.getVisualDetail(source!, occurrenceId!, filters),
+    enabled: Boolean(source && occurrenceId),
     staleTime: 120_000,
     retry: 1,
   })

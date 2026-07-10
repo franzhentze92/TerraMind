@@ -34,4 +34,16 @@ export const biodiversityApi = {
   getHealth() {
     return apiClient.get<BiodiversitySystemHealth>('/environment/biodiversity/health')
   },
+
+  getVisualSummary(filters?: BiodiversityDashboardFilters) {
+    return apiClient.get<import('@/modules/biodiversity/biodiversity-visual.types').BiodiversityVisualSummaryDto>(
+      withQuery('/environment/biodiversity/visual-summary', filters),
+    )
+  },
+
+  getVisualDetail(source: string, occurrenceId: string, filters?: BiodiversityDashboardFilters) {
+    return apiClient.get<import('@/modules/biodiversity/biodiversity-visual.types').BiodiversityVisualDetailDto>(
+      withQuery(`/environment/biodiversity/visual/${source}/${occurrenceId}`, filters),
+    )
+  },
 }

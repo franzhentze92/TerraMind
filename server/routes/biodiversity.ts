@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { getBiodiversityDashboardService } from '@/modules/biodiversity/biodiversity-dashboard.service'
 import { getBiodiversityService } from '@/modules/biodiversity/biodiversity.service'
+import { getBiodiversityVisualService } from '@/modules/biodiversity/biodiversity-visual.service'
 import { parseBiodiversityDashboardFilters } from '@/modules/biodiversity/dto/biodiversity-dashboard.dto'
 import { rejectIfUnauthenticated } from '../middleware/auth.js'
 import { rejectIfRateLimited } from '../middleware/rate-limit.js'
@@ -28,6 +29,7 @@ export async function handleBiodiversityRoutes(
 
   const dashboard = getBiodiversityDashboardService()
   const biodiversity = getBiodiversityService()
+  const visual = getBiodiversityVisualService()
 
   try {
     if (pathname === '/api/environment/biodiversity/dashboard-summary') {
@@ -66,6 +68,40 @@ export async function handleBiodiversityRoutes(
         return true
       }
       jsonResponse(req, res, summary)
+      return true
+    }
+
+    if (pathname === '/api/environment/biodiversity/visual-summary') {
+      const parsed = parseBiodiversityDashboardFilters(searchParams)
+      if (!parsed.ok) {
+        jsonError(req, res, parsed.error, 400)
+        return true
+      }
+      const summary = await visual.getVisualSummary(parsed.data)
+      jsonResponse(req, res, summary)
+      return true
+    }
+
+    const visualDetailMatch = pathname.match(
+      /^\/api\/environment\/biodiversity\/visual\/([^/]+)\/([^/]+)$/,
+    )
+    if (visualDetailMatch) {
+      const [, source, occurrenceId] = visualDetailMatch
+      if (source !== 'gbif' && source !== 'inaturalist') {
+        jsonError(req, res, 'Proveedor inválido', 400)
+        return true
+      }
+      const parsed = parseBiodiversityDashboardFilters(searchParams)
+      if (!parsed.ok) {
+        jsonError(req, res, parsed.error, 400)
+        return true
+      }
+      const detail = await visual.getVisualDetail(source, occurrenceId, parsed.data)
+      if (!detail) {
+        jsonError(req, res, 'Observación visual no encontrada', 404)
+        return true
+      }
+      jsonResponse(req, res, detail)
       return true
     }
 

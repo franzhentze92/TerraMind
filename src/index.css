@@ -46,6 +46,31 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes quetzal-fly-ltr {
+  0% { left: -15%; }
+  88% { left: 105%; }
+  100% { left: 105%; }
+}
+
+@keyframes quetzal-fly-rtl {
+  0% { left: 105%; }
+  88% { left: -15%; }
+  100% { left: -15%; }
+}
+
+.quetzal-fly {
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.quetzal-fly-ltr {
+  animation-name: quetzal-fly-ltr;
+}
+
+.quetzal-fly-rtl {
+  animation-name: quetzal-fly-rtl;
+}
+
 @layer base {
   * {
     @apply border-border-default;

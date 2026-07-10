@@ -1,0 +1,28 @@
+-- 013_biodiversity_observation_media.sql (PROPUESTA — NO APLICAR)
+-- Capa de media enriquecida para 7C.4B+. Persistencia opcional post-revisión.
+-- Orden: 008 climate · 009 land cover · 010 biodiversity core · 011 land cover jobs · 012 population · 013 observation media
+
+-- CREATE TABLE biodiversity_observation_media (
+--   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+--   source text NOT NULL,
+--   source_occurrence_id text NOT NULL,
+--   source_taxon_id text,
+--   image_url text NOT NULL,
+--   thumbnail_url text,
+--   image_license text,
+--   image_attribution text NOT NULL,
+--   observation_url text NOT NULL,
+--   taxon_name text NOT NULL,
+--   common_name text,
+--   taxonomic_group text,
+--   observed_at timestamptz,
+--   zone_code text,
+--   quality_grade text,
+--   privacy_level text,
+--   is_recent boolean DEFAULT false,
+--   sort_score numeric,
+--   fetched_at timestamptz NOT NULL DEFAULT now(),
+--   UNIQUE (source, source_occurrence_id)
+-- );
+
+-- RLS: lectura autenticada; escritura service_role only.

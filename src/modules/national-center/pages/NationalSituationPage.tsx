@@ -12,6 +12,7 @@ import { LiveTimelinePanel } from '../components/LiveTimelinePanel'
 import { SourcesFooter } from '../components/SourcesFooter'
 import { FireHeatSummaryCard } from '@/modules/fires/components/FireHeatSummaryCard'
 import { BiodiversityNationalSummaryCard } from '@/modules/biodiversity/components/BiodiversityNationalSummaryCard'
+import { FlyingQuetzal } from '@/shared/components/FlyingQuetzal'
 import { useFireSummary } from '@/modules/fires/hooks/useFireSummary'
 import { useBiodiversityNationalSummary } from '@/modules/biodiversity/hooks/useBiodiversityDashboard'
 import {
@@ -86,9 +87,10 @@ export function NationalSituationPage() {
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
-            className="mb-6"
+            className="relative mb-6 h-28 overflow-hidden"
           >
-            <div className="flex items-center gap-3">
+            <FlyingQuetzal direction="ltr" size={120} duration={20} delay={0} opacity={0.85} />
+            <div className="relative z-10 flex items-center gap-3">
               <span className="text-2xl">🇬🇹</span>
               <div>
                 <h1 className="text-xl font-semibold tracking-tight text-text-primary">
@@ -116,8 +118,13 @@ export function NationalSituationPage() {
               <CountryIndicatorsPanel indicators={indicators} />
             </aside>
 
-            <main className="space-y-8 xl:col-span-7">
+            <main className="relative space-y-8 xl:col-span-7">
               <ReasoningSequence live={isLive} steps={reasoningSteps} />
+
+              <div className="relative h-32 overflow-hidden">
+                <FlyingQuetzal direction="rtl" size={140} duration={18} delay={3} opacity={0.8} />
+              </div>
+
               <FireHeatSummaryCard
                 data={fireSummary.data}
                 isLoading={fireSummary.isLoading}
@@ -128,7 +135,12 @@ export function NationalSituationPage() {
                 isLoading={biodiversitySummary.isLoading}
                 isError={biodiversitySummary.isError}
               />
-              <ExecutiveSummaryCard brief={executiveBrief} />
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-x-0 -top-10 h-24 overflow-hidden">
+                  <FlyingQuetzal direction="ltr" size={110} duration={22} delay={6} opacity={0.75} />
+                </div>
+                <ExecutiveSummaryCard brief={executiveBrief} />
+              </div>
               {showDemoHallazgos ? (
                 <HallazgosList hallazgos={DEMO_UI.hallazgos} />
               ) : (
@@ -145,7 +157,10 @@ export function NationalSituationPage() {
               )}
             </main>
 
-            <aside className="xl:col-span-3">
+            <aside className="relative xl:col-span-3">
+              <div className="pointer-events-none absolute inset-x-0 top-4 h-24 overflow-hidden">
+                <FlyingQuetzal direction="rtl" size={100} duration={24} delay={9} opacity={0.7} />
+              </div>
               <div className="sticky top-0 rounded-xl border border-border-subtle bg-surface-2/40 p-5">
                 <LiveTimelinePanel entries={timeline} live={isLive} />
               </div>
