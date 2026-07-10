@@ -8,10 +8,11 @@ import {
 } from '@/modules/territory/population/population-context-version'
 import { resolvePopulationAdminService } from '@/modules/territory/population/admin/population-admin.service'
 import { findNearestSettlementsAtPoint } from '@/modules/territory/population/admin/settlement-index'
+import { buildPopulationEstimateConfidence } from '@/modules/territory/population/population-estimate-confidence'
 import type { GeoPoint, PopulationWarningCode } from '@/modules/territory/population/population.types'
 import { WORLDPOP_ANALYSIS_METHOD_VERSION } from '@/modules/territory/population/providers/worldpop/worldpop.manifest'
 import { buildPopulationComparison } from '@/modules/territory/population/raster/population-variant-compare'
-import { fetchEventDetections } from '@/pipeline/stores/land-cover.store'
+import { fetchEventDetections, getLandCoverZones } from '@/pipeline/stores/land-cover.store'
 import {
   listPopulationEventCandidates,
   persistPopulationContext,
@@ -208,6 +209,50 @@ export async function enrichPopulationForEvent(
     warnings.push('settlement_dataset_limited_to_municipal_seats')
   }
 
+  let landCoverZones: Awaited<ReturnType<typeof getLandCoverZones>> = []
+  try {
+    landCoverZones = await getLandCoverZones(eventId)
+  } catch {
+    /* land cover optional for confidence reasons */
+  }
+
+  const zoneConfidenceSummary: Record<string, Record<string, unknown>> = {}
+  let scaleSensitive = false
+
+  for (const buffer of analysis.buffers) {
+    const lcZone = landCoverZones.find((z) => z.radius_m === buffer.radiusM)
+    const confidence = buildPopulationEstimateConfidence({
+      primaryEstimate: buffer.estimatedPopulation,
+      validationEstimate: buffer.validationEstimate,
+      territorial: {
+        radiusM: buffer.radiusM,
+        dataCoveragePct: buffer.dataCoveragePct,
+        validPixelCountEstimate: buffer.analyzedAreaHa
+          ? Math.round(buffer.analyzedAreaHa)
+          : undefined,
+        partialCoverage: buffer.dataCoveragePct < 90,
+        builtUpFractionPct: lcZone?.built_up_pct ?? undefined,
+        settlementDatasetLimited: true,
+      },
+    })
+    if (confidence.reasons.includes('local_estimate_scale_sensitive')) {
+      scaleSensitive = true
+    }
+    zoneConfidenceSummary[String(buffer.radiusM)] = {
+      level: confidence.level,
+      agreement_class: confidence.agreementClass,
+      recommended_display_mode: confidence.recommendedDisplayMode,
+      reasons: confidence.reasons,
+      built_up_fraction_pct: lcZone?.built_up_pct ?? null,
+      ratio_between_models: confidence.ratioBetweenModels,
+      percentage_difference: confidence.percentageDifference,
+    }
+  }
+
+  if (scaleSensitive) {
+    warnings.push('local_estimate_scale_sensitive')
+  }
+
   let status: PopulationContextStatus = 'complete'
   if (warnings.includes('centroid_fallback') || warnings.includes('partial_coverage')) {
     status = 'partial'
@@ -250,6 +295,7 @@ export async function enrichPopulationForEvent(
     validationSummary: {
       constrained_unconstrained_large_difference: largeDiffZones.length > 0,
       zones_compared: analysis.buffers.filter((b) => b.validationEstimate != null).length,
+      zones: zoneConfidenceSummary,
     },
     officialContext,
     nearestSettlements: nearest.map((s) => ({

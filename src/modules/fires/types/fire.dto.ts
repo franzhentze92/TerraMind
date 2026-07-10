@@ -211,11 +211,39 @@ export interface PopulationSourceDto {
   type: 'modelled_spatial_population'
 }
 
+export type PopulationConfidenceLevelDto = 'high' | 'moderate' | 'low' | 'very_low'
+
+export type PopulationAgreementClassDto =
+  | 'close'
+  | 'moderate_difference'
+  | 'large_difference'
+  | 'extreme_difference'
+
+export type PopulationRecommendedDisplayModeDto =
+  | 'single_estimate'
+  | 'estimate_with_uncertainty'
+  | 'modelled_range'
+
+export interface PopulationModelledRangeDto {
+  lower: number
+  upper: number
+}
+
+export interface PopulationZoneConfidenceDto {
+  level: PopulationConfidenceLevelDto
+  agreement_class: PopulationAgreementClassDto
+  recommended_display_mode: PopulationRecommendedDisplayModeDto
+  reasons: string[]
+  disclaimer?: string
+}
+
 export interface PopulationZoneDto {
   radius_m: number
   estimated_population: number
   validation_estimate?: number
   difference_pct?: number
+  modelled_range?: PopulationModelledRangeDto
+  confidence?: PopulationZoneConfidenceDto
   density_per_km2: number
   data_coverage_pct: number
   warnings: string[]

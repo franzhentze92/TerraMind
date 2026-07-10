@@ -39,6 +39,7 @@ export type PopulationWarningCode =
   | 'fallback_to_wgs84'
   | 'checksum_invalid'
   | 'constrained_unconstrained_large_difference'
+  | 'local_estimate_scale_sensitive'
   | 'resolution_limit'
   | 'geometry_too_small'
   | 'geometry_too_large'

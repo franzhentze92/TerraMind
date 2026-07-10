@@ -57,6 +57,7 @@
     "population:enrich-events": "tsx scripts/population-enrich-events.ts",
     "population:worker": "tsx scripts/population-worker.ts",
     "population:context-status": "tsx scripts/population-context-status.ts",
+    "population:audit-confidence": "tsx scripts/population-audit-confidence.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "build": "tsc && vite build",

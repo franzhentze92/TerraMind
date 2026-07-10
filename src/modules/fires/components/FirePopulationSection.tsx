@@ -7,6 +7,8 @@ import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
 import {
   formatPopulationCompact,
 } from '@/modules/fires/utils/population-context.dto'
+import { buildPopulationEventSummaryNarrative } from '@/modules/fires/utils/population-narrative'
+import { formatPopulationZoneDisplay } from '@/modules/fires/utils/population-zone-display'
 import { formatDistanceM } from '@/modules/fires/utils/proximity-label'
 
 interface FirePopulationSectionProps {
@@ -43,9 +45,15 @@ export function FirePopulationSection({
   }
 
   const nearest = context.nearest_settlements[0]
-  const largeModelDiff = context.warnings.some((w) =>
-    w.toLowerCase().includes('difieren significativamente'),
-  )
+  const zone1km = context.zones.find((z) => z.radius_m === 1000)
+  const summaryNarrative =
+    zone1km != null
+      ? buildPopulationEventSummaryNarrative({
+          zone: zone1km,
+          nearestSettlementName: nearest?.name,
+          nearestSettlementDistanceM: nearest?.distance_m,
+        })
+      : null
 
   return (
     <div className="mt-6 space-y-4">
@@ -58,30 +66,47 @@ export function FirePopulationSection({
         </p>
       </div>
 
+      {summaryNarrative && (
+        <p className="text-sm leading-relaxed text-text-secondary">{summaryNarrative}</p>
+      )}
+
       <div className="rounded-lg border border-border-subtle bg-surface-2/30 px-3 py-3">
         <p className="text-xs text-text-tertiary">Población residente estimada</p>
-        <dl className="mt-2 grid grid-cols-2 gap-2 text-sm">
+        <dl className="mt-2 space-y-3">
           {POPULATION_FIRE_EXPECTED_ZONE_RADII_M.map((radius) => {
             const zone = context.zones.find((z) => z.radius_m === radius)
-            const value = zone?.estimated_population
+            if (!zone) {
+              return (
+                <div key={radius}>
+                  <dt className="text-text-tertiary">
+                    {radius >= 1000 ? `${radius / 1000} km` : `${radius} m`}
+                  </dt>
+                  <dd className="font-mono text-text-primary">—</dd>
+                </div>
+              )
+            }
+
+            const display = formatPopulationZoneDisplay(zone)
+            const radiusLabel = radius >= 1000 ? `${radius / 1000} km` : `${radius} m`
+
             return (
               <div key={radius}>
-                <dt className="text-text-tertiary">{radius >= 1000 ? `${radius / 1000} km` : `${radius} m`}</dt>
+                <dt className="text-text-tertiary">{radiusLabel}</dt>
                 <dd
-                  className="font-mono text-text-primary"
-                  title={value != null ? String(Math.round(value)) : undefined}
+                  className={
+                    display.isRange
+                      ? 'text-sm font-medium text-text-primary'
+                      : 'font-mono text-text-primary'
+                  }
+                  title={display.tooltip}
                 >
-                  {value != null ? formatPopulationCompact(value) : '—'}
+                  {display.primaryText}
                 </dd>
+                <dd className="mt-0.5 text-[11px] text-text-tertiary">{display.confidenceLabel}</dd>
               </div>
             )
           })}
         </dl>
-        {largeModelDiff && (
-          <p className="mt-2 text-[11px] text-amber-600 dark:text-amber-400">
-            Los modelos espaciales difieren significativamente para este territorio.
-          </p>
-        )}
       </div>
 
       {nearest && (
@@ -115,6 +140,9 @@ export function FirePopulationSection({
               : 'censo'}{' '}
             {context.official_context.department.reference_year}:{' '}
             {formatPopulationCompact(context.official_context.department.official_population)}
+          </p>
+          <p className="text-[11px] text-text-tertiary">
+            Contexto administrativo; no valida directamente la estimación del buffer.
           </p>
           <p className="text-[11px] text-text-tertiary">
             Fuente: {context.official_context.department.source}

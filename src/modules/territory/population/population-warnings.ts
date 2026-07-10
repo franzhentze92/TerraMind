@@ -27,6 +27,7 @@ export const POPULATION_WARNING_CODES: readonly PopulationWarningCode[] = [
   'fallback_to_wgs84',
   'checksum_invalid',
   'constrained_unconstrained_large_difference',
+  'local_estimate_scale_sensitive',
   'resolution_limit',
   'geometry_too_small',
   'geometry_too_large',
@@ -60,6 +61,7 @@ const WARNING_SEVERITY: Partial<Record<PopulationWarningCode, PopulationWarningS
   settlement_dataset_limited_to_municipal_seats: 'info',
   centroid_fallback: 'warning',
   large_model_difference: 'warning',
+  local_estimate_scale_sensitive: 'info',
 }
 
 export function populationWarning(
