@@ -17,10 +17,13 @@ import {
   Globe,
   Flame,
   Leaf,
+  Users,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { APP_CONFIG } from '@/core/config'
 import { useTerritoryStore } from '@/core/config/territory.store'
+import { useHasPermission } from '@/core/auth/AuthProvider'
+import { OrganizationSelector } from '@/modules/auth/components/OrganizationSelector'
 
 interface NavItem {
   path: string
@@ -83,6 +86,7 @@ const NAV_SECTIONS: NavSection[] = [
 
 export function Sidebar() {
   const territory = useTerritoryStore((s) => s.territory)
+  const canManageOrg = useHasPermission('organization.settings')
 
   return (
     <aside className="flex h-full w-56 flex-col border-r border-border-subtle bg-surface-1">
@@ -91,6 +95,10 @@ export function Sidebar() {
           <Globe className="h-3.5 w-3.5 text-accent" />
         </div>
         <p className="truncate text-sm font-semibold text-text-primary">{APP_CONFIG.name}</p>
+      </div>
+
+      <div className="border-b border-border-subtle px-4 py-2.5">
+        <OrganizationSelector />
       </div>
 
       <div className="border-b border-border-subtle px-4 py-2.5">
@@ -139,6 +147,25 @@ export function Sidebar() {
             </ul>
           </div>
         ))}
+        {canManageOrg && (
+          <div className="mb-4">
+            <p className="mb-1 px-2 text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+              Organización
+            </p>
+            <NavLink
+              to="/admin/organizacion"
+              className={({ isActive }) =>
+                cn(
+                  'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm',
+                  isActive ? 'bg-surface-3 text-text-primary' : 'text-text-secondary hover:text-text-primary',
+                )
+              }
+            >
+              <Users className="h-4 w-4" />
+              Admin organización
+            </NavLink>
+          </div>
+        )}
       </nav>
 
       <div className="border-t border-border-subtle px-4 py-2.5">

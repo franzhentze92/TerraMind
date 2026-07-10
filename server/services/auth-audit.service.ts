@@ -57,3 +57,10 @@ export function drainAuthAuditBuffer(): typeof auditBuffer {
 export function clearAuthAuditBuffer(): void {
   auditBuffer.length = 0
 }
+
+export function listRecentAuthAuditEvents(organizationId: string, limit = 50) {
+  return auditBuffer
+    .filter((e) => e.organization_id === organizationId)
+    .slice(-limit)
+    .reverse()
+}

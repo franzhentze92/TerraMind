@@ -1,5 +1,11 @@
 import type { RequestAuthContext, TerramindRole } from '@/core/auth/permissions'
 import { AuthenticationError } from '@/core/auth/permissions'
+import { permissionsForRoles } from './role-permissions.js'
+import {
+  TEST_AUTH_USER_ORG_ADMIN_A,
+  TEST_MEMBERSHIP_ORG_ADMIN_A,
+  TEST_USER_ORG_ADMIN_A,
+} from './provisioning-test-fixtures.js'
 
 export const TEST_ORG_A = '00000000-0000-4000-a07f-000000000001'
 export const TEST_ORG_B = '00000000-0000-4000-a07f-000000000002'
@@ -25,6 +31,18 @@ export interface TestAuthFixture {
 }
 
 const FIXTURES: TestAuthFixture[] = [
+  {
+    token: 'test-org-admin-org-a',
+    context: {
+      authUserId: TEST_AUTH_USER_ORG_ADMIN_A,
+      userId: TEST_USER_ORG_ADMIN_A,
+      activeOrganizationId: TEST_ORG_A,
+      membershipId: TEST_MEMBERSHIP_ORG_ADMIN_A,
+      roles: ['organization_admin'],
+      permissions: permissionsForRoles(['organization_admin']),
+      isPlatformAdmin: false,
+    },
+  },
   {
     token: 'test-tech-org-a',
     context: {
@@ -124,6 +142,7 @@ export function resolveTestAuthToken(bearer: string): RequestAuthContext | null 
 }
 
 export function testBearerForRole(role: TerramindRole, org: 'a' | 'b' = 'a'): string {
+  if (role === 'organization_admin' && org === 'a') return 'test-org-admin-org-a'
   if (role === 'field_supervisor' && org === 'a') return 'test-supervisor-org-a'
   if (role === 'field_technician' && org === 'b') return 'test-tech-org-b'
   return 'test-tech-org-a'

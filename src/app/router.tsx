@@ -2,7 +2,10 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { ProtectedRoute } from '@/core/auth/ProtectedRoute'
 import { AppShell } from '@/shared/layouts'
 import { LoginPage } from '@/modules/auth/pages/LoginPage'
+import { PermissionRoute } from '@/core/auth/PermissionRoute'
+import { AwaitingAccessPage } from '@/modules/auth/pages/AwaitingAccessPage'
 import { ForbiddenPage } from '@/modules/auth/pages/ForbiddenPage'
+import { OrganizationAdminPage } from '@/modules/admin/pages/OrganizationAdminPage'
 import { NationalSituationPage } from '@/modules/national-center/pages/NationalSituationPage'
 import { CopilotPage } from '@/modules/copilot/pages/CopilotPage'
 import { FindingsPage } from '@/modules/findings/pages/FindingsPage'
@@ -37,6 +40,7 @@ import { PendingEvidencePage } from '@/modules/field-operations/pages/PendingEvi
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
   { path: '/403', element: <ForbiddenPage /> },
+  { path: '/espera-acceso', element: <AwaitingAccessPage /> },
   {
     path: '/',
     element: (
@@ -82,6 +86,38 @@ export const router = createBrowserRouter([
       { path: 'fuentes', element: <IntegrationsPage /> },
       { path: 'conocimiento', element: <KnowledgePage /> },
       { path: 'administracion', element: <SettingsPage /> },
+      {
+        path: 'admin/organizacion',
+        element: (
+          <PermissionRoute permission="organization.settings">
+            <OrganizationAdminPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: 'admin/organizacion/miembros',
+        element: (
+          <PermissionRoute permission="memberships.manage">
+            <OrganizationAdminPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: 'admin/organizacion/invitaciones',
+        element: (
+          <PermissionRoute permission="users.invite">
+            <OrganizationAdminPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: 'admin/organizacion/auditoria',
+        element: (
+          <PermissionRoute permission="organization.settings">
+            <OrganizationAdminPage />
+          </PermissionRoute>
+        ),
+      },
       // Legacy redirects
       { path: 'events', element: <Navigate to="/hallazgos" replace /> },
       { path: 'reports', element: <Navigate to="/informes" replace /> },

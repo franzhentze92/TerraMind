@@ -9,6 +9,7 @@ export interface AuthSessionState {
   organizations: Array<{ id: string; name: string }>
   pendingSyncWarning: boolean
   setSession: (token: string, ctx: RequestAuthContext) => void
+  setAccessToken: (token: string) => void
   setOrganizations: (orgs: Array<{ id: string; name: string }>) => void
   setActiveOrganization: (organizationId: string) => void
   setPendingSyncWarning: (value: boolean) => void
@@ -23,6 +24,7 @@ export const useAuthStore = create<AuthSessionState>()(
       organizations: [],
       pendingSyncWarning: false,
       setSession: (token, ctx) => set({ accessToken: token, authContext: ctx }),
+      setAccessToken: (token) => set({ accessToken: token, authContext: null }),
       setOrganizations: (orgs) => set({ organizations: orgs }),
       setActiveOrganization: (organizationId) => {
         const ctx = get().authContext

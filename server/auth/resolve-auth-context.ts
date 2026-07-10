@@ -92,53 +92,12 @@ async function loadAuthContextFromDatabase(
   authUserId: string,
   req: IncomingMessage,
 ): Promise<RequestAuthContext | null> {
-  const { getSupabaseAdmin } = await import('@/pipeline/stores/supabase.client.js')
-  const admin = getSupabaseAdmin()
-
-  const { data: profile, error: profileError } = await admin
-    .from('user_profiles')
-    .select('id, active_organization_id, is_platform_admin')
-    .eq('auth_user_id', authUserId)
-    .maybeSingle()
-
-  if (profileError || !profile?.active_organization_id) return null
-
   const orgHeader = req.headers['x-terramind-organization-id']
-  const activeOrgId =
-    typeof orgHeader === 'string' && orgHeader.trim()
-      ? orgHeader.trim()
-      : String(profile.active_organization_id)
-
-  const { data: membership, error: membershipError } = await admin
-    .from('organization_memberships')
-    .select('id, status')
-    .eq('user_id', profile.id)
-    .eq('organization_id', activeOrgId)
-    .maybeSingle()
-
-  if (membershipError || !membership || membership.status !== 'active') {
-    if (membership?.status === 'suspended') throw new AuthenticationError('Membership suspended')
-    if (membership?.status === 'revoked') return null
-    return null
-  }
-
-  const { data: roleRows } = await admin
-    .from('membership_roles')
-    .select('role_id')
-    .eq('membership_id', membership.id)
-
-  const roles = (roleRows ?? []).map((r) => String(r.role_id) as TerramindRole)
-  const permissions = permissionsForRoles(roles)
-
-  return {
-    authUserId,
-    userId: String(profile.id),
-    activeOrganizationId: activeOrgId,
-    membershipId: String(membership.id),
-    roles,
-    permissions,
-    isPlatformAdmin: Boolean(profile.is_platform_admin),
-  }
+  const requestedOrg =
+    typeof orgHeader === 'string' && orgHeader.trim() ? orgHeader.trim() : undefined
+  const { buildAuthSessionPayload } = await import('../services/provisioning/session.service.js')
+  const session = await buildAuthSessionPayload(authUserId, requestedOrg)
+  return session.context
 }
 
 export function requireRequestAuth(req: IncomingMessage): RequestAuthContext {

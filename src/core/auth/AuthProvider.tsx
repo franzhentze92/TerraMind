@@ -2,11 +2,14 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState } 
 
 import { useAuthStore } from '@/core/auth/auth.store'
 import type { RequestAuthContext } from '@/core/auth/permissions'
+import type { AuthMeResponse, AuthSessionState } from '@/core/auth/auth-session.types'
 import { getSupabaseBrowserClient } from '@/core/auth/supabase-client'
+import { buildAuthHeaders } from '@/core/auth/auth-fetch'
 
 interface AuthContextValue {
   loading: boolean
   isAuthenticated: boolean
+  sessionState: AuthSessionState | null
   authContext: RequestAuthContext | null
   accessToken: string | null
   signIn: (email: string, password: string) => Promise<{ ok: boolean; error?: string }>
@@ -16,18 +19,39 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
-async function fetchAuthMe(token: string, organizationId?: string): Promise<RequestAuthContext | null> {
-  const headers: Record<string, string> = { Authorization: `Bearer ${token}` }
-  if (organizationId) headers['X-Terramind-Organization-Id'] = organizationId
-  const res = await fetch('/api/auth/me', { headers, credentials: 'include' })
+async function fetchAuthMe(token: string, organizationId?: string): Promise<AuthMeResponse | null> {
+  const res = await fetch('/api/auth/me', {
+    headers: buildAuthHeaders({ Authorization: `Bearer ${token}` }),
+    credentials: 'include',
+  })
   if (!res.ok) return null
-  const data = (await res.json()) as { context: RequestAuthContext }
-  return data.context
+  return (await res.json()) as AuthMeResponse
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const store = useAuthStore()
   const [loading, setLoading] = useState(true)
+  const [sessionState, setSessionState] = useState<AuthSessionState | null>(null)
+
+  const applySession = useCallback(
+    (token: string | null, session: AuthMeResponse | null) => {
+      if (!token || !session) {
+        store.clearSession()
+        setSessionState(null)
+        return
+      }
+      setSessionState(session.state)
+      store.setOrganizations(
+        session.organizations.map((o) => ({ id: o.id, name: o.name })),
+      )
+      if (session.context) {
+        store.setSession(token, session.context)
+      } else {
+        store.setAccessToken(token)
+      }
+    },
+    [store],
+  )
 
   const refreshMe = useCallback(async () => {
     const client = getSupabaseBrowserClient()
@@ -38,19 +62,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const { data } = await client.auth.getSession()
     const token = data.session?.access_token
     if (!token) {
-      store.clearSession()
+      applySession(null, null)
       setLoading(false)
       return
     }
-    const ctx = await fetchAuthMe(token, store.authContext?.activeOrganizationId)
-    if (!ctx) {
-      store.clearSession()
-      setLoading(false)
-      return
-    }
-    store.setSession(token, ctx)
+    const session = await fetchAuthMe(token, store.authContext?.activeOrganizationId)
+    applySession(token, session)
     setLoading(false)
-  }, [store])
+  }, [applySession, store.authContext?.activeOrganizationId])
 
   useEffect(() => {
     void refreshMe()
@@ -73,31 +92,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error || !data.session?.access_token) {
         return { ok: false, error: error?.message ?? 'Login fallido' }
       }
-      const ctx = await fetchAuthMe(data.session.access_token)
-      if (!ctx) return { ok: false, error: 'Perfil no provisionado' }
-      store.setSession(data.session.access_token, ctx)
+      const session = await fetchAuthMe(data.session.access_token)
+      if (!session) return { ok: false, error: 'No se pudo resolver la sesión' }
+      if (session.state === 'awaiting_access') {
+        applySession(data.session.access_token, session)
+        return { ok: true }
+      }
+      if (!session.context) {
+        return { ok: false, error: 'Perfil no provisionado o membership inactiva' }
+      }
+      applySession(data.session.access_token, session)
       return { ok: true }
     },
-    [store],
+    [applySession],
   )
 
   const signOut = useCallback(async () => {
     const client = getSupabaseBrowserClient()
     if (client) await client.auth.signOut()
-    store.clearSession()
-  }, [store])
+    applySession(null, null)
+  }, [applySession])
 
   const value = useMemo<AuthContextValue>(
     () => ({
       loading,
-      isAuthenticated: Boolean(store.accessToken && store.authContext),
+      isAuthenticated: Boolean(store.accessToken && (store.authContext || sessionState === 'awaiting_access')),
+      sessionState,
       authContext: store.authContext,
       accessToken: store.accessToken,
       signIn,
       signOut,
       refreshMe,
     }),
-    [loading, store.accessToken, store.authContext, signIn, signOut, refreshMe],
+    [loading, store.accessToken, store.authContext, sessionState, signIn, signOut, refreshMe],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

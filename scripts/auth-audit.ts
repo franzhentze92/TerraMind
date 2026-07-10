@@ -54,6 +54,7 @@ const operationalFiles = [
   'field-sync.ts',
   'fires.ts',
   'auth.ts',
+  'provisioning.ts',
 ]
 
 for (const file of operationalFiles) {
@@ -87,6 +88,7 @@ console.log(`- AuthorizedResourceContext required: ${guard.includes('service_rol
 console.log('\n## Migrations (not applied per policy)')
 console.log('- 028_field_sync.sql: present, not applied')
 console.log('- 029_auth_tenant_isolation.sql: present, not applied')
+console.log('- 030_auth_provisioning.sql: present, not applied')
 
 console.log('\n## Feature flags')
 const mobileConfig = scan(
