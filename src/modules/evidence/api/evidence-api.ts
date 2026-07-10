@@ -122,3 +122,28 @@ export function withdrawEvidenceSubmission(submissionId: string, reason: string)
     { reason },
   )
 }
+
+export function fetchEvidenceValidation(submissionId: string) {
+  return apiFetch<Record<string, unknown>>(
+    `/api/operations/evidence-submissions/${submissionId}/validation`,
+  )
+}
+
+export function fetchEvidenceValidationHistory(submissionId: string) {
+  return apiFetch<{ items: Array<Record<string, unknown>> }>(
+    `/api/operations/evidence-submissions/${submissionId}/validation-history`,
+  )
+}
+
+export function fetchMissionEvidenceQualitySummary(missionId: string) {
+  return apiFetch<Record<string, unknown>>(
+    `/api/operations/missions/${missionId}/evidence-quality-summary`,
+  )
+}
+
+export function revalidateEvidenceSubmission(submissionId: string, idempotencyKey?: string) {
+  return apiPost<{ ok: boolean }>(
+    `/api/operations/evidence-submissions/${submissionId}/revalidate`,
+    { idempotency_key: idempotencyKey },
+  )
+}

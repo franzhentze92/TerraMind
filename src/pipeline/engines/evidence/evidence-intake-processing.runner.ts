@@ -8,6 +8,7 @@ import {
   updateSubmissionStatus,
   upsertRequirementLinks,
 } from '@/pipeline/stores/evidence-intake.store'
+import { enqueueEvidenceValidationJob } from '@/pipeline/stores/evidence-validation-jobs.store'
 import {
   getMissionById,
   listMissionEvidenceRequirements,
@@ -87,4 +88,8 @@ export async function runEvidenceProcessing(submissionId: string): Promise<void>
       deduplication: result.deduplication,
     },
   })
+
+  if (result.submission_status === 'ready_for_validation') {
+    await enqueueEvidenceValidationJob({ submissionId })
+  }
 }

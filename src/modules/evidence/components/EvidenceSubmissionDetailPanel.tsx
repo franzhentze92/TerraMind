@@ -1,4 +1,4 @@
-import { useEvidenceSubmissionDetail } from '../hooks/useMissionEvidence'
+import { useEvidenceSubmissionDetail, useEvidenceValidation } from '../hooks/useMissionEvidence'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
 
 interface EvidenceSubmissionDetailPanelProps {
@@ -11,7 +11,10 @@ export function EvidenceSubmissionDetailPanel({
   onClose,
 }: EvidenceSubmissionDetailPanelProps) {
   const query = useEvidenceSubmissionDetail(submissionId)
+  const validationQuery = useEvidenceValidation(submissionId)
   const detail = query.data
+  const validation = validationQuery.data?.validation as Record<string, unknown> | undefined
+  const checks = (validationQuery.data?.checks as Array<Record<string, unknown>>) ?? []
 
   if (query.isLoading) {
     return (
@@ -65,6 +68,46 @@ export function EvidenceSubmissionDetailPanel({
         )}
       </div>
 
+      {validation && (
+        <div className="mt-4 rounded border border-border-subtle/80 bg-surface-1/30 p-3">
+          <p className="text-xs font-medium text-text-primary">Validación de calidad</p>
+          <p className="mt-1 text-xs text-text-secondary">
+            Estado: {String(validation.status)} · Fuerza: {String(validation.evidence_strength)}
+          </p>
+          <p className="text-xs text-text-tertiary">
+            Calidad general: {String(validation.overall_quality_score)}/100
+          </p>
+          <p className="mt-1 text-xs text-text-secondary">{String(validation.decision_reason)}</p>
+          {((validation.limitations as string[]) ?? []).length > 0 && (
+            <ul className="mt-2 list-inside list-disc text-xs text-confidence-low">
+              {((validation.limitations as string[]) ?? []).map((l) => (
+                <li key={l}>{l}</li>
+              ))}
+            </ul>
+          )}
+          <div className="mt-2 grid grid-cols-2 gap-1 text-[10px] text-text-tertiary">
+            <span>Integridad: {String(validation.technical_integrity_score)}</span>
+            <span>Provenance: {String(validation.provenance_score)}</span>
+            <span>Temporal: {String(validation.temporal_relevance_score)}</span>
+            <span>Espacial: {String(validation.spatial_relevance_score)}</span>
+            <span>Semántica: {String(validation.semantic_relevance_score)}</span>
+            <span>Completitud: {String(validation.completeness_score)}</span>
+            <span>Independencia: {String(validation.source_independence_score)}</span>
+            <span>Usabilidad: {String(validation.usability_score)}</span>
+          </div>
+          {checks.length > 0 && (
+            <div className="mt-2">
+              <p className="text-[10px] font-medium text-text-primary">Checks</p>
+              {checks.slice(0, 6).map((c) => (
+                <p key={String(c.id)} className="text-[10px] text-text-tertiary">
+                  {String(c.dimension)} · {String(c.check_code)} · {String(c.outcome)}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {assets.length > 0 && (
         <div className="mt-4">
           <p className="text-xs font-medium text-text-primary">Archivos</p>
@@ -101,6 +144,7 @@ export function EvidenceSubmissionDetailPanel({
             <p key={String(l.id)} className="mt-1 text-xs text-text-secondary">
               {String(l.requirement_id).slice(0, 8)}… · {String(l.match_type)} ·{' '}
               {String(l.preliminary_coverage)}
+              {l.valid_coverage_status && ` · ${String(l.valid_coverage_status)}`}
             </p>
           ))}
         </div>

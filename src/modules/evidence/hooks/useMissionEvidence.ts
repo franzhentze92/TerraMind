@@ -3,8 +3,11 @@ import {
   confirmEvidenceUpload,
   createEvidenceSubmission,
   fetchEvidenceSubmissionDetail,
+  fetchEvidenceValidation,
   fetchMissionEvidence,
+  fetchMissionEvidenceQualitySummary,
   requestEvidenceUploadUrl,
+  revalidateEvidenceSubmission,
   submitStructuredObservation,
   withdrawEvidenceSubmission,
 } from '../api/evidence-api'
@@ -23,6 +26,22 @@ export function useEvidenceSubmissionDetail(submissionId: string | undefined) {
     queryKey: ['evidence-submission', submissionId],
     queryFn: () => fetchEvidenceSubmissionDetail(submissionId!),
     enabled: Boolean(submissionId),
+  })
+}
+
+export function useEvidenceValidation(submissionId: string | undefined) {
+  return useQuery({
+    queryKey: ['evidence-validation', submissionId],
+    queryFn: () => fetchEvidenceValidation(submissionId!),
+    enabled: Boolean(submissionId),
+  })
+}
+
+export function useMissionEvidenceQuality(missionId: string | undefined) {
+  return useQuery({
+    queryKey: ['mission-evidence-quality', missionId],
+    queryFn: () => fetchMissionEvidenceQualitySummary(missionId!),
+    enabled: Boolean(missionId),
   })
 }
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Badge } from '@/shared/components/Badge'
-import { useMissionEvidence, useEvidenceIntake } from '../hooks/useMissionEvidence'
+import { useMissionEvidence, useEvidenceIntake, useMissionEvidenceQuality } from '../hooks/useMissionEvidence'
 import { EvidenceSubmissionDetailPanel } from './EvidenceSubmissionDetailPanel'
 
 const STATUS_LABELS: Record<string, string> = {
@@ -20,6 +20,7 @@ interface MissionEvidenceSectionProps {
 
 export function MissionEvidenceSection({ missionId }: MissionEvidenceSectionProps) {
   const query = useMissionEvidence(missionId)
+  const qualityQuery = useMissionEvidenceQuality(missionId)
   const intake = useEvidenceIntake(missionId)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -88,6 +89,29 @@ export function MissionEvidenceSection({ missionId }: MissionEvidenceSectionProp
 
       {query.isLoading && <p className="text-xs text-text-tertiary">Cargando evidencia…</p>}
       {error && <p className="mb-2 text-xs text-confidence-low">{error}</p>}
+
+      {qualityQuery.data && (
+        <div className="mb-4 rounded border border-border-subtle bg-surface-2/30 p-3 text-xs">
+          <p className="font-medium text-text-primary">Resumen de calidad</p>
+          <p className="mt-1 text-text-secondary">
+            Aceptada: {String((qualityQuery.data.validation_counts as Record<string, number>)?.accepted ?? 0)} ·
+            Con limitaciones:{' '}
+            {String(
+              (qualityQuery.data.validation_counts as Record<string, number>)
+                ?.accepted_with_limitations ?? 0,
+            )}{' '}
+            · Inconclusa:{' '}
+            {String((qualityQuery.data.validation_counts as Record<string, number>)?.inconclusive ?? 0)} ·
+            Rechazada:{' '}
+            {String((qualityQuery.data.validation_counts as Record<string, number>)?.rejected ?? 0)}
+          </p>
+          {Number(qualityQuery.data.conflict_flags) > 0 && (
+            <p className="mt-1 text-confidence-low">
+              Conflictos potenciales: {String(qualityQuery.data.conflict_flags)}
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="mb-4 rounded border border-border-subtle bg-surface-2/30 p-3">
         <p className="text-[10px] uppercase tracking-wider text-text-tertiary">
