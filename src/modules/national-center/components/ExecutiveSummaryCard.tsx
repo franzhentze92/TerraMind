@@ -38,6 +38,11 @@ function SituationList({
 
 export function ExecutiveSummaryCard({ brief }: ExecutiveSummaryCardProps) {
   const [expanded, setExpanded] = useState(false)
+  const priorityText =
+    brief.priorityIntro ??
+    (brief.situacionesPrioritarias > 0
+      ? `Hoy TerraMind identificó ${brief.situacionesPrioritarias} situaciones prioritarias.`
+      : 'No se identificaron situaciones prioritarias.')
 
   return (
     <motion.div
@@ -54,13 +59,21 @@ export function ExecutiveSummaryCard({ brief }: ExecutiveSummaryCardProps) {
 
       <div className="mt-4 rounded-xl border border-border-subtle bg-surface-2/80 p-6">
         <p className="text-base font-medium text-text-primary">{brief.greeting}</p>
-        <p className="mt-3 text-sm text-text-secondary">
-          Hoy TerraMind identificó{' '}
-          <span className="font-semibold text-text-primary">
-            {brief.situacionesPrioritarias} situaciones prioritarias
-          </span>
-          .
-        </p>
+        <p className="mt-3 text-sm text-text-secondary">{priorityText}</p>
+
+        {brief.isLive && (
+          <p className="mt-3 text-sm leading-relaxed text-text-secondary">{brief.fullAnalysis}</p>
+        )}
+
+        {!brief.isLive && (
+          <p className="mt-3 text-sm text-text-secondary">
+            Hoy TerraMind identificó{' '}
+            <span className="font-semibold text-text-primary">
+              {brief.situacionesPrioritarias} situaciones prioritarias
+            </span>
+            .
+          </p>
+        )}
 
         <SituationList items={brief.criticas} emoji="🔴" label="Críticas" />
         <SituationList items={brief.atencion} emoji="🟡" label="Atención" />
@@ -75,12 +88,37 @@ export function ExecutiveSummaryCard({ brief }: ExecutiveSummaryCardProps) {
               className="overflow-hidden"
             >
               <div className="mt-5 border-t border-border-subtle pt-5">
-                <p className="text-sm leading-relaxed text-text-secondary">
-                  {brief.fullAnalysis}
-                </p>
+                {!brief.isLive && (
+                  <p className="text-sm leading-relaxed text-text-secondary">
+                    {brief.fullAnalysis}
+                  </p>
+                )}
                 <ul className="mt-4 space-y-1.5 text-xs text-text-tertiary">
-                  <li>✓ {brief.stats.sources} fuentes · {brief.stats.observations} observaciones</li>
-                  <li>✓ {brief.stats.events} eventos · {brief.stats.hallazgos} hallazgos</li>
+                  {brief.isLive ? (
+                    <>
+                      <li>
+                        ✓ {brief.stats.sources} fuentes operativas ·{' '}
+                        {brief.stats.observations} observaciones FIRMS
+                      </li>
+                      <li>
+                        ✓ {brief.stats.detectionsNational ?? '—'} detecciones nacionales ·{' '}
+                        {brief.stats.events} eventos térmicos
+                      </li>
+                      <li>
+                        ✓ {brief.stats.attention ?? 0} evento
+                        {(brief.stats.attention ?? 0) === 1 ? '' : 's'} requiere atención
+                      </li>
+                    </>
+                  ) : (
+                    <>
+                      <li>
+                        ✓ {brief.stats.sources} fuentes · {brief.stats.observations} observaciones
+                      </li>
+                      <li>
+                        ✓ {brief.stats.events} eventos · {brief.stats.hallazgos ?? 0} hallazgos
+                      </li>
+                    </>
+                  )}
                 </ul>
               </div>
             </motion.div>

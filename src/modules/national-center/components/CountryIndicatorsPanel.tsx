@@ -26,7 +26,7 @@ const TREND_ICONS = {
   stable: Minus,
 } as const
 
-function ScoreBar({ score, status }: { score: number; status: CountryIndicator['status'] }) {
+function ScoreBar({ score, status, max = 100 }: { score: number; status: CountryIndicator['status']; max?: number }) {
   const barColor =
     status === 'good'
       ? 'bg-confidence-high'
@@ -34,11 +34,13 @@ function ScoreBar({ score, status }: { score: number; status: CountryIndicator['
         ? 'bg-status-warning'
         : 'bg-status-critical'
 
+  const width = Math.min(100, Math.max(0, (score / max) * 100))
+
   return (
     <div className="mt-2 h-0.5 w-full overflow-hidden rounded-full bg-surface-4">
       <motion.div
         initial={{ width: 0 }}
-        animate={{ width: `${score}%` }}
+        animate={{ width: `${width}%` }}
         transition={{ duration: 0.8, ease: 'easeOut', delay: 0.2 }}
         className={cn('h-full rounded-full', barColor)}
       />
@@ -54,8 +56,10 @@ export function CountryIndicatorsPanel({ indicators }: CountryIndicatorsPanelPro
       </p>
 
       {indicators.map((ind, i) => {
-        const TrendIcon = TREND_ICONS[ind.trend]
+        const isFireLive = ind.id === 'fire' && ind.subtitle
+        const TrendIcon = isFireLive ? null : TREND_ICONS[ind.trend]
         const changePrefix = ind.change7d > 0 ? '+' : ''
+        const scoreMax = isFireLive ? Math.max(ind.score, 10) : 100
 
         return (
           <motion.div
@@ -63,7 +67,10 @@ export function CountryIndicatorsPanel({ indicators }: CountryIndicatorsPanelPro
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 + i * 0.06 }}
-            className="rounded-lg border border-border-subtle bg-surface-2/50 px-4 py-3"
+            className={cn(
+              'rounded-lg border border-border-subtle bg-surface-2/50 px-4 py-3',
+              isFireLive && 'border-confidence-medium/30',
+            )}
           >
             <span className="text-xs text-text-secondary">{ind.label}</span>
 
@@ -73,19 +80,25 @@ export function CountryIndicatorsPanel({ indicators }: CountryIndicatorsPanelPro
                   {ind.score}
                 </span>
                 <span className={cn('text-[10px] font-medium', LEVEL_COLORS[ind.level])}>
-                  {ind.level}
+                  {isFireLive ? (ind.contextLabel ?? ind.level) : ind.level}
                 </span>
               </div>
-              <div className="flex items-center gap-1 text-right">
-                <TrendIcon className={cn('h-3 w-3', STATUS_COLORS[ind.status])} />
-                <span className={cn('font-mono text-xs', STATUS_COLORS[ind.status])}>
-                  {changePrefix}{ind.change7d}
-                </span>
-              </div>
+              {isFireLive ? (
+                <span className="text-[10px] text-text-tertiary">{ind.subtitle}</span>
+              ) : TrendIcon ? (
+                <div className="flex items-center gap-1 text-right">
+                  <TrendIcon className={cn('h-3 w-3', STATUS_COLORS[ind.status])} />
+                  <span className={cn('font-mono text-xs', STATUS_COLORS[ind.status])}>
+                    {changePrefix}{ind.change7d}
+                  </span>
+                </div>
+              ) : null}
             </div>
 
-            <p className="mt-1 text-[10px] text-text-tertiary">Últimos 7 días</p>
-            <ScoreBar score={ind.score} status={ind.status} />
+            <p className="mt-1 text-[10px] text-text-tertiary">
+              {isFireLive ? 'Eventos térmicos' : 'Últimos 7 días'}
+            </p>
+            <ScoreBar score={ind.score} status={ind.status} max={scoreMax} />
           </motion.div>
         )
       })}

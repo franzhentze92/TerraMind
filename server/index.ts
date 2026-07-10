@@ -2,47 +2,37 @@ import { config } from 'dotenv'
 import { resolve } from 'node:path'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { getSituationReport, isPipelineRunning, runPipeline } from '@/pipeline/orchestrator'
-import { startScheduler } from '@/pipeline/scheduler'
+import { startFireScheduler } from '@/pipeline/scheduler/fire.scheduler'
 import { verifyMapKey } from '@/pipeline/connectors/firms.connector'
+import { handlePreflight } from './http/cors.js'
+import { jsonResponse } from './http/json.js'
+import { handleFireRoutes } from './routes/fires.js'
 
 config({ path: resolve(process.cwd(), '.env') })
 
 const PORT = Number(process.env.TERRAMIND_PORT ?? 3001)
 
-function jsonResponse(res: ServerResponse, data: unknown, status = 200) {
-  res.writeHead(status, {
-    'Content-Type': 'application/json',
-    'Access-Control-Allow-Origin': '*',
-  })
-  res.end(JSON.stringify(data))
-}
-
 const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
-  const url = req.url ?? '/'
+  if (handlePreflight(req, res)) return
 
-  if (req.method === 'OPTIONS') {
-    res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    })
-    res.end()
+  const url = new URL(req.url ?? '/', `http://localhost:${PORT}`)
+  const pathname = url.pathname
+
+  if (await handleFireRoutes(req, res, pathname, url.searchParams)) return
+
+  if (pathname === '/api/health' && req.method === 'GET') {
+    jsonResponse(req, res, { status: 'ok', service: 'terramind-pipeline' })
     return
   }
 
-  if (url === '/api/health' && req.method === 'GET') {
-    jsonResponse(res, { status: 'ok', service: 'terramind-pipeline' })
+  if (pathname === '/api/situacion/brief' && req.method === 'GET') {
+    jsonResponse(req, res, getSituationReport())
     return
   }
 
-  if (url === '/api/situacion/brief' && req.method === 'GET') {
-    jsonResponse(res, getSituationReport())
-    return
-  }
-
-  if (url === '/api/pipeline/status' && req.method === 'GET') {
+  if (pathname === '/api/pipeline/status' && req.method === 'GET') {
     const report = getSituationReport()
-    jsonResponse(res, {
+    jsonResponse(req, res, {
       running: isPipelineRunning(),
       lastSyncAt: report.lastSyncAt,
       nextSyncAt: report.nextSyncAt,
@@ -51,27 +41,27 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
     return
   }
 
-  if (url === '/api/firms/status' && req.method === 'GET') {
+  if (pathname === '/api/firms/status' && req.method === 'GET') {
     const configured = Boolean(process.env.NASA_FIRMS_MAP_KEY?.trim())
     if (!configured) {
-      jsonResponse(res, { configured: false, valid: false })
+      jsonResponse(req, res, { configured: false, valid: false })
       return
     }
     const status = await verifyMapKey()
-    jsonResponse(res, { configured: true, ...status })
+    jsonResponse(req, res, { configured: true, ...status })
     return
   }
 
-  if (url === '/api/pipeline/sync' && req.method === 'POST') {
+  if (pathname === '/api/pipeline/sync' && req.method === 'POST') {
     const result = await runPipeline()
-    jsonResponse(res, result)
+    jsonResponse(req, res, result)
     return
   }
 
-  jsonResponse(res, { error: 'Not found' }, 404)
+  jsonResponse(req, res, { error: 'Not found' }, 404)
 })
 
 server.listen(PORT, () => {
   console.log(`[TerraMind] API escuchando en http://localhost:${PORT}`)
-  startScheduler()
+  startFireScheduler()
 })

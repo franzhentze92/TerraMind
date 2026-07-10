@@ -1,3 +1,13 @@
+export class ApiError extends Error {
+  status: number
+
+  constructor(message: string, status: number) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+  }
+}
+
 export interface ApiClientConfig {
   baseUrl: string
   timeout: number
@@ -23,7 +33,16 @@ export class ApiClient {
     const response = await fetch(`${this.config.baseUrl}${endpoint}`, {
       signal: AbortSignal.timeout(this.config.timeout),
     })
-    if (!response.ok) throw new Error(`API error: ${response.status}`)
+    if (!response.ok) {
+      let message = `API error: ${response.status}`
+      try {
+        const body = (await response.json()) as { error?: string }
+        if (body.error) message = body.error
+      } catch {
+        // ignore parse errors
+      }
+      throw new ApiError(message, response.status)
+    }
     return response.json() as Promise<T>
   }
 
@@ -34,7 +53,9 @@ export class ApiClient {
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(this.config.timeout),
     })
-    if (!response.ok) throw new Error(`API error: ${response.status}`)
+    if (!response.ok) {
+      throw new ApiError(`API error: ${response.status}`, response.status)
+    }
     return response.json() as Promise<T>
   }
 }

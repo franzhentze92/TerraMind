@@ -5,6 +5,7 @@ import { cn } from '@/shared/utils/cn'
 
 interface LiveTimelinePanelProps {
   entries: TimelineEntry[]
+  live?: boolean
 }
 
 const STATUS_CONFIG: Record<
@@ -16,7 +17,7 @@ const STATUS_CONFIG: Record<
   waiting: { icon: Clock, label: 'Esperando', className: 'text-status-info' },
 }
 
-export function LiveTimelinePanel({ entries }: LiveTimelinePanelProps) {
+export function LiveTimelinePanel({ entries, live = false }: LiveTimelinePanelProps) {
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
@@ -28,7 +29,7 @@ export function LiveTimelinePanel({ entries }: LiveTimelinePanelProps) {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-confidence-high opacity-50" />
             <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-confidence-high" />
           </span>
-          En vivo
+          {live ? 'Pipeline FIRMS' : 'En vivo'}
         </span>
       </div>
 

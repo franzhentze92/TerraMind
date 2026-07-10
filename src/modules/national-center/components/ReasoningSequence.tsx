@@ -10,20 +10,21 @@ const DEMO_STEPS = [
   'Informe generado',
 ]
 
-const LIVE_STEPS = [
-  'TerraMind está razonando…',
-  'NASA FIRMS verificada',
-  'Observaciones normalizadas',
-  'Eventos correlacionados',
-  'Hallazgo generado',
-  'Informe actualizado',
-]
+interface ReasoningSequenceProps {
+  live?: boolean
+  steps?: string[]
+}
 
-export function ReasoningSequence({ live = false }: { live?: boolean }) {
+export function ReasoningSequence({ live = false, steps }: ReasoningSequenceProps) {
   const [phase, setPhase] = useState(0)
   const [done, setDone] = useState(false)
 
-  const STEPS = live ? LIVE_STEPS : DEMO_STEPS
+  const STEPS = steps ?? (live ? DEMO_STEPS : DEMO_STEPS)
+
+  useEffect(() => {
+    setPhase(0)
+    setDone(false)
+  }, [steps?.join('|')])
 
   useEffect(() => {
     if (phase === 0) {
@@ -37,7 +38,7 @@ export function ReasoningSequence({ live = false }: { live?: boolean }) {
       }, 600)
       return () => clearTimeout(t)
     }
-  }, [phase])
+  }, [phase, STEPS.length])
 
   if (done) return null
 

@@ -23,8 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
-# TerraMind pipeline store
-data/
+# TerraMind pipeline store (geo sources are versioned intentionally)
+data/terramind-store.json
 
 # Secrets — nunca commitear
 .env

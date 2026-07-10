@@ -1,25 +1,31 @@
 import { Globe } from 'lucide-react'
-import type { DailyBriefHeader } from '../data/daily-brief.demo'
-import { formatObservationCount } from '../data/daily-brief.demo'
+import type { FireDashboardHeader } from '@/modules/fires/utils/fire-dashboard'
 import { useSecondsSince } from '@/shared/hooks/useLiveClock'
 import { cn } from '@/shared/utils/cn'
 
 interface DailyBriefHeaderBarProps {
-  data: DailyBriefHeader
-  lastUpdated: Date
+  data: FireDashboardHeader
 }
 
-export function DailyBriefHeaderBar({ data, lastUpdated }: DailyBriefHeaderBarProps) {
-  const seconds = useSecondsSince(lastUpdated)
+export function DailyBriefHeaderBar({ data }: DailyBriefHeaderBarProps) {
+  const uiSeconds = useSecondsSince(data.uiRefreshAt)
 
   const ticker = [
-    { label: 'Sistema operativo', value: null, dot: true },
-    { label: 'Fuentes', value: data.sourcesActive.toString() },
-    { label: 'Observaciones', value: formatObservationCount(data.observationsToday) },
-    { label: 'Eventos', value: data.eventsToday.toString() },
-    { label: 'Hallazgos', value: data.hallazgosToday.toString(), warn: true },
-    { label: 'Confianza', value: `${data.nationalConfidence}%`, accent: true },
-    { label: 'Actualización', value: `${seconds}s` },
+    { label: 'Sistema operativo', value: null, dot: true, status: data.systemStatus },
+    { label: 'Fuentes', value: data.sourcesQueriedLabel },
+    { label: 'Detecciones', value: data.detectionsNational.toString() },
+    { label: 'Eventos', value: data.eventsThermal.toString() },
+    {
+      label: 'Atención',
+      value: data.attentionCount.toString(),
+      warn: data.attentionCount > 0,
+    },
+    {
+      label: 'FIRMS',
+      value: data.firmsIngestionLabel ?? '—',
+      accent: true,
+    },
+    { label: 'UI', value: `${uiSeconds}s` },
   ]
 
   return (
@@ -43,10 +49,27 @@ export function DailyBriefHeaderBar({ data, lastUpdated }: DailyBriefHeaderBarPr
             {item.dot ? (
               <div className="flex items-center gap-1.5">
                 <span className="relative flex h-1.5 w-1.5">
-                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-confidence-high opacity-40" />
-                  <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-confidence-high" />
+                  <span
+                    className={cn(
+                      'absolute inline-flex h-full w-full animate-ping rounded-full opacity-40',
+                      item.status === 'operational' ? 'bg-confidence-high' : 'bg-status-warning',
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      'relative inline-flex h-1.5 w-1.5 rounded-full',
+                      item.status === 'operational' ? 'bg-confidence-high' : 'bg-status-warning',
+                    )}
+                  />
                 </span>
-                <span className="text-xs text-confidence-high">{item.label}</span>
+                <span
+                  className={cn(
+                    'text-xs',
+                    item.status === 'operational' ? 'text-confidence-high' : 'text-status-warning',
+                  )}
+                >
+                  {item.label}
+                </span>
               </div>
             ) : (
               <div className="flex items-baseline gap-1.5">

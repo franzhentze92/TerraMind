@@ -12,6 +12,7 @@ import {
   Plug,
   Settings,
   Globe,
+  Flame,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { APP_CONFIG } from '@/core/config'
@@ -31,7 +32,10 @@ interface NavSection {
 const NAV_SECTIONS: NavSection[] = [
   {
     title: 'Centro Nacional',
-    items: [{ path: '/situacion', label: 'Situación Nacional', icon: Home }],
+    items: [
+      { path: '/situacion', label: 'Situación Nacional', icon: Home },
+      { path: '/incendios', label: 'Incendios', icon: Flame },
+    ],
   },
   {
     title: 'Inteligencia',

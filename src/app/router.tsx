@@ -11,6 +11,7 @@ import { IntegrationsPage } from '@/modules/integrations/pages/IntegrationsPage'
 import { TrendsPage } from '@/modules/trends/pages/TrendsPage'
 import { ReportsPage } from '@/modules/reports/pages/ReportsPage'
 import { SettingsPage } from '@/modules/settings/pages/SettingsPage'
+import { FireAnalysisPage } from '@/modules/fires/pages/FireAnalysisPage'
 
 export const router = createBrowserRouter([
   {
@@ -19,6 +20,8 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/situacion" replace /> },
       { path: 'situacion', element: <NationalSituationPage /> },
+      { path: 'incendios', element: <FireAnalysisPage /> },
+      { path: 'incendios/:eventId', element: <FireAnalysisPage /> },
       { path: 'copilot', element: <CopilotPage /> },
       { path: 'hallazgos', element: <FindingsPage /> },
       { path: 'prioridades', element: <PrioritiesPage /> },
