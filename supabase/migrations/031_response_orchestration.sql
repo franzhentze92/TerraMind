@@ -136,8 +136,161 @@ create table if not exists public.response_orchestration_events (
 create index if not exists response_orchestration_events_incident_idx
   on public.response_orchestration_events (incident_id, created_at desc);
 
+create table if not exists public.response_assessment_jobs (
+  id uuid primary key default gen_random_uuid(),
+  organization_id uuid not null references public.organizations (id),
+  incident_id uuid not null references public.incidents (id) on delete cascade,
+  verification_resolution_id uuid references public.verification_need_resolutions (id) on delete set null,
+  status text not null default 'pending' check (status in (
+    'pending', 'waiting_dependencies', 'ready', 'running', 'completed',
+    'blocked_inconsistent_snapshot', 'failed_retryable', 'failed_terminal'
+  )),
+  dependencies jsonb not null default '[]'::jsonb,
+  attempts integer not null default 0,
+  max_attempts integer not null default 5,
+  error_code text,
+  next_retry_at timestamptz,
+  input_signature text,
+  result_assessment_id uuid references public.response_assessments (id) on delete set null,
+  idempotency_key text not null,
+  locked_at timestamptz,
+  locked_by text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create unique index if not exists response_assessment_jobs_idempotency_idx
+  on public.response_assessment_jobs (organization_id, idempotency_key);
+
+create index if not exists response_assessment_jobs_status_idx
+  on public.response_assessment_jobs (status, next_retry_at, created_at);
+
+-- ---------------------------------------------------------------------------
+-- Permissions (8C.1.2)
+-- ---------------------------------------------------------------------------
+
+insert into public.permissions (id, category, label) values
+  ('responses.view', 'response', 'View response orchestration'),
+  ('responses.assess', 'response', 'Assess incident response'),
+  ('responses.decide', 'response', 'Record human response decisions'),
+  ('responses.approve', 'response', 'Approve response decisions'),
+  ('responses.modify', 'response', 'Modify response decisions'),
+  ('responses.reject', 'response', 'Reject response recommendations'),
+  ('response_actions.create', 'response', 'Create response actions'),
+  ('response_actions.execute', 'response', 'Execute response actions'),
+  ('response_actions.complete', 'response', 'Complete response actions'),
+  ('notifications.prepare', 'response', 'Prepare notification drafts'),
+  ('notifications.approve', 'response', 'Approve notification drafts'),
+  ('incident_closure.recommend', 'response', 'Recommend incident closure')
+on conflict (id) do nothing;
+
+insert into public.role_permissions (role_id, permission_id)
+select 'operations_coordinator', p.id from public.permissions p
+where p.id in (
+  'responses.view', 'responses.assess', 'responses.decide', 'responses.approve',
+  'responses.modify', 'responses.reject', 'response_actions.create', 'response_actions.execute',
+  'response_actions.complete', 'notifications.prepare', 'notifications.approve',
+  'incident_closure.recommend'
+)
+on conflict do nothing;
+
+insert into public.role_permissions (role_id, permission_id)
+select 'organization_admin', p.id from public.permissions p
+where p.id in (
+  'responses.view', 'responses.assess', 'responses.decide', 'responses.approve',
+  'responses.modify', 'responses.reject', 'response_actions.create', 'response_actions.execute',
+  'response_actions.complete', 'notifications.prepare', 'notifications.approve',
+  'incident_closure.recommend'
+)
+on conflict do nothing;
+
+insert into public.role_permissions (role_id, permission_id)
+select 'field_supervisor', p.id from public.permissions p
+where p.id in (
+  'responses.view', 'responses.decide', 'response_actions.create', 'response_actions.execute',
+  'response_actions.complete', 'notifications.prepare'
+)
+on conflict do nothing;
+
+insert into public.role_permissions (role_id, permission_id)
+select 'analyst', p.id from public.permissions p
+where p.id in (
+  'responses.view', 'responses.assess', 'responses.decide', 'responses.modify',
+  'response_actions.create', 'incident_closure.recommend'
+)
+on conflict do nothing;
+
+insert into public.role_permissions (role_id, permission_id)
+select 'viewer', p.id from public.permissions p
+where p.id in ('responses.view')
+on conflict do nothing;
+
+insert into public.role_permissions (role_id, permission_id)
+select 'platform_admin', p.id from public.permissions p
+where p.category = 'response'
+on conflict do nothing;
+
+-- ---------------------------------------------------------------------------
+-- RLS
+-- ---------------------------------------------------------------------------
+
 alter table public.response_assessments enable row level security;
 alter table public.decision_records enable row level security;
 alter table public.response_actions enable row level security;
 alter table public.notification_directives enable row level security;
 alter table public.response_orchestration_events enable row level security;
+alter table public.response_assessment_jobs enable row level security;
+
+create policy response_assessments_org_select on public.response_assessments
+  for select using (
+    organization_id in (
+      select om.organization_id from public.organization_memberships om
+      join public.user_profiles up on up.id = om.user_id
+      where up.auth_user_id = auth.uid() and om.status = 'active'
+    )
+  );
+
+create policy decision_records_org_select on public.decision_records
+  for select using (
+    organization_id in (
+      select om.organization_id from public.organization_memberships om
+      join public.user_profiles up on up.id = om.user_id
+      where up.auth_user_id = auth.uid() and om.status = 'active'
+    )
+  );
+
+create policy response_actions_org_select on public.response_actions
+  for select using (
+    organization_id in (
+      select om.organization_id from public.organization_memberships om
+      join public.user_profiles up on up.id = om.user_id
+      where up.auth_user_id = auth.uid() and om.status = 'active'
+    )
+  );
+
+create policy notification_directives_org_select on public.notification_directives
+  for select using (
+    organization_id in (
+      select om.organization_id from public.organization_memberships om
+      join public.user_profiles up on up.id = om.user_id
+      where up.auth_user_id = auth.uid() and om.status = 'active'
+    )
+  );
+
+create policy response_orchestration_events_org_select on public.response_orchestration_events
+  for select using (
+    organization_id in (
+      select om.organization_id from public.organization_memberships om
+      join public.user_profiles up on up.id = om.user_id
+      where up.auth_user_id = auth.uid() and om.status = 'active'
+    )
+  );
+
+create policy response_assessment_jobs_org_select on public.response_assessment_jobs
+  for select using (
+    organization_id in (
+      select om.organization_id from public.organization_memberships om
+      join public.user_profiles up on up.id = om.user_id
+      where up.auth_user_id = auth.uid() and om.status = 'active'
+    )
+  );

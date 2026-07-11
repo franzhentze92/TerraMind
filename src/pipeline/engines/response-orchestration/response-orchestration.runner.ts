@@ -7,8 +7,12 @@ import {
   buildResponseAssessmentIdempotencyKey,
   findAssessmentByIdempotency,
   insertResponseAssessment,
+  insertDecisionRecord,
+  insertResponseActions,
+  insertNotificationDirectives,
   recordResponseOrchestrationEvent,
 } from '@/pipeline/stores/response-orchestration.store.js'
+import { buildNotificationDirectiveDrafts } from '@/modules/response-orchestration/engine/notification-directive.engine'
 
 export async function runResponseAssessment(input: ResponseOrchestrationInput) {
   const output = evaluateResponseOrchestration(input)
@@ -87,5 +91,61 @@ export async function runResponseAssessment(input: ResponseOrchestrationInput) {
     decision_draft: decisionDraft,
     action_drafts: actionDrafts,
     notification_directives: notificationDirectives,
+  }
+}
+
+export async function runResponseAssessmentWithPersistence(input: ResponseOrchestrationInput) {
+  const result = await runResponseAssessment(input)
+  if (result.idempotent_replay || !result.assessment || !result.decision_draft) return result
+
+  const existingDecision = await import('@/pipeline/stores/response-orchestration.store.js').then((s) =>
+    s.getActiveDecisionForIncident(input.incident.incident_id, input.organizationId),
+  )
+  if (existingDecision) {
+    return { ...result, decision_draft: null, action_drafts: [], notification_directives: [] }
+  }
+
+  const decisionRow = await insertDecisionRecord({
+    organizationId: input.organizationId,
+    incidentId: input.incident.incident_id,
+    assessmentId: String(result.assessment.id),
+    draft: result.decision_draft,
+  })
+
+  const actionRows = await insertResponseActions({
+    organizationId: input.organizationId,
+    incidentId: input.incident.incident_id,
+    decisionId: String(decisionRow.id),
+    drafts: result.action_drafts,
+  })
+
+  const notificationRows = await insertNotificationDirectives({
+    organizationId: input.organizationId,
+    incidentId: input.incident.incident_id,
+    decisionId: String(decisionRow.id),
+    directives: result.notification_directives.map((d) => ({
+      audience_type: d.audience_type,
+      channel_type: d.channel_type,
+      urgency: d.urgency,
+      message_template_id: d.message_template_id,
+      approval_required: d.approval_required,
+      draft_payload: d.draft_payload,
+    })),
+  })
+
+  await recordResponseOrchestrationEvent({
+    organizationId: input.organizationId,
+    incidentId: input.incident.incident_id,
+    assessmentId: String(result.assessment.id),
+    decisionId: String(decisionRow.id),
+    eventType: 'decision_draft_created',
+    payload: { decision_status: result.decision_draft.decision_status },
+  })
+
+  return {
+    ...result,
+    decision_row: decisionRow,
+    action_rows: actionRows,
+    notification_rows: notificationRows,
   }
 }

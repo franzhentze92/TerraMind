@@ -224,6 +224,20 @@ export async function runNeedResolution(
     contextSignature: result.context_signature,
   })
 
+  const incident = await getIncidentById(String(plan.incident_id))
+  if (incident?.organization_id) {
+    const { enqueueResponseAssessmentJob } = await import(
+      '@/pipeline/stores/response-orchestration.store.js'
+    )
+    await enqueueResponseAssessmentJob({
+      organizationId: String(incident.organization_id),
+      incidentId: String(plan.incident_id),
+      verificationResolutionId: resolutionId,
+      dependencies: result.downstream_effects,
+      idempotencyKey: `response-job:${resolutionId}:${result.context_signature}`,
+    })
+  }
+
   return { skipped: false, resolution_id: resolutionId }
 }
 

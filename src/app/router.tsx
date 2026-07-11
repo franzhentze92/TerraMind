@@ -36,6 +36,8 @@ import { FieldPackageDetailPage } from '@/modules/field-operations/pages/FieldPa
 import { FieldSyncPage } from '@/modules/field-operations/pages/FieldSyncPage'
 import { FieldTaskFormPage } from '@/modules/field-operations/pages/FieldTaskFormPage'
 import { PendingEvidencePage } from '@/modules/field-operations/pages/PendingEvidencePage'
+import { ResponseOrchestrationListPage } from '@/modules/response-orchestration/pages/ResponseOrchestrationListPage'
+import { ResponseOrchestrationDetailPage } from '@/modules/response-orchestration/pages/ResponseOrchestrationDetailPage'
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -62,6 +64,22 @@ export const router = createBrowserRouter([
       { path: 'incidentes', element: <IncidentsPage /> },
       { path: 'incidentes/:incidentId', element: <IncidentDetailPage /> },
       { path: 'verificaciones', element: <VerificationsPage /> },
+      {
+        path: 'respuesta',
+        element: (
+          <PermissionRoute permission="responses.view">
+            <ResponseOrchestrationListPage />
+          </PermissionRoute>
+        ),
+      },
+      {
+        path: 'respuesta/:incidentId',
+        element: (
+          <PermissionRoute permission="responses.view">
+            <ResponseOrchestrationDetailPage />
+          </PermissionRoute>
+        ),
+      },
       { path: 'misiones', element: <MissionsPage /> },
       { path: 'misiones/:missionId', element: <MissionDetailPage /> },
       { path: 'operaciones/asignaciones', element: <AssignmentsPage /> },

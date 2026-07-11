@@ -17,6 +17,19 @@ import { assertRealSyncPilotAllowed } from '../../auth/real-sync-pilot-policy.js
 
 export { authorizeMissionAccess, authorizeAssignmentAction } from './mission-access.js'
 export { permissionForWorkflowAction } from './workflow-access.js'
+export {
+  authorizeResponseAssessmentAccess,
+  authorizeResponseDecisionAccess,
+  authorizeResponseActionAccess,
+  authorizeResponseApproval,
+  authorizeNotificationDirectiveAccess,
+  authorizeClosureRecommendationAccess,
+  authorizeResponseModify,
+  authorizeResponseReject,
+  authorizeResponseAssess,
+  authorizeResponseDecide,
+  authorizeResponseListScope,
+} from './response-access.js'
 
 export async function authorizeMissionWorkflowAction(
   auth: RequestAuthContext,

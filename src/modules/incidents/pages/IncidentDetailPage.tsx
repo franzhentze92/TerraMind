@@ -18,11 +18,16 @@ import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
 import { VerificationPlanSection } from '@/modules/verification/components/VerificationPlanSection'
 import { IncidentVerificationResolutionSection } from '@/modules/verification/components/IncidentVerificationResolutionSection'
 import { IncidentMissionsSection } from '@/modules/missions/components/IncidentMissionsSection'
+import { useResponseDetail } from '@/modules/response-orchestration/hooks/useResponseOrchestration'
+import { ResponseStatusBadge } from '@/modules/response-orchestration/components/ResponseStatusBadge'
+import { useHasPermission } from '@/core/auth/AuthProvider'
 
 export function IncidentDetailPage() {
   const { incidentId } = useParams()
   const detailQuery = useIncidentDetail(incidentId)
   const historyQuery = useIncidentHistory(incidentId)
+  const canViewResponse = useHasPermission('responses.view')
+  const responseQuery = useResponseDetail(canViewResponse ? incidentId : undefined)
   const detail = detailQuery.data
 
   if (detailQuery.isLoading) {
@@ -48,6 +53,11 @@ export function IncidentDetailPage() {
           {incidentStatusLabel(String(detail.status))}
         </Badge>
         <Badge variant="default">{evidenceStatusLabel(String(detail.evidence_status))}</Badge>
+        {canViewResponse && responseQuery.data?.badge && (
+          <Link to={`/respuesta/${incidentId}`}>
+            <ResponseStatusBadge badge={String(responseQuery.data.badge)} />
+          </Link>
+        )}
       </div>
 
       <section className="mb-6 grid gap-3 rounded-lg border border-border-subtle bg-surface-2/30 p-4 text-sm md:grid-cols-2">

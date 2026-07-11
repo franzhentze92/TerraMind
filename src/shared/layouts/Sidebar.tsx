@@ -8,6 +8,7 @@ import {
   Layers,
   CheckCircle2,
   ClipboardList,
+  Shield,
   Map,
   TrendingUp,
   FileText,
@@ -23,12 +24,14 @@ import { cn } from '@/shared/utils/cn'
 import { APP_CONFIG } from '@/core/config'
 import { useTerritoryStore } from '@/core/config/territory.store'
 import { useHasPermission } from '@/core/auth/AuthProvider'
+import type { TerramindPermission } from '@/core/auth/permissions'
 import { OrganizationSelector } from '@/modules/auth/components/OrganizationSelector'
 
 interface NavItem {
   path: string
   label: string
   icon: typeof Home
+  permission?: TerramindPermission
 }
 
 interface NavSection {
@@ -55,6 +58,7 @@ const NAV_SECTIONS: NavSection[] = [
       { path: '/prioridades', label: 'Prioridades', icon: AlertCircle },
       { path: '/incidentes', label: 'Incidentes', icon: Layers },
       { path: '/verificaciones', label: 'Verificaciones', icon: CheckCircle2 },
+      { path: '/respuesta', label: 'Respuesta', icon: Shield, permission: 'responses.view' },
       { path: '/misiones', label: 'Misiones', icon: ClipboardList },
       { path: '/operaciones/asignaciones', label: 'Asignaciones', icon: ClipboardList },
       { path: '/campo', label: 'Campo — PWA móvil', icon: Map },
@@ -87,6 +91,7 @@ const NAV_SECTIONS: NavSection[] = [
 export function Sidebar() {
   const territory = useTerritoryStore((s) => s.territory)
   const canManageOrg = useHasPermission('organization.settings')
+  const canViewResponses = useHasPermission('responses.view')
 
   return (
     <aside className="flex h-full w-56 flex-col border-r border-border-subtle bg-surface-1">
@@ -115,7 +120,9 @@ export function Sidebar() {
               {section.title}
             </p>
             <ul className="space-y-0.5">
-              {section.items.map((item) => (
+              {section.items
+                .filter((item) => !item.permission || (item.permission === 'responses.view' ? canViewResponses : true))
+                .map((item) => (
                 <li key={item.path}>
                   <NavLink
                     to={item.path}
