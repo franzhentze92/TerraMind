@@ -6,9 +6,18 @@ import { needResolutionStatusLabel } from '../utils/verification-labels'
 
 interface Props {
   incidentId: string
+  /**
+   * When true, the "no requiere resolución" empty state is not rendered on its
+   * own. Used in the incident detail page where the verification plan section
+   * already communicates the consolidated "no requiere verificación" result.
+   */
+  suppressNotRequired?: boolean
 }
 
-export function IncidentVerificationResolutionSection({ incidentId }: Props) {
+export function IncidentVerificationResolutionSection({
+  incidentId,
+  suppressNotRequired = false,
+}: Props) {
   const query = useIncidentVerificationResolution(incidentId)
   const planQuery = useIncidentVerificationPlan(incidentId)
   const data = query.data
@@ -34,6 +43,9 @@ export function IncidentVerificationResolutionSection({ incidentId }: Props) {
 
   if (resolutions.length === 0) {
     if (!verificationRequired) {
+      // The verification plan section already shows the consolidated
+      // "no requiere verificación" block, so avoid repeating the idea.
+      if (suppressNotRequired) return null
       return (
         <section id="resolucion" className="scroll-mt-6 rounded-lg border border-border-subtle bg-surface-2/30 p-4">
           <OperationalEmptyState

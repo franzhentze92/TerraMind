@@ -1,3 +1,21 @@
+export type VerificationClassification = 'operational' | 'legacy' | 'demo'
+
+/** Descriptive classification line for verification cards (list + detail). */
+export function verificationClassificationText(
+  classification: VerificationClassification | string | undefined,
+): string {
+  const map: Record<string, string> = {
+    operational: 'Operacional',
+    legacy: 'Registro histórico · organización pendiente',
+    demo: 'Demostración interna',
+  }
+  return map[classification ?? 'operational'] ?? 'Operacional'
+}
+
+/** Why additional verification is not required, in plain language. */
+export const VERIFICATION_NOT_REQUIRED_REASON =
+  'No se requiere verificación adicional porque el análisis remoto no identificó preguntas activas que necesiten evidencia adicional.'
+
 export function verificationPlanStatusLabel(status: string): string {
   const map: Record<string, string> = {
     draft: 'Borrador',

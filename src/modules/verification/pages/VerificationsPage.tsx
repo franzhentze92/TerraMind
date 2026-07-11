@@ -10,13 +10,24 @@ import {
 import { Badge } from '@/shared/components/Badge'
 import { useVerificationPlansList } from '../hooks/useVerificationPlans'
 import {
-  verificationNeedTypeLabel,
   verificationPlanStatusLabel,
+  verificationClassificationText,
+  VERIFICATION_NOT_REQUIRED_REASON,
 } from '../utils/verification-labels'
-import { domainLabel } from '@/modules/priorities/utils/priority-labels'
 import { ClassificationBadge } from '@/modules/executive-metrics/components/ClassificationBadge'
+import { activeQuestionsLabel } from '@/shared/format/plural'
 import { cn } from '@/shared/utils/cn'
 import { useCanonicalOperationalCounts } from '@/shared/hooks/useCanonicalOperationalCounts'
+
+function recommendedWindowText(
+  status: string,
+  window: { end_hours?: number; label?: string } | undefined,
+): string {
+  if (status === 'not_required') return 'Ventana recomendada: no aplica'
+  const end = window?.end_hours
+  if (typeof end === 'number' && end > 0) return `Ventana recomendada: ${end}h`
+  return ''
+}
 
 export function VerificationsPage() {
   const [status, setStatus] = useState('')
@@ -61,61 +72,71 @@ export function VerificationsPage() {
       )}
 
       <div className="space-y-3">
-        {items.map((item) => (
-          <Link
-            key={item.id}
-            to={`/incidentes/${item.incident_id}#verificacion`}
-            className="block rounded-lg border border-border-subtle bg-surface-2/30 p-4 hover:border-accent/40"
-          >
-            <div className="flex flex-wrap items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-                  {item.primary_need_type
-                    ? verificationNeedTypeLabel(item.primary_need_type)
-                    : 'Verificación'}{' '}
-                  · prioridad {item.plan_priority}
-                </p>
-                <h3 className="text-sm font-semibold text-text-primary">
-                  {item.incident_display_name ?? 'Incidente'}
-                </h3>
-                <p className="mt-0.5 text-xs text-text-secondary">
-                  {item.domain ? domainLabel(item.domain) : 'Ubicación no disponible'}
-                </p>
-                {item.recommended_method_label && (
-                  <p className="mt-1 text-xs text-text-secondary">
-                    {item.recommended_method_label}
-                    {item.requires_field ? ' · requiere campo' : ' · remoto'}
+        {items.map((item) => {
+          const notRequired = item.status === 'not_required'
+          const windowText = recommendedWindowText(
+            item.status,
+            item.recommended_window as { end_hours?: number; label?: string } | undefined,
+          )
+          return (
+            <Link
+              key={item.id}
+              to={`/incidentes/${item.incident_id}#verificacion`}
+              className="block rounded-lg border border-border-subtle bg-surface-2/30 p-4 hover:border-accent/40"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-text-primary">
+                    {item.incident_display_name ?? 'Incidente sin nombre asignado'}
+                  </h3>
+                  <p className="mt-0.5 text-xs text-text-tertiary">
+                    {verificationClassificationText(item.classification)}
                   </p>
-                )}
+                  <p className="mt-0.5 text-xs text-text-secondary">
+                    Verificación adicional:{' '}
+                    {notRequired ? 'no requerida' : verificationPlanStatusLabel(item.status)}
+                  </p>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {item.classification && (
+                    <ClassificationBadge classification={item.classification} />
+                  )}
+                  {item.requires_field && <Badge variant="default">Campo</Badge>}
+                </div>
               </div>
-              <div className="flex flex-wrap gap-1.5">
-                {item.classification && <ClassificationBadge classification={item.classification} />}
-                <Badge variant="default">{verificationPlanStatusLabel(item.status)}</Badge>
-                {item.requires_field && <Badge variant="default">Campo</Badge>}
+
+              {notRequired ? (
+                <div className="mt-2">
+                  <p className="text-[10px] uppercase tracking-wider text-text-tertiary">Motivo</p>
+                  <p className="mt-0.5 text-xs text-text-secondary">
+                    {VERIFICATION_NOT_REQUIRED_REASON}
+                  </p>
+                </div>
+              ) : item.primary_need_question ? (
+                <p className="mt-2 text-xs text-text-secondary">
+                  <span className="text-text-tertiary">Pregunta activa: </span>
+                  {item.primary_need_question}
+                </p>
+              ) : null}
+
+              {!notRequired && item.recommended_method_label && (
+                <p className="mt-1 text-xs text-text-secondary">
+                  {item.recommended_method_label}
+                  {item.requires_field ? ' · requiere campo' : ' · remoto'}
+                </p>
+              )}
+
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs text-text-tertiary">
+                  {activeQuestionsLabel(item.needs_count)}
+                  {windowText ? ` · ${windowText}` : ''}
+                  {` · Prioridad del plan: ${item.plan_priority}/100`}
+                </p>
+                <span className="text-xs text-accent">Ver incidente →</span>
               </div>
-            </div>
-
-            {item.status === 'not_required' ? (
-              <p className="mt-2 text-xs text-text-tertiary">
-                No se requiere verificación adicional: el contexto remoto actual es suficiente para las
-                preguntas abiertas.
-              </p>
-            ) : item.primary_need_question ? (
-              <p className="mt-2 text-xs text-text-secondary">
-                <span className="text-text-tertiary">Pregunta activa: </span>
-                {item.primary_need_question}
-              </p>
-            ) : null}
-
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs text-text-tertiary">
-                {item.needs_count} pregunta(s) activa(s) · ventana{' '}
-                {(item.recommended_window as { end_hours?: number })?.end_hours ?? '—'}h
-              </p>
-              <span className="text-xs text-accent">Ver incidente →</span>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          )
+        })}
 
         {listEmpty && status === 'not_required' && (
           <OperationalEmptyState

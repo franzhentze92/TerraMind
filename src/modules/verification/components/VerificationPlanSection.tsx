@@ -56,7 +56,7 @@ export function VerificationPlanSection({ incidentId }: Props) {
         <h2 className="text-sm font-semibold text-text-primary">Plan de verificación</h2>
         <div className="flex flex-wrap gap-1.5">
           <Badge variant="default">{verificationPlanStatusLabel(String(plan.status))}</Badge>
-          <Badge variant="default">Prioridad {String(plan.plan_priority)}</Badge>
+          <Badge variant="default">Prioridad del plan: {String(plan.plan_priority)}/100</Badge>
         </div>
       </div>
 
@@ -77,7 +77,7 @@ export function VerificationPlanSection({ incidentId }: Props) {
         <OperationalEmptyState
           compact
           title="No se requiere verificación adicional"
-          explanation="La revisión remota o el contexto actual es suficiente para las preguntas abiertas."
+          explanation="No existen preguntas activas ni una resolución pendiente. El análisis remoto es suficiente por ahora."
           status="not_required"
         />
       ) : (

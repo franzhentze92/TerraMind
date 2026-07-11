@@ -4,6 +4,7 @@ import { Badge } from '@/shared/components/Badge'
 import { useIncidentDetail, useIncidentHistory } from '../hooks/useIncidents'
 import {
   evidenceStatusLabel,
+  incidentHistoryActionLabel,
   incidentStatusLabel,
   incidentStatusVariant,
   incidentTypeLabel,
@@ -18,7 +19,7 @@ import {
   verificationLevelLabel,
 } from '@/modules/priorities/utils/priority-labels'
 import { lifecycleStateLabel } from '@/modules/lifecycle/utils/lifecycle-labels'
-import { participationLabel, humanizeToken } from '@/shared/product-language'
+import { participationLabel } from '@/shared/product-language'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
 import { VerificationPlanSection } from '@/modules/verification/components/VerificationPlanSection'
 import { IncidentVerificationResolutionSection } from '@/modules/verification/components/IncidentVerificationResolutionSection'
@@ -150,7 +151,7 @@ export function IncidentDetailPage() {
 
       {incidentId && (
         <section className="mb-6" id="resolucion">
-          <IncidentVerificationResolutionSection incidentId={incidentId} />
+          <IncidentVerificationResolutionSection incidentId={incidentId} suppressNotRequired />
         </section>
       )}
 
@@ -187,14 +188,16 @@ export function IncidentDetailPage() {
       </section>
 
       <section>
-        <h2 className="text-sm font-semibold text-text-primary">Historial de membresía</h2>
+        <h2 className="text-sm font-semibold text-text-primary">Historial del incidente</h2>
         <div className="mt-3 space-y-2">
           {history.slice(0, 10).map((h) => (
             <div
               key={String((h as Record<string, unknown>).id)}
               className="rounded border border-border-subtle px-3 py-2 text-xs"
             >
-              <p className="font-medium text-text-primary">{humanizeToken(String((h as Record<string, unknown>).action))}</p>
+              <p className="font-medium text-text-primary">
+                {incidentHistoryActionLabel(String((h as Record<string, unknown>).action))}
+              </p>
               <p className="text-text-tertiary">
                 {formatGuatemalaDateTime(String((h as Record<string, unknown>).created_at))}
               </p>

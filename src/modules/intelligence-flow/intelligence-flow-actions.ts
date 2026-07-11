@@ -51,7 +51,11 @@ export function buildIntelligenceFlowActions(
   if (flow.current_stage !== 'finding') addLink('finding', 'Ver hallazgo', node('finding'))
   if (flow.current_stage !== 'priority') addLink('priority', 'Ver prioridad', node('priority'))
   if (flow.current_stage !== 'incident') addLink('incident', 'Ver incidente', node('incident'))
-  addLink('verification', 'Ver verificación', node('verification'))
+  // The incident detail page embeds the verification plan inline (#verificacion),
+  // so a duplicate "Ver verificación" action there would just scroll in place.
+  if (flow.current_stage !== 'incident' && flow.current_stage !== 'verification') {
+    addLink('verification', 'Ver verificación', node('verification'))
+  }
   addLink('mission', 'Ver misión', node('mission'))
   addLink('evidence', 'Ver evidencia', node('evidence'))
   addLink('response', 'Ver respuesta', node('response'))

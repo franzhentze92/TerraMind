@@ -13,11 +13,29 @@ import { filterRowsByActiveOrganization } from '../auth/tenant-list-scope.js'
 import { buildIncidentDisplayName } from '@/modules/incidents/utils/incident-display-name'
 import { isInternalDemoIncidentId } from '@/modules/executive-demo/demo-config'
 
-function classifyPlanIncident(incident: { id: string; organization_id?: string | null } | null): 'operational' | 'legacy' | 'demo' {
-  if (!incident) return 'operational'
-  if (isInternalDemoIncidentId(String(incident.id))) return 'demo'
+function classifyPlanIncident(
+  incidentId: string,
+  incident: { id: string; organization_id?: string | null } | null,
+): 'operational' | 'legacy' | 'demo' {
+  if (isInternalDemoIncidentId(incidentId)) return 'demo'
+  if (!incident) return 'legacy'
   if ((incident.organization_id ?? null) == null) return 'legacy'
   return 'operational'
+}
+
+/** Pick the most operationally relevant lifecycle state among snapshot members. */
+function dominantLifecycleState(members: unknown): string | null {
+  if (!Array.isArray(members)) return null
+  const states = members
+    .map((m) => (m as { lifecycle_state?: string | null }).lifecycle_state)
+    .filter((s): s is string => Boolean(s))
+  if (states.length === 0) return null
+  const priority = ['expanding', 'persistent', 'reactivated', 'active', 'declining']
+  for (const p of priority) {
+    const hit = states.find((s) => s.replace(/^lifecycle_/, '') === p)
+    if (hit) return hit
+  }
+  return states[0]
 }
 
 export async function listVerificationPlansDto(
@@ -63,19 +81,33 @@ export async function listVerificationPlansDto(
     if (filters.blocked === true && plan.status !== 'blocked') continue
     if (filters.blocked === false && plan.status === 'blocked') continue
 
+    const snapshot = (plan.incident_snapshot ?? {}) as {
+      incident_type?: string
+      status?: string
+      incident_status?: string
+      domain?: string
+      event_count?: number
+      members?: unknown
+    }
+    const resolvedType = incident?.incident_type ?? snapshot.incident_type ?? null
+    const resolvedStatus = incident?.status ?? snapshot.incident_status ?? snapshot.status ?? null
+    const resolvedEventCount = incident?.event_count ?? snapshot.event_count ?? 1
+    const resolvedLifecycle = incident?.lifecycle_state ?? dominantLifecycleState(snapshot.members)
+
     items.push({
       id: plan.id,
       incident_id: plan.incident_id,
-      incident_status: incident?.status ?? null,
-      incident_type: incident?.incident_type ?? null,
-      incident_display_name: incident
+      incident_status: incident?.status ?? snapshot.incident_status ?? null,
+      incident_type: resolvedType,
+      incident_display_name: resolvedType
         ? buildIncidentDisplayName({
-            incident_type: String(incident.incident_type),
-            status: String(incident.status),
-            event_count: Number(incident.event_count),
+            incident_type: String(resolvedType),
+            status: resolvedStatus ? String(resolvedStatus) : undefined,
+            event_count: Number(resolvedEventCount),
+            lifecycle_state: resolvedLifecycle ?? undefined,
           })
         : null,
-      classification: classifyPlanIncident(incident),
+      classification: classifyPlanIncident(plan.incident_id, incident),
       domain: incident?.domain ?? (plan.incident_snapshot as { domain?: string }).domain,
       status: plan.status,
       plan_priority: plan.plan_priority,
