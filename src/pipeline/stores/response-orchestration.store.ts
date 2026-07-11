@@ -357,3 +357,63 @@ export async function findResponseAssessmentJobByIdempotency(organizationId: str
     .maybeSingle()
   return data
 }
+
+export async function releaseStaleResponseAssessmentJobLocks(lockTimeoutMinutes: number): Promise<number> {
+  const admin = getSupabaseAdmin()
+  const cutoff = new Date(Date.now() - lockTimeoutMinutes * 60_000).toISOString()
+  const { data, error } = await admin
+    .from('response_assessment_jobs')
+    .update({
+      status: 'ready',
+      locked_at: null,
+      locked_by: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('status', 'running')
+    .lt('locked_at', cutoff)
+    .select('id')
+  if (error) throw new Error(error.message)
+  return data?.length ?? 0
+}
+
+export async function countResponseAssessmentJobsByStatus(): Promise<Record<string, number>> {
+  const admin = getSupabaseAdmin()
+  const statuses = [
+    'pending',
+    'waiting_dependencies',
+    'ready',
+    'running',
+    'completed',
+    'blocked_inconsistent_snapshot',
+    'failed_retryable',
+    'failed_terminal',
+  ]
+  const counts: Record<string, number> = {}
+  for (const status of statuses) {
+    const { count, error } = await admin
+      .from('response_assessment_jobs')
+      .select('id', { head: true, count: 'exact' })
+      .eq('status', status)
+    if (error) throw new Error(error.message)
+    counts[status] = count ?? 0
+  }
+  return counts
+}
+
+export async function countLegacyIncidentAssessments(): Promise<number> {
+  const admin = getSupabaseAdmin()
+  const { data: legacyIncidents, error: incError } = await admin
+    .from('incidents')
+    .select('id')
+    .is('organization_id', null)
+  if (incError) throw new Error(incError.message)
+  const ids = (legacyIncidents ?? []).map((r) => r.id as string)
+  if (ids.length === 0) return 0
+
+  const { count, error } = await admin
+    .from('response_assessments')
+    .select('id', { head: true, count: 'exact' })
+    .in('incident_id', ids)
+  if (error) throw new Error(error.message)
+  return count ?? 0
+}

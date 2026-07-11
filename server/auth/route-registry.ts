@@ -781,6 +781,18 @@ export const OPERATIONAL_ROUTE_REGISTRY: OperationalRouteSpec[] = [
   // Response orchestration (8C.1.2)
   {
     method: 'GET',
+    path: '/api/responses/executive-summary',
+    resource: 'response_list',
+    permission: 'responses.view',
+    authorizer: 'authorizeResponseListScope',
+    tenantPath: 'organization_id',
+    usesServiceRole: true,
+    rateLimit: 'default_read',
+    status: 'protected',
+    routeFile: 'response-orchestration.ts',
+  },
+  {
+    method: 'GET',
     path: '/api/responses',
     resource: 'response_list',
     permission: 'responses.view',

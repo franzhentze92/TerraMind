@@ -6,13 +6,13 @@ import type { ResponseOrchestrationInput } from '@/modules/response-orchestratio
 import {
   buildResponseAssessmentIdempotencyKey,
   findAssessmentByIdempotency,
+  getActiveDecisionForIncident,
   insertResponseAssessment,
   insertDecisionRecord,
   insertResponseActions,
   insertNotificationDirectives,
   recordResponseOrchestrationEvent,
 } from '@/pipeline/stores/response-orchestration.store.js'
-import { buildNotificationDirectiveDrafts } from '@/modules/response-orchestration/engine/notification-directive.engine'
 
 export async function runResponseAssessment(input: ResponseOrchestrationInput) {
   const output = evaluateResponseOrchestration(input)
@@ -98,8 +98,9 @@ export async function runResponseAssessmentWithPersistence(input: ResponseOrches
   const result = await runResponseAssessment(input)
   if (result.idempotent_replay || !result.assessment || !result.decision_draft) return result
 
-  const existingDecision = await import('@/pipeline/stores/response-orchestration.store.js').then((s) =>
-    s.getActiveDecisionForIncident(input.incident.incident_id, input.organizationId),
+  const existingDecision = await getActiveDecisionForIncident(
+    input.incident.incident_id,
+    input.organizationId,
   )
   if (existingDecision) {
     return { ...result, decision_draft: null, action_drafts: [], notification_directives: [] }

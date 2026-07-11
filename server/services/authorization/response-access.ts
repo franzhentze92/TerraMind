@@ -45,6 +45,16 @@ export async function authorizeResponseAssessmentAccess(
 ): Promise<AuthorizedResourceContext> {
   const incident = await loadIncidentSnapshot(incidentId)
   if (!incident) throw new AuthorizationError('Incidente no encontrado', 404)
+  if (!incident.organization_id) {
+    assertPermission(auth, permission)
+    return {
+      ...auth,
+      resourceType: 'response_assessment',
+      resourceId: incident.id,
+      organizationId: auth.activeOrganizationId,
+      authorizedAt: new Date().toISOString(),
+    }
+  }
   return authorizeWithPermission(auth, permission, incident, 'response_assessment')
 }
 

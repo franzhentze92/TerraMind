@@ -22,6 +22,7 @@ import {
   buildFireThermalIndicator,
   buildFireTimeline,
 } from '@/modules/fires/utils/fire-dashboard'
+import { ResponseOrchestrationExecutivePanel } from '@/modules/response-orchestration/components/ResponseOrchestrationExecutivePanel'
 
 function HeaderSkeleton() {
   return (
@@ -130,6 +131,7 @@ export function NationalSituationPage() {
                 isLoading={fireSummary.isLoading}
                 isError={fireSummary.isError}
               />
+              <ResponseOrchestrationExecutivePanel />
               <BiodiversityNationalSummaryCard
                 data={biodiversitySummary.data}
                 isLoading={biodiversitySummary.isLoading}

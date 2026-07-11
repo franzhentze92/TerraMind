@@ -1,24 +1,24 @@
 #!/usr/bin/env tsx
-import { ResponseOrchestrationWorker } from '@/pipeline/workers/response-orchestration.worker'
+/**
+ * Dedicated response orchestration worker process.
+ * For co-located deployment the TerraMind server scheduler is preferred (server/index.ts).
+ * Use this script when running workers as a separate service/replica.
+ */
+import {
+  startResponseOrchestrationScheduler,
+  stopResponseOrchestrationScheduler,
+  awaitResponseOrchestrationSchedulerDrain,
+} from '@/pipeline/scheduler/response-orchestration.scheduler'
 
-const worker = new ResponseOrchestrationWorker()
-let running = true
+startResponseOrchestrationScheduler()
+console.log('[response-orchestration-worker] dedicated process started')
 
-process.on('SIGINT', () => {
-  running = false
-})
-
-async function main() {
-  console.log('[response-orchestration-worker] started')
-  while (running) {
-    try {
-      const processed = await worker.runOnce()
-      if (!processed) await new Promise((r) => setTimeout(r, 2000))
-    } catch (err) {
-      console.error('[response-orchestration-worker] error', err)
-      await new Promise((r) => setTimeout(r, 5000))
-    }
-  }
+async function shutdown(signal: string): Promise<void> {
+  console.log(`[response-orchestration-worker] ${signal}`)
+  stopResponseOrchestrationScheduler()
+  await awaitResponseOrchestrationSchedulerDrain()
+  process.exit(0)
 }
 
-main()
+process.on('SIGINT', () => void shutdown('SIGINT'))
+process.on('SIGTERM', () => void shutdown('SIGTERM'))

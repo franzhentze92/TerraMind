@@ -16,10 +16,19 @@ import {
 } from '@/modules/priorities/utils/priority-labels'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
 import { cn } from '@/shared/utils/cn'
+import { useHasPermission } from '@/core/auth/AuthProvider'
+import { useResponsesList } from '@/modules/response-orchestration/hooks/useResponseOrchestration'
+import { ResponseStatusBadge } from '@/modules/response-orchestration/components/ResponseStatusBadge'
+import type { ResponseBadgeKey } from '@/modules/response-orchestration/utils/response-status-labels'
 
 export function IncidentsPage() {
   const [status, setStatus] = useState('')
   const query = useIncidentsList({ status: status || undefined })
+  const canViewResponse = useHasPermission('responses.view')
+  const responsesQuery = useResponsesList()
+  const responseByIncident = new Map(
+    (responsesQuery.data?.items ?? []).map((r) => [r.incident_id, r]),
+  )
 
   return (
     <div className="flex h-full flex-col overflow-y-auto p-6">
@@ -76,6 +85,11 @@ export function IncidentsPage() {
                   {incidentStatusLabel(item.status)}
                 </Badge>
                 <Badge variant="default">{evidenceStatusLabel(item.evidence_status)}</Badge>
+                {canViewResponse && responseByIncident.has(item.id) && (
+                  <ResponseStatusBadge
+                    badge={responseByIncident.get(item.id)!.badge as ResponseBadgeKey}
+                  />
+                )}
               </div>
             </div>
             <div className="mt-3 flex flex-wrap gap-3 text-xs text-text-secondary">

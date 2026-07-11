@@ -23,6 +23,7 @@ import {
   getClosureAssessment,
   getResponseBriefing,
   getResponseDetail,
+  getResponseExecutiveSummary,
   getResponseHistory,
   listResponses,
   modifyDecision,
@@ -39,6 +40,7 @@ export async function handleResponseOrchestrationRoutes(
   if (!pathname.startsWith('/api/responses')) return false
 
   const listMatch = pathname === '/api/responses'
+  const executiveMatch = pathname === '/api/responses/executive-summary'
   const incidentMatch = pathname.match(/^\/api\/responses\/([^/]+)$/)
   const assessMatch = pathname.match(/^\/api\/responses\/([^/]+)\/assess$/)
   const decisionsMatch = pathname.match(/^\/api\/responses\/([^/]+)\/decisions$/)
@@ -52,6 +54,24 @@ export async function handleResponseOrchestrationRoutes(
   const actionPatchMatch = pathname.match(/^\/api\/responses\/actions\/([^/]+)$/)
 
   try {
+    if (executiveMatch && req.method === 'GET') {
+      const result = await runOperationalGuard(
+        req,
+        res,
+        {
+          permission: 'responses.view',
+          rateLimit: 'default_read',
+          authorize: authorizeResponseListScope,
+          auditType: 'responses_executive_summary',
+          resourceType: 'response_list',
+        },
+        async (auth) => getResponseExecutiveSummary(auth.activeOrganizationId),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, result)
+      return true
+    }
+
     if (listMatch && req.method === 'GET') {
       const filter = searchParams.get('filter') ?? undefined
       const result = await runOperationalGuard(

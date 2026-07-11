@@ -3,6 +3,11 @@ import { resolve } from 'node:path'
 import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { getSituationReport, isPipelineRunning, runPipeline } from '@/pipeline/orchestrator'
 import { startFireScheduler } from '@/pipeline/scheduler/fire.scheduler'
+import {
+  getResponseOrchestrationSchedulerHealth,
+  startResponseOrchestrationScheduler,
+  stopResponseOrchestrationScheduler,
+} from '@/pipeline/scheduler/response-orchestration.scheduler'
 import { verifyMapKey } from '@/pipeline/connectors/firms.connector'
 import { handlePreflight } from './http/cors.js'
 import { jsonResponse } from './http/json.js'
@@ -63,6 +68,12 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
     return
   }
 
+  if (pathname === '/api/pipeline/response-orchestration/status' && req.method === 'GET') {
+    const health = await getResponseOrchestrationSchedulerHealth()
+    jsonResponse(req, res, health)
+    return
+  }
+
   if (pathname === '/api/pipeline/status' && req.method === 'GET') {
     const report = getSituationReport()
     jsonResponse(req, res, {
@@ -97,4 +108,14 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 server.listen(PORT, () => {
   console.log(`[TerraMind] API escuchando en http://localhost:${PORT}`)
   startFireScheduler()
+  startResponseOrchestrationScheduler()
 })
+
+function shutdown(signal: string): void {
+  console.log(`[TerraMind] ${signal} — deteniendo schedulers…`)
+  stopResponseOrchestrationScheduler()
+  process.exit(0)
+}
+
+process.on('SIGINT', () => shutdown('SIGINT'))
+process.on('SIGTERM', () => shutdown('SIGTERM'))

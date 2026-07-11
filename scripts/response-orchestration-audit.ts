@@ -64,6 +64,8 @@ async function main() {
   const authFiles = [
     'server/services/authorization/response-access.ts',
     'server/routes/response-orchestration.ts',
+    'src/pipeline/scheduler/response-orchestration.scheduler.ts',
+    'scripts/response-orchestration-http-smoke.ts',
     'server/services/response-orchestration.service.ts',
     'src/pipeline/stores/response-orchestration.store.ts',
     'src/pipeline/workers/response-orchestration.worker.ts',
@@ -97,6 +99,19 @@ async function main() {
     const { data: perms } = await admin.from('permissions').select('id').like('id', 'responses.%')
     if ((perms ?? []).length < 6) fail('remote permissions seed')
     else pass('remote response permissions')
+
+    const { error: jobsProbe } = await admin
+      .from('response_assessment_jobs')
+      .select('id', { head: true, count: 'exact' })
+    if (jobsProbe) fail('migration 031 probe', jobsProbe.message)
+    else pass('migration 031 applied remotely', 'response_assessment_jobs reachable')
+
+    const { countLegacyIncidentAssessments } = await import(
+      '../src/pipeline/stores/response-orchestration.store.js'
+    )
+    const legacyAssessments = await countLegacyIncidentAssessments()
+    if (legacyAssessments > 0) fail('legacy incident assessments', String(legacyAssessments))
+    else pass('zero assessments on legacy incidents without organization_id')
   } else {
     pass('remote probe skipped (no SUPABASE env)')
   }

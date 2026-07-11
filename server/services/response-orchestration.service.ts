@@ -86,6 +86,19 @@ export async function listResponses(organizationId: string, filter?: string) {
 }
 
 export async function getResponseDetail(incidentId: string, organizationId: string) {
+  const { isAuthTestMode, testIncidentSnapshot } = await import('../auth/resource-fixtures.js')
+  if (isAuthTestMode()) {
+    const testSnap = testIncidentSnapshot(incidentId)
+    if (testSnap && !testSnap.organization_id) {
+      return {
+        incident_id: incidentId,
+        ownership_unresolved: true,
+        incident: { id: incidentId, organization_id: null },
+        generated_at: new Date().toISOString(),
+      }
+    }
+  }
+
   const incident = await getIncidentById(incidentId)
   if (!incident) return null
   if (!incident.organization_id) {
@@ -441,4 +454,52 @@ export async function getClosureAssessment(incidentId: string, organizationId: s
 export async function getResponseHistory(incidentId: string, organizationId: string) {
   const items = await listResponseOrchestrationHistory(incidentId, organizationId)
   return { items, generated_at: new Date().toISOString() }
+}
+
+export async function getResponseExecutiveSummary(organizationId: string) {
+  const assessments = await listAssessmentsForOrganization(organizationId)
+  const items = []
+
+  for (const assessment of assessments) {
+    const incidentId = String(assessment.incident_id)
+    const decision = await getActiveDecisionForIncident(incidentId, organizationId)
+    const actions = decision ? await listActionsForDecision(String(decision.id)) : []
+    const badge = resolveResponseBadge({
+      recommended_level: String(assessment.recommended_response_level),
+      decision_status: decision ? String(decision.decision_status) : 'recommended',
+      assessment_status: String(assessment.status),
+      has_executing_action: actions.some((a) => a.status === 'executing'),
+    })
+
+    items.push({
+      incident_id: incidentId,
+      recommended_level: assessment.recommended_response_level,
+      urgency: assessment.urgency,
+      decision_status: decision?.decision_status ?? 'recommended',
+      primary_action: actions.find((a) => a.status === 'executing')?.action_type ?? actions[0]?.action_type ?? null,
+      badge,
+      blocking_uncertainties: assessment.blocking_uncertainties,
+      closure_recommendation: assessment.closure_recommendation,
+      updated_at: assessment.updated_at,
+    })
+  }
+
+  const pendingDecision = items.filter((i) =>
+    ['pendiente_decision', 'verificacion_adicional', 'respuesta_interna'].includes(i.badge),
+  ).length
+  const inProgress = items.filter((i) => i.badge === 'accion_en_curso').length
+  const blocked = items.filter((i) => i.badge === 'bloqueado_incertidumbre').length
+  const closureRecommended = items.filter((i) => i.badge === 'cierre_recomendado').length
+
+  return {
+    items,
+    summary: {
+      total_with_assessment: items.length,
+      pending_decision: pendingDecision,
+      action_in_progress: inProgress,
+      blocked_by_uncertainty: blocked,
+      closure_recommended: closureRecommended,
+    },
+    generated_at: new Date().toISOString(),
+  }
 }

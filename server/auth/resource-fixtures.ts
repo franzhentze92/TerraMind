@@ -15,6 +15,7 @@ export interface TenantResourceSnapshot {
 
 export const TEST_INCIDENT_ORG_A = '00000000-0000-4000-a07f-00000000e001'
 export const TEST_INCIDENT_ORG_B = '00000000-0000-4000-a07f-00000000e002'
+export const TEST_LEGACY_INCIDENT = '00000000-0000-4000-a07f-00000000e099'
 export const TEST_PLAN_ORG_A = '00000000-0000-4000-a07f-00000000p001'
 export const TEST_SUBMISSION_ORG_A = '00000000-0000-4000-a07f-00000000s001'
 export const TEST_SUBMISSION_ORG_B = '00000000-0000-4000-a07f-00000000s002'
@@ -27,6 +28,7 @@ export const TEST_NEED_ORG_A = '00000000-0000-4000-a07f-00000000n001'
 const INCIDENTS: Record<string, TenantResourceSnapshot> = {
   [TEST_INCIDENT_ORG_A]: { id: TEST_INCIDENT_ORG_A, organization_id: TEST_ORG_A },
   [TEST_INCIDENT_ORG_B]: { id: TEST_INCIDENT_ORG_B, organization_id: TEST_ORG_B },
+  [TEST_LEGACY_INCIDENT]: { id: TEST_LEGACY_INCIDENT, organization_id: null },
 }
 
 const PLANS: Record<string, TenantResourceSnapshot> = {

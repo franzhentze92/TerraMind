@@ -13,6 +13,18 @@ export interface ResponseListItemDto {
   updated_at: string
 }
 
+export interface ResponseExecutiveItemDto {
+  incident_id: string
+  recommended_level: string
+  urgency: string
+  decision_status: string
+  primary_action: string | null
+  badge: string
+  blocking_uncertainties: unknown
+  closure_recommendation: string
+  updated_at: string
+}
+
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(path, { credentials: 'include', ...init })
   if (!res.ok) throw new Error(`API error ${res.status}`)
@@ -22,6 +34,14 @@ async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
 export function fetchResponses(filter?: string) {
   const qs = filter ? `?filter=${encodeURIComponent(filter)}` : ''
   return apiFetch<{ items: ResponseListItemDto[]; generated_at: string }>(`/api/responses${qs}`)
+}
+
+export function fetchResponseExecutiveSummary() {
+  return apiFetch<{
+    items: ResponseExecutiveItemDto[]
+    summary: Record<string, number>
+    generated_at: string
+  }>('/api/responses/executive-summary')
 }
 
 export function fetchResponseDetail(incidentId: string) {
