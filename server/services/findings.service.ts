@@ -6,7 +6,6 @@ import {
   mapFindingRowToDto,
   type CompositeFindingRow,
 } from '@/pipeline/stores/composite-findings.store'
-import { filterRowsByActiveOrganization } from '../auth/tenant-list-scope.js'
 
 export interface FindingListItemDto {
   id: string
@@ -63,13 +62,14 @@ export async function listFindings(
   limit?: number
   offset?: number
   },
-  auth?: RequestAuthContext,
+  // National intelligence data (global_public_data): composite_findings has no
+  // organization_id. Access is gated by the findings.view permission upstream;
+  // we do NOT tenant-filter here, otherwise every national finding would drop to
+  // 0 for non-platform-admins while the dashboard still counts them.
+  _auth?: RequestAuthContext,
 ): Promise<{ items: FindingListItemDto[]; generated_at: string }> {
   const rows = await listCompositeFindings(filters)
-  const scoped = auth
-    ? filterRowsByActiveOrganization(auth, rows as Array<{ organization_id?: string | null }>)
-    : rows
-  let items = scoped.map(toListItem)
+  let items = rows.map(toListItem)
   if (filters.confidence) {
     items = items.filter((i) => i.confidence_level === filters.confidence)
   }

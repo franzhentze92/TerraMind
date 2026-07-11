@@ -10,7 +10,25 @@ import {
 } from '@/pipeline/stores/incident-memberships.store'
 import { listCorrelationRunsForEvent } from '@/pipeline/stores/incident-correlation-runs.store'
 import { loadFireEventIncidentSnapshot } from '@/modules/incidents/services/fire-incident-snapshot.loader'
-import { filterRowsByActiveOrganization } from '../auth/tenant-list-scope.js'
+import { isInternalDemoIncidentId } from '@/modules/executive-demo/demo-config'
+import type { DataClassification } from '@/modules/executive-metrics/metric-taxonomy'
+
+/**
+ * Classify an incident for the list. Legacy (null org) is national data (RLS
+ * allows it) and stays visible to authorized users, badged — never silently
+ * dropped or summed as operational.
+ */
+function classifyIncident(
+  row: { id: string; organization_id?: string | null },
+  auth?: RequestAuthContext,
+): DataClassification | 'out_of_scope' {
+  const id = String(row.id)
+  const orgId = row.organization_id ?? null
+  if (isInternalDemoIncidentId(id)) return 'demo'
+  if (orgId == null) return 'legacy'
+  if (!auth || auth.isPlatformAdmin || orgId === auth.activeOrganizationId) return 'operational'
+  return 'out_of_scope'
+}
 
 export async function listIncidentsDto(
   filters: {
@@ -19,22 +37,27 @@ export async function listIncidentsDto(
   verification_level?: string
   domain?: string
   limit?: number
+  include_demo?: boolean
   },
   auth?: RequestAuthContext,
 ) {
-  const rows = await listIncidents({
+  const rows = (await listIncidents({
     status: filters.status,
     attention_level: filters.attention_level,
     limit: filters.limit ?? 100,
-  })
-  let items = auth ? filterRowsByActiveOrganization(auth, rows as Array<{ organization_id?: string | null }>) : rows
+  })) as Array<Awaited<ReturnType<typeof getIncidentById>> & { organization_id?: string | null }>
+
+  let items = rows
+    .map((row) => ({ row, classification: classifyIncident(row, auth) }))
+    .filter((x) => x.classification !== 'out_of_scope')
+    .filter((x) => (filters.include_demo ? true : x.classification !== 'demo'))
   if (filters.verification_level) {
-    items = items.filter((r) => r.verification_level === filters.verification_level)
+    items = items.filter((x) => x.row!.verification_level === filters.verification_level)
   }
-  if (filters.domain) items = items.filter((r) => r.domain === filters.domain)
+  if (filters.domain) items = items.filter((x) => x.row!.domain === filters.domain)
 
   return {
-    items: items.map(mapIncidentSummary),
+    items: items.map((x) => mapIncidentSummary(x.row!, x.classification as DataClassification)),
     generated_at: new Date().toISOString(),
   }
 }
@@ -104,12 +127,17 @@ export async function getFireEventIncident(eventId: string) {
   }
 }
 
-function mapIncidentSummary(incident: Awaited<ReturnType<typeof getIncidentById>> & object) {
+function mapIncidentSummary(
+  incident: Awaited<ReturnType<typeof getIncidentById>> & { organization_id?: string | null },
+  classification: DataClassification = 'operational',
+) {
   return {
     id: incident.id,
     incident_type: incident.incident_type,
     domain: incident.domain,
     status: incident.status,
+    organization_id: incident.organization_id ?? null,
+    classification,
     primary_event_type: incident.primary_event_type,
     primary_event_id: incident.primary_event_id,
     first_observed_at: incident.first_observed_at,

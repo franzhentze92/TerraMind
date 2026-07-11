@@ -155,6 +155,8 @@ export interface NationalReportDto {
   period: ReportPeriod
   generated_at: string
   dashboard: ExecutiveDashboardDto
+  /** Canonical metrics (Product Consolidation — Phase 1). Report figures must match these. */
+  canonical_metrics?: import('@/modules/executive-metrics/executive-metric.types').ExecutiveMetric[]
   sections: Array<{ id: string; title: string; content: string; items?: unknown[] }>
 }
 

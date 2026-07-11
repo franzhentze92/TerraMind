@@ -20,6 +20,7 @@ import { useHasPermission } from '@/core/auth/AuthProvider'
 import { useResponsesList } from '@/modules/response-orchestration/hooks/useResponseOrchestration'
 import { ResponseStatusBadge } from '@/modules/response-orchestration/components/ResponseStatusBadge'
 import type { ResponseBadgeKey } from '@/modules/response-orchestration/utils/response-status-labels'
+import { ClassificationBadge } from '@/modules/executive-metrics/components/ClassificationBadge'
 
 export function IncidentsPage() {
   const [status, setStatus] = useState('')
@@ -81,6 +82,7 @@ export function IncidentsPage() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-1.5">
+                {item.classification && <ClassificationBadge classification={item.classification} />}
                 <Badge variant={incidentStatusVariant(item.status)}>
                   {incidentStatusLabel(item.status)}
                 </Badge>

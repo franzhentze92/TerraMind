@@ -1,0 +1,22 @@
+---
+description: How to verify work — never block on screenshots
+alwaysApply: true
+---
+
+# Verificación visual
+
+No generar screenshots ni ejecutar Playwright / scripts de captura salvo que el
+usuario lo solicite explícitamente. Nunca dejar un commit o push bloqueado
+esperando capturas.
+
+Para validación rutinaria usar, en este orden:
+
+- `build` (vite build / tsc para el código nuevo);
+- tests de componentes y de rutas;
+- tests unitarios y de servicio;
+- auditorías automatizadas (p. ej. `npm run product-truth:audit`);
+- comparaciones automatizadas (p. ej. dashboard == informe);
+- revisión manual rápida por parte del usuario.
+
+Si una fase pasa build + tests + auditorías, ciérrala y haz push (cuando el
+usuario lo pida) sin exigir verificación visual adicional.

@@ -23,6 +23,8 @@ export interface IncidentSummaryDto {
   resolved_at: string | null
   created_at: string
   updated_at: string
+  organization_id?: string | null
+  classification?: 'operational' | 'legacy' | 'demo' | 'pending' | 'excluded' | 'unresolved_ownership'
 }
 
 import { authFetch } from '@/core/auth/auth-fetch'

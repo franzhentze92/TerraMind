@@ -6,8 +6,20 @@ import {
   resolveNationalReportClassification,
 } from '@/modules/executive-demo/narrative/report-classification'
 import type { RequestAuthContext } from '@/core/auth/permissions'
+import type { ExecutiveMetric } from '@/modules/executive-metrics/executive-metric.types'
 import { getExecutiveDashboard } from './executive-dashboard.service.js'
+import { getExecutiveMetrics } from './executive-metrics.service.js'
 import { getIncidentStory } from './incident-story.service.js'
+
+/**
+ * Single projection the national report uses to print any KPI. Reports MUST read
+ * from the same canonical metric array the dashboard consumes, so this guarantees
+ * dashboard and report never diverge for the same filters. Exercised by
+ * executive-metrics.service.test.ts (dashboard == report).
+ */
+export function reportMetricValue(metrics: ExecutiveMetric[], id: string): number {
+  return metrics.find((m) => m.id === id)?.value ?? 0
+}
 
 export function parseReportPeriod(
   preset: string | null,
@@ -52,6 +64,8 @@ export async function buildNationalReport(
   includeDemo: boolean,
 ): Promise<NationalReportDto> {
   const dashboard = await getExecutiveDashboard(auth, { include_demo: includeDemo })
+  const canonicalMetrics = await getExecutiveMetrics(auth, { include_demo: includeDemo })
+  const metricValue = (id: string): number => reportMetricValue(canonicalMetrics, id)
   const classification = assertNeverAutoVerified(
     resolveNationalReportClassification(dashboard, includeDemo),
   )
@@ -62,6 +76,7 @@ export async function buildNationalReport(
     period,
     generated_at: new Date().toISOString(),
     dashboard,
+    canonical_metrics: canonicalMetrics,
     sections: [
       section('cover', 'Portada', `TerraMind · Guatemala · ${classificationLabel(classification)}`),
       section('executive', 'Resumen ejecutivo', [
@@ -69,16 +84,16 @@ export async function buildNationalReport(
         dashboard.summary.requires_attention,
         dashboard.summary.terramind_recommends,
       ].join('\n\n')),
-      section('sources', 'Estado de fuentes y pipelines', `Estado: ${dashboard.system_status} · Fuentes activas: ${dashboard.sources_active} · Última sync: ${dashboard.last_sync_at ?? 'n/d'}`),
+      section('sources', 'Estado de fuentes y pipelines', `Estado: ${dashboard.system_status} · Fuentes activas: ${metricValue('sources_active')} · Última sync: ${dashboard.last_sync_at ?? 'n/d'}`),
       section('situation', 'Situación nacional', dashboard.summary.what_changed),
-      section('findings', 'Hallazgos prioritarios', `${dashboard.priority_findings.length} hallazgo(s) destacados`),
-      section('incidents', 'Incidentes', `${dashboard.active_incidents.length} incidente(s) en vista`),
+      section('findings', 'Hallazgos prioritarios', `${metricValue('findings_active')} hallazgo(s) activos`),
+      section('incidents', 'Incidentes', `${metricValue('incidents_operational')} incidente(s) operacional(es)`),
       section('changes', 'Cambios en el período', `${dashboard.recent_changes.length} evento(s) recientes`),
-      section('verification', 'Verificaciones', `${dashboard.pending_verifications.length} plan(es)`),
-      section('missions', 'Misiones', `${dashboard.missions_in_progress.length} misión(es)`),
-      section('evidence', 'Evidencia y validación', `${dashboard.recent_evidence.length} envío(s) recientes`),
+      section('verification', 'Verificaciones', `${metricValue('verification_plans_legacy')} plan(es) legacy · ${metricValue('verification_needs_active')} necesidad(es) activa(s)`),
+      section('missions', 'Misiones', `${metricValue('missions_operational')} misión(es) operacional(es)`),
+      section('evidence', 'Evidencia y validación', `${metricValue('evidence_operational')} envío(s) operacional(es)`),
       section('resolutions', 'Resoluciones', dashboard.recent_resolutions.length > 0 ? 'Ver resoluciones activas' : 'Sin resoluciones completadas'),
-      section('responses', 'Respuestas recomendadas', dashboard.response_recommendations.length > 0 ? `${dashboard.response_recommendations.length} assessment(s)` : 'Sin assessments — ver empty state'),
+      section('responses', 'Respuestas recomendadas', metricValue('response_assessments') > 0 ? `${metricValue('response_assessments')} evaluación(es) de respuesta` : 'Sin evaluaciones de respuesta — se generan tras una resolución de verificación'),
       section('decisions', 'Decisiones pendientes', dashboard.pending_decisions.length > 0 ? `${dashboard.pending_decisions.length} pendiente(s)` : 'Sin decisiones'),
       section('uncertainties', 'Incertidumbres', 'Los niveles de confianza se reportan por etapa; no se confirman causas ni daños.'),
       section('next', 'Próximas acciones', dashboard.summary.pending_decision),

@@ -8,7 +8,6 @@ import {
   type PriorityAssessmentRow,
 } from '@/pipeline/stores/priority-assessments.store'
 import { getSupabaseAdmin } from '@/pipeline/stores/supabase.client'
-import { filterRowsByActiveOrganization } from '../auth/tenant-list-scope.js'
 
 export interface PriorityListItemDto {
   id: string
@@ -106,7 +105,10 @@ export async function listPriorities(
   limit?: number
   offset?: number
   },
-  auth?: RequestAuthContext,
+  // National intelligence data (global_public_data): finding_priority_assessments
+  // has no organization_id. Gated by priorities.view upstream; not tenant-filtered
+  // (otherwise it drops to 0 for non-platform-admins while the dashboard counts it).
+  _auth?: RequestAuthContext,
 ): Promise<{ items: PriorityListItemDto[]; generated_at: string }> {
   const rows = await listPriorityAssessments({
     assessment_status: 'active',
@@ -117,14 +119,11 @@ export async function listPriorities(
     limit: filters.limit,
     offset: filters.offset,
   })
-  const scoped = auth
-    ? filterRowsByActiveOrganization(auth, rows as Array<{ organization_id?: string | null }>)
-    : rows
 
-  const entityIds = scoped.map((r) => r.entity_id)
+  const entityIds = rows.map((r) => r.entity_id)
   const deptMap = await loadEventDepartments(entityIds)
 
-  let items = scoped.map((row) => toListItem(row, deptMap.get(row.entity_id)))
+  let items = rows.map((row) => toListItem(row, deptMap.get(row.entity_id)))
 
   if (filters.department_code) {
     items = items.filter((item) => {

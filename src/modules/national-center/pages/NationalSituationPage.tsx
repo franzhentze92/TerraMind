@@ -24,6 +24,7 @@ import {
 } from '@/modules/fires/utils/fire-dashboard'
 import { ResponseOrchestrationExecutivePanel } from '@/modules/response-orchestration/components/ResponseOrchestrationExecutivePanel'
 import { ExecutiveNationalCommandCenter } from '@/modules/executive-demo/components/ExecutiveNationalCommandCenter'
+import { NationalMetricsPanel } from '@/modules/executive-metrics/components/NationalMetricsPanel'
 
 function HeaderSkeleton() {
   return (
@@ -132,6 +133,7 @@ export function NationalSituationPage() {
                 isLoading={fireSummary.isLoading}
                 isError={fireSummary.isError}
               />
+              <NationalMetricsPanel />
               <ExecutiveNationalCommandCenter />
               <ResponseOrchestrationExecutivePanel />
               <BiodiversityNationalSummaryCard

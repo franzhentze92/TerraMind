@@ -90,9 +90,17 @@ export async function renderNationalReportPdf(report: NationalReportDto): Promis
       .filter(Boolean)
       .join('\n\n'))
 
-    const metrics = report.dashboard?.metrics ?? []
-    const metricLines = metrics.map((m) => `${m.label}: ${m.value}`)
-    renderSection(doc, 'Indicadores nacionales', 'Conteos agregados en la ventana del informe.', metricLines)
+    // Canonical metrics (Product Consolidation — Phase 1): the PDF prints the
+    // same numbers as the dashboard/report so figures can never diverge.
+    const metrics = report.canonical_metrics ?? []
+    const metricLines = metrics.map((m) => {
+      const excluded = m.breakdown
+        .filter((b) => !b.included && b.value > 0)
+        .map((b) => `${b.label}: ${b.value}`)
+      const suffix = excluded.length > 0 ? ` (${excluded.join(' · ')})` : ''
+      return `${m.label} [${m.timeWindow.label}]: ${m.value}${suffix}`
+    })
+    renderSection(doc, 'Indicadores nacionales', 'Conteos canónicos con clasificación operacional / legacy / demo.', metricLines)
 
     renderSection(
       doc,

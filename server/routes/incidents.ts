@@ -103,6 +103,7 @@ export async function handleIncidentsRoutes(
               verification_level: searchParams.get('verification_level') ?? undefined,
               domain: searchParams.get('domain') ?? undefined,
               limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : undefined,
+              include_demo: searchParams.get('include_demo') === 'true',
             },
             auth,
           ),
