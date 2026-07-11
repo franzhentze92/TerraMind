@@ -22,7 +22,7 @@ export function FieldCampoHomePage() {
         <FieldPilotBanner
           pilotActive={pilot.pilotActive}
           missionId={s?.active_mission_id}
-          missionAllowlisted={pilot.pilotActiveForMission}
+          missionSyncEnabled={pilot.pilotActiveForMission}
         />
       </div>
 
@@ -44,7 +44,7 @@ export function FieldCampoHomePage() {
             <Stat label="Paquetes" value={s.packages_count} />
             <Stat label="Tareas pendientes" value={s.pending_tasks} />
             <Stat label="Borradores" value={s.draft_forms} />
-            <Stat label="Pending sync" value={s.pending_sync_bundles} />
+            <Stat label="Pendiente de sincronización" value={s.pending_sync_bundles} />
             <Stat label="Conflictos" value={s.open_conflicts} />
             <Stat label="Almacenamiento" value={formatBytes(s.local_storage_bytes)} />
           </div>
@@ -53,8 +53,8 @@ export function FieldCampoHomePage() {
             <p className="text-text-secondary">{t('work_local_only', 'es')}</p>
             <div className="mt-2 space-y-1">
               <ProgressRow label="Captura local" pct={s.overall_capture_pct} />
-              <ProgressRow label="Listo sync" pct={s.ready_for_sync_pct} />
-              <ProgressRow label="Recibido servidor (sim)" pct={s.synced_pct} />
+              <ProgressRow label="Listo para sincronizar" pct={s.ready_for_sync_pct} />
+              <ProgressRow label="Recibido por el servidor" pct={s.synced_pct} />
             </div>
           </section>
 
@@ -73,13 +73,15 @@ export function FieldCampoHomePage() {
             >
               {t('prepare_sync', 'es')}
             </Link>
-            <button
-              type="button"
-              className="rounded-lg border border-dashed border-border-subtle px-4 py-2 text-xs text-text-tertiary"
-              onClick={() => void campo.installSyntheticDemo()}
-            >
-              Instalar paquete demo (fixture sintético)
-            </button>
+            {import.meta.env.DEV && (
+              <button
+                type="button"
+                className="rounded-lg border border-dashed border-border-subtle px-4 py-2 text-xs text-text-tertiary"
+                onClick={() => void campo.installSyntheticDemo()}
+              >
+                Cargar demostración interna
+              </button>
+            )}
           </div>
         </div>
       )}

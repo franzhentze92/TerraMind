@@ -41,6 +41,12 @@ import { FieldTaskFormPage } from '@/modules/field-operations/pages/FieldTaskFor
 import { PendingEvidencePage } from '@/modules/field-operations/pages/PendingEvidencePage'
 import { ResponseOrchestrationListPage } from '@/modules/response-orchestration/pages/ResponseOrchestrationListPage'
 import { ResponseOrchestrationDetailPage } from '@/modules/response-orchestration/pages/ResponseOrchestrationDetailPage'
+import type { TerramindPermission } from '@/core/auth/permissions'
+import type { ReactNode } from 'react'
+
+function guard(permission: TerramindPermission, element: ReactNode) {
+  return <PermissionRoute permission={permission}>{element}</PermissionRoute>
+}
 
 export const router = createBrowserRouter([
   { path: '/login', element: <LoginPage /> },
@@ -55,93 +61,73 @@ export const router = createBrowserRouter([
     ),
     children: [
       { index: true, element: <Navigate to="/situacion" replace /> },
-      { path: 'situacion', element: <NationalSituationPage /> },
-      { path: 'situacion-nacional', element: <NationalSituationPage /> },
-      { path: 'incendios', element: <FireAnalysisPage /> },
-      { path: 'incendios/:eventId', element: <FireAnalysisPage /> },
-      { path: 'biodiversidad', element: <BiodiversityAnalysisPage /> },
-      { path: 'copilot', element: <CopilotPage /> },
-      { path: 'hallazgos', element: <FindingsPage /> },
-      { path: 'hallazgos/:findingId', element: <FindingDetailPage /> },
-      { path: 'prioridades', element: <PrioritiesPage /> },
-      { path: 'prioridades/:priorityId', element: <PriorityDetailPage /> },
-      { path: 'incidentes', element: <IncidentsPage /> },
-      { path: 'incidentes/:incidentId', element: <IncidentDetailPage /> },
-      { path: 'incidentes/:incidentId/historia', element: <IncidentStoryPage /> },
-      { path: 'verificaciones', element: <VerificationsPage /> },
+      { path: 'situacion', element: guard('findings.view', <NationalSituationPage />) },
+      { path: 'situacion-nacional', element: guard('findings.view', <NationalSituationPage />) },
+      { path: 'incendios', element: guard('incidents.view', <FireAnalysisPage />) },
+      { path: 'incendios/:eventId', element: guard('incidents.view', <FireAnalysisPage />) },
+      { path: 'biodiversidad', element: guard('findings.view', <BiodiversityAnalysisPage />) },
+      { path: 'copilot', element: guard('findings.view', <CopilotPage />) },
+      { path: 'hallazgos', element: guard('findings.view', <FindingsPage />) },
+      { path: 'hallazgos/:findingId', element: guard('findings.view', <FindingDetailPage />) },
+      { path: 'prioridades', element: guard('priorities.view', <PrioritiesPage />) },
+      { path: 'prioridades/:priorityId', element: guard('priorities.view', <PriorityDetailPage />) },
+      { path: 'incidentes', element: guard('incidents.view', <IncidentsPage />) },
+      { path: 'incidentes/:incidentId', element: guard('incidents.view', <IncidentDetailPage />) },
+      { path: 'incidentes/:incidentId/historia', element: guard('incidents.view', <IncidentStoryPage />) },
+      { path: 'verificaciones', element: guard('verification_plans.view', <VerificationsPage />) },
       {
         path: 'respuesta',
-        element: (
-          <PermissionRoute permission="responses.view">
-            <ResponseOrchestrationListPage />
-          </PermissionRoute>
-        ),
+        element: guard('responses.view', <ResponseOrchestrationListPage />),
       },
       {
         path: 'respuesta/:incidentId',
-        element: (
-          <PermissionRoute permission="responses.view">
-            <ResponseOrchestrationDetailPage />
-          </PermissionRoute>
-        ),
+        element: guard('responses.view', <ResponseOrchestrationDetailPage />),
       },
-      { path: 'misiones', element: <MissionsPage /> },
-      { path: 'misiones/:missionId', element: <MissionDetailPage /> },
-      { path: 'operaciones/asignaciones', element: <AssignmentsPage /> },
+      { path: 'misiones', element: guard('missions.view', <MissionsPage />) },
+      { path: 'misiones/:missionId', element: guard('missions.view', <MissionDetailPage />) },
+      { path: 'misiones/asignaciones', element: guard('missions.assign', <AssignmentsPage />) },
+      { path: 'operaciones/asignaciones', element: <Navigate to="/misiones/asignaciones" replace /> },
       {
         path: 'campo',
-        element: <FieldCampoLayout />,
+        element: guard('missions.view', <FieldCampoLayout />),
         children: [
           { index: true, element: <FieldCampoHomePage /> },
-          { path: 'misiones', element: <FieldMissionsPage /> },
-          { path: 'paquetes', element: <FieldPackagesPage /> },
-          { path: 'paquetes/:packageId', element: <FieldPackageDetailPage /> },
-          { path: 'paquetes/:packageId/tareas/:taskId', element: <FieldTaskFormPage /> },
-          { path: 'evidencia-pendiente', element: <PendingEvidencePage /> },
-          { path: 'sincronizacion', element: <FieldSyncPage /> },
-          { path: 'conflictos', element: <FieldConflictsPage /> },
+          { path: 'misiones', element: guard('missions.view', <FieldMissionsPage />) },
+          { path: 'paquetes', element: guard('offline_packages.download', <FieldPackagesPage />) },
+          { path: 'paquetes/:packageId', element: guard('offline_packages.download', <FieldPackageDetailPage />) },
+          {
+            path: 'paquetes/:packageId/tareas/:taskId',
+            element: guard('evidence.submit', <FieldTaskFormPage />),
+          },
+          { path: 'evidencia-pendiente', element: guard('evidence.submit', <PendingEvidencePage />) },
+          { path: 'sincronizacion', element: guard('field_sync.execute', <FieldSyncPage />) },
+          { path: 'conflictos', element: guard('field_sync.resolve_conflict', <FieldConflictsPage />) },
         ],
       },
-      { path: 'estrategias', element: <StrategiesPage /> },
-      { path: 'territorio', element: <TerritoryPage /> },
-      { path: 'tendencias', element: <TrendsPage /> },
-      { path: 'informes', element: <ReportsHubPage /> },
-      { path: 'informes/nacional', element: <NationalReportPage /> },
-      { path: 'informes/incidentes/:incidentId', element: <IncidentReportPage /> },
-      { path: 'fuentes', element: <IntegrationsPage /> },
-      { path: 'conocimiento', element: <KnowledgePage /> },
-      { path: 'administracion', element: <SettingsPage /> },
+      { path: 'estrategias', element: guard('findings.view', <StrategiesPage />) },
+      { path: 'territorio', element: guard('findings.view', <TerritoryPage />) },
+      { path: 'tendencias', element: guard('findings.view', <TrendsPage />) },
+      { path: 'informes', element: guard('findings.view', <ReportsHubPage />) },
+      { path: 'informes/nacional', element: guard('findings.view', <NationalReportPage />) },
+      { path: 'informes/incidentes/:incidentId', element: guard('findings.view', <IncidentReportPage />) },
+      { path: 'fuentes', element: guard('organization.settings', <IntegrationsPage />) },
+      { path: 'conocimiento', element: guard('findings.view', <KnowledgePage />) },
+      { path: 'administracion', element: guard('organization.settings', <SettingsPage />) },
       {
         path: 'admin/organizacion',
-        element: (
-          <PermissionRoute permission="organization.settings">
-            <OrganizationAdminPage />
-          </PermissionRoute>
-        ),
+        element: guard('organization.settings', <OrganizationAdminPage />),
       },
       {
         path: 'admin/organizacion/miembros',
-        element: (
-          <PermissionRoute permission="memberships.manage">
-            <OrganizationAdminPage />
-          </PermissionRoute>
-        ),
+        element: guard('memberships.manage', <OrganizationAdminPage />),
       },
       {
         path: 'admin/organizacion/invitaciones',
-        element: (
-          <PermissionRoute permission="users.invite">
-            <OrganizationAdminPage />
-          </PermissionRoute>
-        ),
+        element: guard('users.invite', <OrganizationAdminPage />),
       },
       {
         path: 'admin/organizacion/auditoria',
-        element: (
-          <PermissionRoute permission="organization.settings">
-            <OrganizationAdminPage />
-          </PermissionRoute>
-        ),
+        element: guard('organization.settings', <OrganizationAdminPage />),
       },
       // Legacy redirects
       { path: 'events', element: <Navigate to="/hallazgos" replace /> },

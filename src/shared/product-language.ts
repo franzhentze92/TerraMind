@@ -19,15 +19,44 @@ export const PRODUCT_LANGUAGE: Record<string, string> = {
   pending_sync: 'pendiente de sincronización',
   internal_demo: 'demostración interna',
   draft: 'borrador',
-  tenant_owned: 'perteneciente a la organización',
-  ownership_unresolved: 'ownership pendiente',
+  tenant_owned: 'Operacional',
+  ownership_unresolved: 'Organización pendiente',
   inferred: 'inferido',
-  ready_for_validation: 'listo para validación',
+  ready_for_validation: 'Lista para validación',
   not_required: 'no requerida',
   useful: 'útil',
   prepare: 'preparar',
   monitor: 'monitoreo',
+  legacy_unowned: 'Legacy · organización pendiente',
+  lifecycle_persistent: 'Persistente',
+  lifecycle_expanding: 'En expansión',
+  lifecycle_declining: 'En descenso',
+  partially_satisfied: 'Parcialmente resuelta',
+  conflicting_evidence: 'Evidencia contradictoria',
+  pilot: 'Demostración interna',
+  allowlist: 'lista de cuentas habilitadas',
+  fixture: 'demostración',
+  model_version: 'versión del modelo',
 }
+
+/** Terms that must never appear in product UI (audit checks these). */
+export const FORBIDDEN_UI_TERMS = [
+  'tenant-owned',
+  'ownership_unresolved',
+  'response assessment',
+  'downstream',
+  'pending sync',
+  'internal_demo',
+  'allowlist',
+  'fixture sintético',
+  'Sync simulado',
+  '8B.7G',
+  '8C.1',
+  'ready_for_validation',
+  'lifecycle_persistent',
+  'model version',
+  'producción global bloqueada',
+] as const
 
 /** Canonical scope labels for the UI. */
 export const SCOPE_LABELS: Record<MetricScope, string> = {
@@ -46,7 +75,7 @@ export const CLASSIFICATION_LABELS: Record<DataClassification, string> = {
   demo: 'Demostración interna',
   pending: 'Pendiente de procesamiento',
   excluded: 'Excluido',
-  unresolved_ownership: 'Ownership pendiente',
+  unresolved_ownership: 'Organización pendiente',
 }
 
 /** Short badge text per classification (compact surfaces). */
@@ -56,7 +85,7 @@ export const CLASSIFICATION_BADGES: Record<DataClassification, string> = {
   demo: 'Demostración',
   pending: 'Pendiente',
   excluded: 'Excluido',
-  unresolved_ownership: 'Ownership pendiente',
+  unresolved_ownership: 'Org. pendiente',
 }
 
 /** Canonical ownership labels for the UI. */
@@ -70,7 +99,7 @@ export const OWNERSHIP_LABELS: Record<OwnershipClass, string> = {
 
 /** Reasons a breakdown item is excluded from the operational KPI. */
 export const EXCLUSION_REASON_LABELS: Record<string, string> = {
-  ownership_unresolved: 'Ownership pendiente',
+  ownership_unresolved: 'Organización pendiente',
   legacy: 'Registro legacy',
   demo: 'Demostración interna',
   out_of_scope: 'Fuera del alcance de la organización',

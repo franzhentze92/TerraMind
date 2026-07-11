@@ -3,18 +3,18 @@ import { FIELD_REAL_SYNC_ENABLED } from '@/modules/field-operations/field-mobile
 interface FieldPilotBannerProps {
   pilotActive: boolean
   missionId?: string | null
-  missionAllowlisted?: boolean
+  missionSyncEnabled?: boolean
 }
 
-export function FieldPilotBanner({ pilotActive, missionId, missionAllowlisted }: FieldPilotBannerProps) {
+export function FieldPilotBanner({ pilotActive, missionId, missionSyncEnabled }: FieldPilotBannerProps) {
   if (FIELD_REAL_SYNC_ENABLED) return null
 
-  if (pilotActive && missionAllowlisted && missionId) {
+  if (pilotActive && missionSyncEnabled && missionId) {
     return (
       <div className="rounded-lg border border-accent/40 bg-accent/5 px-3 py-2 text-xs text-accent">
-        <p className="font-medium">Piloto interno</p>
+        <p className="font-medium">Modo de demostración</p>
         <p className="mt-0.5 text-text-secondary">
-          Sync real habilitado solo para esta misión ({missionId.slice(0, 8)}…).
+          Sincronización habilitada para la misión activa en esta cuenta.
         </p>
       </div>
     )
@@ -23,14 +23,14 @@ export function FieldPilotBanner({ pilotActive, missionId, missionAllowlisted }:
   if (pilotActive) {
     return (
       <div className="rounded-lg border border-border-subtle bg-surface-2/40 px-3 py-2 text-xs text-text-secondary">
-        Piloto interno activo — sync real solo en misiones allowlisted.
+        Demostración interna activa — la sincronización real solo aplica a misiones habilitadas.
       </div>
     )
   }
 
   return (
     <p className="text-xs text-confidence-medium">
-      Sync simulado — producción global bloqueada. Piloto 8B.7G requiere allowlist explícita.
+      Sincronización no habilitada para esta cuenta. El trabajo se guarda en este dispositivo.
     </p>
   )
 }

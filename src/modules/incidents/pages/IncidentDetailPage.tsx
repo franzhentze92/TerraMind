@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom'
-import { ModuleHeader } from '@/shared/components'
+import { PageHeader, StageNavigationLinks } from '@/shared/components'
 import { Badge } from '@/shared/components/Badge'
 import { useIncidentDetail, useIncidentHistory } from '../hooks/useIncidents'
 import {
@@ -8,6 +8,10 @@ import {
   incidentStatusVariant,
   incidentTypeLabel,
 } from '../utils/incident-labels'
+import {
+  buildIncidentBreadcrumbLabel,
+  buildIncidentDisplayName,
+} from '../utils/incident-display-name'
 import {
   actionLevelLabel,
   attentionLevelLabel,
@@ -40,33 +44,58 @@ export function IncidentDetailPage() {
   const members = (detail.members as Array<Record<string, unknown>> | undefined) ?? []
   const history = historyQuery.data?.items ?? []
   const limitations = (detail.priority_limitations as string[] | undefined) ?? []
+  const primaryMember = members.find((m) => m.membership_role === 'primary') ?? members[0]
+  const displayName = buildIncidentDisplayName({
+    incident_type: String(detail.incident_type),
+    status: String(detail.status),
+    event_count: Number(detail.event_count),
+    department_name: primaryMember?.department_name as string | null | undefined,
+    lifecycle_state: primaryMember?.lifecycle_state as string | null | undefined,
+  })
+  const breadcrumbLabel = buildIncidentBreadcrumbLabel({
+    incident_type: String(detail.incident_type),
+    department_name: primaryMember?.department_name as string | null | undefined,
+    lifecycle_state: primaryMember?.lifecycle_state as string | null | undefined,
+    event_count: Number(detail.event_count),
+  })
 
   return (
     <div className="flex h-full flex-col overflow-y-auto p-6">
-      <ModuleHeader
-        title="Detalle del incidente"
-        description={incidentTypeLabel(String(detail.incident_type))}
+      <PageHeader
+        title={displayName}
+        subtitle={incidentTypeLabel(String(detail.incident_type))}
+        breadcrumbs={[
+          { label: 'Incidentes', to: '/incidentes' },
+          { label: breadcrumbLabel },
+        ]}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <Link
+              to={`/incidentes/${incidentId}/historia`}
+              className="rounded border border-border-subtle px-3 py-1.5 text-xs hover:border-accent/40"
+            >
+              Ver historia
+            </Link>
+            <Link
+              to={`/informes/incidentes/${incidentId}`}
+              className="rounded border border-border-subtle px-3 py-1.5 text-xs hover:border-accent/40"
+            >
+              Generar informe
+            </Link>
+          </div>
+        }
       />
 
-      <div className="mb-4 flex flex-wrap gap-2">
-        <Link
-          to={`/incidentes/${incidentId}/historia`}
-          className="rounded border border-border-subtle px-3 py-1.5 text-xs hover:border-accent/40"
-        >
-          Ver historia
-        </Link>
-        <Link
-          to={`/informes/incidentes/${incidentId}`}
-          className="rounded border border-border-subtle px-3 py-1.5 text-xs hover:border-accent/40"
-        >
-          Generar informe
-        </Link>
-        <a
-          href={`/api/reports/incidents/${incidentId}?format=pdf&include_demo=true`}
-          className="rounded bg-accent/20 px-3 py-1.5 text-xs text-accent hover:bg-accent/30"
-        >
-          Descargar PDF
-        </a>
+      <div className="mb-4 mt-2">
+        <StageNavigationLinks
+          links={[
+            { label: 'Ver verificación', to: `/verificaciones?incident=${incidentId}` },
+            ...(canViewResponse && responseQuery.data
+              ? [{ label: 'Ver respuesta', to: `/respuesta/${incidentId}` }]
+              : []),
+          ]}
+          emptyMessage="Todavía no existe un plan de verificación para este incidente."
+        />
       </div>
 
       <div className="mb-4 flex flex-wrap gap-2">

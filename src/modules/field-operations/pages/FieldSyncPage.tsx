@@ -27,7 +27,9 @@ export function FieldSyncPage() {
     <div className="mx-auto max-w-lg p-4">
       <h1 className="text-lg font-medium text-text-primary">Sincronización</h1>
       <p className="mt-1 text-xs text-confidence-medium">
-        {sync.realSyncEnabled ? t('sync_available', 'es') : 'Transport simulado — sin Supabase real'}
+        {sync.realSyncEnabled
+          ? t('sync_available', 'es')
+          : 'Sincronización no habilitada para esta cuenta. El trabajo se guarda en este dispositivo.'}
       </p>
 
       <div className="mt-4 flex flex-wrap gap-2">
@@ -48,14 +50,14 @@ export function FieldSyncPage() {
             })()
           }}
         >
-          Sincronizar todos (simulado)
+          Sincronizar todo
         </button>
       </div>
 
       <ul className="mt-4 space-y-3">
         {bundles.map((b) => (
           <li key={b.bundle_id} className="rounded-lg border border-border-subtle p-3 text-sm">
-            <p className="font-medium">Bundle {b.bundle_id.slice(0, 8)}…</p>
+            <p className="font-medium">Envío {b.bundle_id.slice(0, 8)}…</p>
             <p className="text-xs text-text-tertiary">{labelSyncStatus(b.status)} · {(b.size_bytes / 1024).toFixed(1)} KB</p>
             <div className="mt-2 flex gap-2">
               <button
@@ -105,7 +107,7 @@ export function FieldSyncPage() {
 
       {sync.lastResult && (
         <section className="mt-4 rounded border border-border-subtle p-3 text-xs">
-          <p className="font-medium">Timeline simulado</p>
+          <p className="font-medium">Historial de sincronización</p>
           <ol className="mt-1 list-decimal pl-4">
             {sync.lastResult.steps.map((s, i) => (
               <li key={i}>{t(s.message_key, 'es')}</li>

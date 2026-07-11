@@ -15,7 +15,7 @@ const ES: Record<string, string> = {
   online_no_api: 'Sin servidor disponible',
   session_expired: 'Sesión expirada',
   slow_network: 'Red lenta',
-  sync_available: 'Sincronización disponible (simulada)',
+  sync_available: 'Sincronización disponible',
   sync_in_progress: 'Sincronización en progreso',
   continue_task: 'Continuar tarea',
   prepare_sync: 'Preparar para sincronización',

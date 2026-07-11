@@ -232,8 +232,9 @@ describe('route aliases', () => {
     const routerSource = await import('node:fs').then((fs) =>
       fs.readFileSync(new URL('../../app/router.tsx', import.meta.url), 'utf8'),
     )
-    expect(routerSource).toContain("{ path: 'situacion', element: <NationalSituationPage /> }")
-    expect(routerSource).toContain("{ path: 'situacion-nacional', element: <NationalSituationPage /> }")
+    expect(routerSource).toContain("{ path: 'situacion'")
+    expect(routerSource).toContain('NationalSituationPage')
+    expect(routerSource).toContain("{ path: 'situacion-nacional'")
     expect(routerSource).not.toContain("{ path: 'situacion-nacional', element: <Navigate to=\"/situacion\"")
   })
 })

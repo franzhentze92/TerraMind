@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
-import { ModuleHeader } from '@/shared/components'
+import { PageHeader } from '@/shared/components'
 import { Badge } from '@/shared/components/Badge'
 import { useIncidentsList } from '../hooks/useIncidents'
 import {
@@ -15,6 +15,7 @@ import {
   verificationLevelLabel,
 } from '@/modules/priorities/utils/priority-labels'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
+import { buildIncidentDisplayName } from '../utils/incident-display-name'
 import { cn } from '@/shared/utils/cn'
 import { useHasPermission } from '@/core/auth/AuthProvider'
 import { useResponsesList } from '@/modules/response-orchestration/hooks/useResponseOrchestration'
@@ -33,12 +34,16 @@ export function IncidentsPage() {
 
   return (
     <div className="flex h-full flex-col overflow-y-auto p-6">
-      <ModuleHeader
+      <PageHeader
         title="Incidentes"
-        description="Situaciones operacionales que agrupan eventos territoriales correlacionados."
+        subtitle="Situaciones operacionales que agrupan eventos territoriales correlacionados."
+        breadcrumbs={[
+          { label: 'Inteligencia', to: '/hallazgos' },
+          { label: 'Incidentes' },
+        ]}
       />
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 mt-4 flex flex-wrap gap-2">
         {['', 'open', 'monitoring', 'resolved'].map((s) => (
           <button
             key={s || 'all'}
@@ -74,7 +79,11 @@ export function IncidentsPage() {
                   {incidentTypeLabel(item.incident_type)}
                 </p>
                 <h3 className="text-sm font-semibold text-text-primary">
-                  Situación operacional · {item.event_count} evento(s)
+                  {buildIncidentDisplayName({
+                    incident_type: item.incident_type,
+                    status: item.status,
+                    event_count: item.event_count,
+                  })}
                 </h3>
                 <p className="mt-1 text-xs text-text-tertiary">
                   {formatGuatemalaDateTime(item.first_observed_at)} —{' '}

@@ -20,21 +20,23 @@ export function PendingEvidencePage() {
         <h1 className="mt-2 text-xl font-medium text-text-primary">Evidencia pendiente</h1>
         <p className="mt-1 text-sm text-text-secondary">
           {FIELD_REAL_SYNC_ENABLED
-            ? 'Sincronización resumible e idempotente hacia evidence submissions (8B.7D).'
-            : `${t('work_local_only', 'es')} — transport simulado hasta 8B.7F y staging confirmado.`}
+            ? 'Evidencia local lista para enviarse al servidor de forma resumible.'
+            : `${t('work_local_only', 'es')} — pendiente de sincronización cuando la cuenta lo permita.`}
         </p>
       </div>
 
       {sync.loading && <p className="text-sm text-text-tertiary">Cargando…</p>}
 
       {!sync.loading && sync.bundles.length === 0 && (
-        <p className="text-sm text-text-tertiary">No hay bundles pendientes de sincronización.</p>
+        <p className="text-sm text-text-tertiary">
+          No hay evidencia pendiente. Las capturas locales aparecerán aquí antes de sincronizarse.
+        </p>
       )}
 
       {!sync.loading && sync.bundles.length > 0 && (
         <>
           <p className="mb-4 text-sm text-text-secondary">
-            Total: {sync.bundles.length} bundle(s) · {(totalBytes / (1024 * 1024)).toFixed(2)} MB
+            Total: {sync.bundles.length} envío(s) · {(totalBytes / (1024 * 1024)).toFixed(2)} MB
           </p>
           <ul className="space-y-3">
             {sync.bundles.map((b) => {

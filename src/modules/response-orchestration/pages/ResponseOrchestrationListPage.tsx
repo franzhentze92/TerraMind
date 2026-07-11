@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
-import { ModuleHeader } from '@/shared/components'
+import { PageHeader, OperationalEmptyState } from '@/shared/components'
 import { useResponsesList } from '../hooks/useResponseOrchestration'
 import { ResponseStatusBadge } from '../components/ResponseStatusBadge'
 import {
@@ -29,12 +29,16 @@ export function ResponseOrchestrationListPage() {
 
   return (
     <div className="flex h-full flex-col overflow-y-auto p-6">
-      <ModuleHeader
+      <PageHeader
         title="Respuesta operacional"
-        description="Recomendaciones del motor, decisiones humanas y acciones de seguimiento — separadas explícitamente."
+        subtitle="Recomendaciones del motor, decisiones humanas y acciones de seguimiento — separadas explícitamente."
+        breadcrumbs={[
+          { label: 'Operaciones', to: '/verificaciones' },
+          { label: 'Respuesta' },
+        ]}
       />
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 mt-4 flex flex-wrap gap-2">
         {FILTERS.map((f) => (
           <button
             key={f.id || 'all'}
@@ -89,7 +93,13 @@ export function ResponseOrchestrationListPage() {
           </Link>
         ))}
         {!query.isLoading && (query.data?.items?.length ?? 0) === 0 && (
-          <p className="text-sm text-text-tertiary">No hay respuestas registradas para esta organización.</p>
+          <OperationalEmptyState
+            title="No hay evaluaciones de respuesta"
+            explanation="Se generan después de resolver una verificación y completar las reevaluaciones posteriores."
+            sourceProcess="Resolución de verificación → evaluación de respuesta"
+            primaryCta={{ label: 'Ver verificaciones', to: '/verificaciones' }}
+            secondaryCta={{ label: 'Ver incidentes', to: '/incidentes' }}
+          />
         )}
       </div>
     </div>
