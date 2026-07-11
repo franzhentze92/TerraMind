@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 
 import { useOfflineEvidenceTask } from '@/modules/field-operations/offline-evidence/hooks/useOfflineEvidence'
 import type { LocalOfflinePackageRecord } from '@/modules/field-operations/offline-packages/offline-package.repository'
+import { evidenceTypeLabel, humanizeToken } from '@/shared/product-language'
 
 function formatCoverageLine(c: {
   evidence_type: string
@@ -10,7 +11,7 @@ function formatCoverageLine(c: {
   missing_count: number
   warnings: string[]
 }): string {
-  const base = `${c.evidence_type}: ${c.minimum_count} required · ${c.captured_count} captured`
+  const base = `${evidenceTypeLabel(c.evidence_type)}: ${c.minimum_count} mínimo · ${c.captured_count} capturada(s)`
   if (c.missing_count > 0) return `${base} · ${c.missing_count} faltantes`
   if (c.warnings.length) return `${base} · ${c.warnings.join(', ')}`
   return base
@@ -155,9 +156,9 @@ export function LocalEvidencePanel({
               className="flex items-start justify-between gap-2 rounded border border-border-subtle px-3 py-2 text-xs"
             >
               <div>
-                <p className="font-medium text-text-primary">{r.evidence_type}</p>
+                <p className="font-medium text-text-primary">{evidenceTypeLabel(r.evidence_type)}</p>
                 <p className="text-text-tertiary">
-                  {new Date(r.captured_at).toLocaleString()} · {r.status}
+                  {new Date(r.captured_at).toLocaleString()} · {humanizeToken(r.status)}
                 </p>
                 {r.limitations.length > 0 && (
                   <p className="text-confidence-medium">Limitaciones: {r.limitations.join(', ')}</p>

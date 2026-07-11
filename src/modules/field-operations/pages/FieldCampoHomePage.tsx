@@ -4,16 +4,12 @@ import { OperationalEmptyState, OperationalCardSkeleton } from '@/shared/compone
 import { useFieldCampo } from '@/modules/field-operations/field-mobile/hooks/useFieldCampo'
 import { t } from '@/modules/field-operations/field-mobile/i18n/field-mobile-i18n'
 import { useRealSyncPilot } from '@/modules/field-operations/field-sync/hooks/useRealSyncPilot'
+import { resolveFieldSyncStatus } from '@/modules/field-operations/field-sync/field-sync-status'
+import { FieldSyncStatusCard } from '@/modules/field-operations/field-sync/components/FieldSyncStatusCard'
 
 function formatBytes(n: number) {
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`
   return `${(n / (1024 * 1024)).toFixed(1)} MB`
-}
-
-function connectivityLabel(state: string): string {
-  if (state === 'online') return 'Conectado'
-  if (state === 'offline') return 'Sin conexión'
-  return 'Conectividad limitada'
 }
 
 export function FieldCampoHomePage() {
@@ -28,6 +24,19 @@ export function FieldCampoHomePage() {
       s.pending_tasks > 0 ||
       s.pending_sync_bundles > 0 ||
       s.open_conflicts > 0)
+
+  const onlineStates = ['sync_available', 'slow_network', 'sync_in_progress']
+  const syncStatus = s
+    ? resolveFieldSyncStatus({
+        featureEnabled: pilot.pilotActive,
+        authenticated: true,
+        organizationEligible: true,
+        online: onlineStates.includes(s.connectivity),
+        hasPendingWork: s.pending_sync_bundles > 0,
+        syncRunning: s.connectivity === 'sync_in_progress',
+        hasError: s.connectivity === 'session_expired' || s.open_conflicts > 0,
+      })
+    : null
 
   return (
     <div className="mx-auto max-w-lg p-4" data-testid="field-campo-home">
@@ -52,15 +61,9 @@ export function FieldCampoHomePage() {
               onClick: () => void campo.refresh(),
             }}
           />
+          {syncStatus && <FieldSyncStatusCard status={syncStatus} />}
           <section className="rounded-lg border border-border-subtle p-3 text-xs text-text-secondary">
-            <p>Estado de conexión: {connectivityLabel(s.connectivity)}</p>
-            <p className="mt-1">Almacenamiento local: {formatBytes(s.local_storage_bytes)}</p>
-            {!pilot.pilotActive && (
-              <p className="mt-1 text-text-tertiary">
-                La sincronización todavía no está habilitada para esta cuenta. El trabajo local
-                permanecerá guardado.
-              </p>
-            )}
+            <p>Almacenamiento local: {formatBytes(s.local_storage_bytes)}</p>
           </section>
         </div>
       )}
@@ -77,9 +80,9 @@ export function FieldCampoHomePage() {
             )}
           </section>
 
+          {syncStatus && <FieldSyncStatusCard status={syncStatus} />}
           <section className="rounded-lg border border-border-subtle p-3 text-xs text-text-secondary">
-            <p>Conexión: {connectivityLabel(s.connectivity)}</p>
-            <p className="mt-1">Almacenamiento local: {formatBytes(s.local_storage_bytes)}</p>
+            <p>Almacenamiento local: {formatBytes(s.local_storage_bytes)}</p>
             {s.packages_count > 0 && (
               <p className="mt-1">
                 <Link to="/campo/paquetes" className="text-accent hover:underline">

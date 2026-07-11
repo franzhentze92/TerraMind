@@ -42,3 +42,24 @@ export function findingDomainLabel(domain: string): string {
   }
   return map[domain] ?? domain
 }
+
+/** Human interpretation for each finding rule code (internal codes never reach the UI). */
+const RULE_INTERPRETATIONS: Record<string, string> = {
+  THERMAL_PROTECTED_AREA_001: 'La actividad térmica se ubica dentro de un área protegida.',
+  THERMAL_PROTECTED_AREA_002: 'La actividad térmica se ubica cerca de un área protegida.',
+  THERMAL_LAND_COVER_001:
+    'La actividad térmica coincide espacialmente con cobertura forestal.',
+  THERMAL_LAND_COVER_002:
+    'La actividad térmica coincide espacialmente con una zona de cobertura natural combinada.',
+  THERMAL_CLIMATE_001: 'Se registraron condiciones secas en el entorno del evento.',
+  THERMAL_CLIMATE_002: 'Se registró viento elevado durante la detección.',
+  THERMAL_POPULATION_001: 'Hay población modelada en el entorno inmediato.',
+  THERMAL_POPULATION_002: 'Existe alta incertidumbre en la estimación poblacional local.',
+  THERMAL_BIODIVERSITY_001: 'Hay biodiversidad documentada en el entorno.',
+  THERMAL_BIODIVERSITY_002: 'El contexto de biodiversidad presenta limitaciones.',
+  THERMAL_MULTI_001: 'Múltiples contextos coinciden y requieren atención conjunta.',
+}
+
+export function findingRuleInterpretation(code: string): string {
+  return RULE_INTERPRETATIONS[code] ?? 'Interpretación derivada de reglas de contexto territorial.'
+}

@@ -29,6 +29,8 @@ interface IntelligenceFlowNavigatorProps {
   isError?: boolean
   onRetry?: () => void
   className?: string
+  /** Render the cycle inside a collapsed <details> so it never dominates the page. */
+  collapsible?: boolean
 }
 
 export function IntelligenceFlowNavigator({
@@ -37,6 +39,7 @@ export function IntelligenceFlowNavigator({
   isError,
   onRetry,
   className,
+  collapsible,
 }: IntelligenceFlowNavigatorProps) {
   if (isLoading) {
     return (
@@ -63,6 +66,42 @@ export function IntelligenceFlowNavigator({
 
   const nodeByStage = new Map(flow.nodes.map((n) => [n.stage, n]))
 
+  const classificationNote =
+    flow.classification !== 'operational' ? (
+      <p className="mt-1 text-[11px] text-amber-300">
+        {flow.classification === 'legacy'
+          ? 'Registro histórico — trazabilidad pendiente.'
+          : 'Demostración interna — no operacional.'}
+      </p>
+    ) : null
+
+  const steps = (
+    <ol className="mt-3 flex flex-wrap gap-2">
+      {FLOW_STAGE_ORDER.map((stage) => {
+        const n = nodeByStage.get(stage)
+        if (!n) return null
+        return <FlowStep key={stage} node={n} isCurrent={flow.current_stage === stage} />
+      })}
+    </ol>
+  )
+
+  if (collapsible) {
+    return (
+      <details
+        className={cn('rounded-xl border border-border-subtle bg-surface-2/30', className)}
+        data-testid="intelligence-flow-navigator"
+      >
+        <summary className="cursor-pointer select-none px-4 py-3 text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+          Ciclo operacional
+        </summary>
+        <div className="px-4 pb-4">
+          {classificationNote}
+          {steps}
+        </div>
+      </details>
+    )
+  }
+
   return (
     <nav
       className={cn('rounded-xl border border-border-subtle bg-surface-2/30 p-4', className)}
@@ -72,22 +111,8 @@ export function IntelligenceFlowNavigator({
       <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
         Ciclo operacional
       </p>
-      {flow.classification !== 'operational' && (
-        <p className="mt-1 text-[11px] text-amber-300">
-          {flow.classification === 'legacy'
-            ? 'Registro legacy — ownership pendiente.'
-            : 'Demostración interna — no operacional.'}
-        </p>
-      )}
-      <ol className="mt-3 flex flex-wrap gap-2">
-        {FLOW_STAGE_ORDER.map((stage) => {
-          const n = nodeByStage.get(stage)
-          if (!n) return null
-          return (
-            <FlowStep key={stage} node={n} isCurrent={flow.current_stage === stage} />
-          )
-        })}
-      </ol>
+      {classificationNote}
+      {steps}
     </nav>
   )
 }

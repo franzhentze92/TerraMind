@@ -37,7 +37,7 @@ export function SituationOperationalHeader() {
             tone={isStale ? 'warning' : 'ok'}
           />
           <span className="rounded-md border border-border-subtle px-2 py-0.5 text-xs text-text-secondary">
-            Fuentes activas: {sourcesActive}
+            Pipelines con datos recientes: {sourcesActive}
           </span>
           {lastSync && (
             <span className="text-xs text-text-tertiary">
@@ -65,7 +65,7 @@ export function SituationOperationalHeader() {
             className="rounded-lg border border-border-subtle px-3 py-1.5 text-xs text-text-secondary hover:text-text-primary"
             data-testid="sources-drawer-trigger"
           >
-            Fuentes activas
+            Ver fuentes de datos
           </button>
           <Link
             to="/informes/nacional"

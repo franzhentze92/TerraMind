@@ -290,6 +290,7 @@ export async function handleMissionsRoutes(
               status: searchParams.get('status') ?? undefined,
               incident_id: searchParams.get('incident_id') ?? undefined,
               limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : undefined,
+              include_demo: searchParams.get('include_demo') === 'true',
             },
             auth,
           ),

@@ -10,6 +10,7 @@ import {
 export function useIncidentsList(filters: {
   status?: string
   attention_level?: string
+  include_demo?: string
 } = {}) {
   const authReady = useAuthQueryReady()
   return useQuery({

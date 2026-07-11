@@ -1,12 +1,30 @@
 import { Link } from 'react-router-dom'
 import { ModuleHeader, OperationalEmptyState } from '@/shared/components'
-import { FileText, Globe, AlertTriangle, Printer } from 'lucide-react'
+import { FileText, Globe, AlertTriangle } from 'lucide-react'
 import { useCanonicalOperationalCounts } from '@/shared/hooks/useCanonicalOperationalCounts'
-import { CLASSIFICATION_LABELS } from '@/modules/institutional-reports/report-classification'
 
 const REPORT_TYPES = [
-  { id: 'national', label: 'Nacional' },
-  { id: 'incident', label: 'Por incidente' },
+  {
+    id: 'national',
+    label: 'Informe nacional',
+    description: 'Resumen ejecutivo, métricas, mapa, hallazgos, incidentes y metodología.',
+  },
+  {
+    id: 'incident',
+    label: 'Informe por incidente',
+    description: 'Historia completa del ciclo operacional y línea de tiempo institucional.',
+  },
+  {
+    id: 'verification',
+    label: 'Verificación y misiones',
+    description: 'Documentado dentro del informe por incidente cuando existen etapas registradas.',
+  },
+] as const
+
+const REPORT_FORMATS = [
+  { id: 'html', label: 'HTML en pantalla', description: 'Lectura interactiva dentro de la plataforma.' },
+  { id: 'pdf', label: 'PDF descargable', description: 'Documento con portada, numeración y clasificación.' },
+  { id: 'print', label: 'Impresión A4', description: 'Estilos institucionales para imprimir en papel A4.' },
 ] as const
 
 export function ReportsHubPage() {
@@ -17,99 +35,100 @@ export function ReportsHubPage() {
     <div className="flex h-full flex-col overflow-y-auto p-6" data-testid="reports-hub-page">
       <ModuleHeader
         title="Centro de informes"
-        description="Informes institucionales generados bajo demanda · HTML, impresión y PDF unificados"
+        description="Informes institucionales generados bajo demanda"
       />
 
-      <OperationalEmptyState
-        compact
-        className="mb-6"
-        title="No hay informes guardados"
-        explanation="Los informes se generan bajo demanda. Elija un tipo, periodo y clasificación al crear uno nuevo."
-        primaryAction={{ label: 'Generar informe nacional', href: '/informes/nacional' }}
-        secondaryAction={{ label: 'Ver incidentes', href: '/incidentes' }}
-        status="empty"
-      />
-
-      <div className="mb-6 flex flex-wrap gap-3 print:hidden">
-        <fieldset className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-text-tertiary">Tipo:</span>
-          {REPORT_TYPES.map((t) => (
-            <span key={t.id} className="rounded border border-border-subtle px-2 py-0.5">
-              {t.label}
-            </span>
-          ))}
-        </fieldset>
-        <fieldset className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="text-text-tertiary">Clasificación:</span>
-          {Object.values(CLASSIFICATION_LABELS).map((label) => (
-            <span key={label} className="rounded border border-border-subtle px-2 py-0.5">
-              {label}
-            </span>
-          ))}
-        </fieldset>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <ReportCard
-          icon={<Globe className="h-6 w-6 text-accent" />}
-          title="Informe nacional"
-          description="Resumen ejecutivo · métricas · mapa · hallazgos · incidentes · metodología"
-          href="/informes/nacional"
-          actions={['Ver', 'Descargar PDF', 'Imprimir']}
-        />
-        {hasOperationalIncidents ? (
-          <ReportCard
-            icon={<AlertTriangle className="h-6 w-6 text-amber-400" />}
-            title="Informe por incidente"
-            description="Historia completa del ciclo operacional · timeline institucional"
-            href="/incidentes"
-            actions={['Ver', 'Descargar PDF', 'Imprimir']}
+      <section className="mt-2" aria-labelledby="reports-generate">
+        <h2 id="reports-generate" className="text-sm font-semibold text-text-primary">
+          Generar nuevo informe
+        </h2>
+        <div className="mt-3 grid gap-4 md:grid-cols-2">
+          <GenerateCard
+            icon={<Globe className="h-6 w-6 text-accent" />}
+            title="Informe nacional"
+            description="Resumen ejecutivo · métricas · mapa · hallazgos · incidentes · metodología"
+            href="/informes/nacional"
           />
-        ) : (
-          <div className="flex flex-col rounded-xl border border-dashed border-border-subtle bg-surface-2/20 p-5 opacity-80">
-            <AlertTriangle className="h-6 w-6 text-text-tertiary" />
-            <h3 className="mt-3 font-medium text-text-primary">Informe por incidente</h3>
-            <p className="mt-1 text-sm text-text-secondary">
-              No se registraron incidentes operacionales pertenecientes a la organización durante el
-              periodo actual.
-            </p>
-          </div>
-        )}
-        <ReportCard
-          icon={<Printer className="h-6 w-6 text-text-secondary" />}
-          title="Impresión A4"
-          description="Estilos institucionales · portada · numeración · clasificación en cada página"
-          href="/informes/nacional"
-          actions={['Imprimir']}
+          {hasOperationalIncidents ? (
+            <GenerateCard
+              icon={<AlertTriangle className="h-6 w-6 text-amber-400" />}
+              title="Informe por incidente"
+              description="Historia completa del ciclo operacional · línea de tiempo institucional"
+              href="/incidentes"
+            />
+          ) : (
+            <div className="flex flex-col rounded-xl border border-dashed border-border-subtle bg-surface-2/20 p-5 opacity-80">
+              <AlertTriangle className="h-6 w-6 text-text-tertiary" />
+              <h3 className="mt-3 font-medium text-text-primary">Informe por incidente</h3>
+              <p className="mt-1 text-sm text-text-secondary">
+                Disponible cuando existan incidentes operacionales de la organización en el periodo.
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      <section className="mt-8" aria-labelledby="reports-recent">
+        <h2 id="reports-recent" className="text-sm font-semibold text-text-primary">
+          Informes recientes
+        </h2>
+        <OperationalEmptyState
+          compact
+          className="mt-3"
+          title="No hay informes guardados"
+          explanation="Los informes se generan bajo demanda y no se archivan automáticamente. Genera uno desde la sección superior."
+          primaryAction={{ label: 'Generar informe nacional', href: '/informes/nacional' }}
+          status="empty"
         />
-        <ReportCard
-          icon={<FileText className="h-6 w-6 text-text-secondary" />}
-          title="Verificación y misiones"
-          description="Documentado en informe por incidente cuando existan etapas registradas"
-          href="/verificaciones"
-        />
-      </div>
+      </section>
+
+      <section className="mt-8" aria-labelledby="reports-types">
+        <h2 id="reports-types" className="text-sm font-semibold text-text-primary">
+          Tipos de informe
+        </h2>
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          {REPORT_TYPES.map((t) => (
+            <div key={t.id} className="rounded-xl border border-border-subtle bg-surface-2/40 p-4">
+              <FileText className="h-5 w-5 text-text-secondary" />
+              <h3 className="mt-2 text-sm font-medium text-text-primary">{t.label}</h3>
+              <p className="mt-1 text-xs text-text-secondary">{t.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="mt-8" aria-labelledby="reports-formats">
+        <h2 id="reports-formats" className="text-sm font-semibold text-text-primary">
+          Formatos disponibles
+        </h2>
+        <div className="mt-3 grid gap-3 md:grid-cols-3">
+          {REPORT_FORMATS.map((f) => (
+            <div key={f.id} className="rounded-xl border border-border-subtle bg-surface-2/40 p-4">
+              <h3 className="text-sm font-medium text-text-primary">{f.label}</h3>
+              <p className="mt-1 text-xs text-text-secondary">{f.description}</p>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <p className="mt-8 text-xs text-text-tertiary">
-        Clasificación visible en portada, encabezado y pie. Los informes con datos de demostración
-        nunca se marcan como oficiales. Legacy aparece en anexos separados.
+        La clasificación aparece en portada, encabezado y pie. Los informes con datos de demostración
+        nunca se marcan como oficiales; los registros históricos aparecen en anexos separados.
       </p>
     </div>
   )
 }
 
-function ReportCard({
+function GenerateCard({
   icon,
   title,
   description,
   href,
-  actions,
 }: {
   icon: React.ReactNode
   title: string
   description: string
   href: string
-  actions?: string[]
 }) {
   return (
     <Link
@@ -119,11 +138,7 @@ function ReportCard({
       {icon}
       <h3 className="mt-3 font-medium text-text-primary">{title}</h3>
       <p className="mt-1 flex-1 text-sm text-text-secondary">{description}</p>
-      {actions && actions.length > 0 && (
-        <p className="mt-3 text-[10px] uppercase tracking-wide text-text-tertiary">
-          {actions.join(' · ')}
-        </p>
-      )}
+      <p className="mt-3 text-[10px] uppercase tracking-wide text-accent">Generar →</p>
     </Link>
   )
 }

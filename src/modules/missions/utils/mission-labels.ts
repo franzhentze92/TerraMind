@@ -1,3 +1,5 @@
+import { humanizeToken } from '@/shared/product-language'
+
 export function missionStatusLabel(status: string): string {
   const map: Record<string, string> = {
     draft: 'Borrador',
@@ -12,11 +14,12 @@ export function missionStatusLabel(status: string): string {
     expired: 'Expirada',
     failed: 'Fallida',
   }
-  return map[status] ?? status
+  return map[status] ?? humanizeToken(status)
 }
 
 export function missionTypeLabel(type: string): string {
   const map: Record<string, string> = {
+    field_verification: 'Verificación de campo',
     remote_analytical_review: 'Revisión analítica remota',
     satellite_reobservation_request: 'Reobservación satelital',
     higher_resolution_imagery_review: 'Imagen de mayor resolución',
@@ -27,5 +30,44 @@ export function missionTypeLabel(type: string): string {
     georeferenced_photo_collection: 'Fotografía georreferenciada',
     drone_observation: 'Observación con dron',
   }
-  return map[type] ?? type
+  return map[type] ?? humanizeToken(type)
+}
+
+export function missionAssignmentStatusLabel(status: string): string {
+  const map: Record<string, string> = {
+    proposed: 'Propuesta',
+    assigned: 'Asignada',
+    accepted: 'Aceptada',
+    in_progress: 'En progreso',
+    completed: 'Completada',
+    declined: 'Rechazada',
+    revoked: 'Revocada',
+    blocked: 'Bloqueada',
+    expired: 'Expirada',
+    cancelled: 'Cancelada',
+  }
+  return map[status] ?? humanizeToken(status)
+}
+
+export function missionTaskStatusLabel(status: string): string {
+  const map: Record<string, string> = {
+    pending: 'Pendiente',
+    in_progress: 'En progreso',
+    completed: 'Completada',
+    skipped: 'Omitida',
+    blocked: 'Bloqueada',
+    failed: 'Fallida',
+  }
+  return map[status] ?? humanizeToken(status)
+}
+
+export function missionAssigneeTypeLabel(type: string): string {
+  const map: Record<string, string> = {
+    user: 'Usuario',
+    team: 'Equipo',
+    organization: 'Organización',
+    field_unit: 'Unidad de campo',
+    partner: 'Socio institucional',
+  }
+  return map[type] ?? humanizeToken(type)
 }

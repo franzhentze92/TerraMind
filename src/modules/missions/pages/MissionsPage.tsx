@@ -32,17 +32,27 @@ export function MissionsPage() {
   const canAssign = useHasPermission('missions.assign')
   const canViewVerification = useHasPermission('verification_plans.view')
   const counts = useCanonicalOperationalCounts()
+  const showDemo = searchParams.get('demo') === '1'
   const query = useMissionsList({
     status: activeTab.status && activeTab.status !== '__assignments__' ? activeTab.status : undefined,
+    include_demo: showDemo ? 'true' : undefined,
   })
 
   const visibleTabs = TABS.filter((t) => t.key !== 'assignments' || canAssign)
   const items = query.data?.items ?? []
+  const demoExcluded = query.data?.demo_excluded ?? counts.missionsDemo
   const listEmpty = items.length === 0 && !query.isLoading && !query.isError
 
+  const setShowDemo = (next: boolean) => {
+    const params: Record<string, string> = {}
+    if (tab !== 'all') params.tab = tab
+    if (next) params.demo = '1'
+    setSearchParams(params)
+  }
+
   const demoNote =
-    listEmpty && tab === 'all' && counts.missionsDemo > 0
-      ? `Hay ${counts.missionsDemo} misión(es) de demostración interna disponibles.`
+    listEmpty && !showDemo && demoExcluded > 0
+      ? `Existen ${demoExcluded} misión(es) de demostración interna.`
       : undefined
 
   return (
@@ -88,6 +98,18 @@ export function MissionsPage() {
         <MissionsAssignmentsPanel />
       ) : (
         <>
+          {showDemo && (
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-confidence-medium/30 bg-confidence-medium/10 px-4 py-2 text-xs text-confidence-medium">
+              <span>Mostrando misiones de demostración interna — no representan operaciones reales.</span>
+              <button
+                type="button"
+                onClick={() => setShowDemo(false)}
+                className="rounded-md border border-confidence-medium/40 px-2 py-1 font-medium hover:bg-confidence-medium/20"
+              >
+                Volver a operacionales
+              </button>
+            </div>
+          )}
           {query.isLoading && <OperationalListSkeleton />}
           {query.isError && (
             <OperationalErrorState
@@ -117,8 +139,13 @@ export function MissionsPage() {
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-1.5">
+                    {item.classification === 'demo' && (
+                      <Badge variant="warning">Demostración</Badge>
+                    )}
                     <Badge variant="default">{missionStatusLabel(item.status)}</Badge>
-                    <Badge variant="default">P{item.priority}</Badge>
+                    <Badge variant="default" title={`Prioridad ${item.priority} de 100`}>
+                      Prioridad {item.priority}
+                    </Badge>
                   </div>
                 </div>
                 <p className="mt-2 text-xs text-text-secondary">
@@ -158,7 +185,14 @@ export function MissionsPage() {
                     ? { label: 'Ver verificaciones', href: '/verificaciones' }
                     : undefined
                 }
-                secondaryAction={{ label: 'Actualizar', onClick: () => void query.refetch() }}
+                secondaryAction={
+                  !showDemo && demoExcluded > 0
+                    ? {
+                        label: `Ver demostración interna (${demoExcluded})`,
+                        onClick: () => setShowDemo(true),
+                      }
+                    : { label: 'Actualizar', onClick: () => void query.refetch() }
+                }
               />
             )}
           </div>

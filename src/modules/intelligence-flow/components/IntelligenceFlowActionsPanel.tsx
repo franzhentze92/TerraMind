@@ -34,29 +34,36 @@ export function IntelligenceFlowActionsPanel({ flow, className }: IntelligenceFl
     <section
       className={className}
       data-testid="intelligence-flow-actions"
+      aria-label="Acciones relacionadas"
     >
       <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-        Continuar en el ciclo
+        Acciones relacionadas
       </p>
-      <ul className="mt-2 space-y-2">
-        {actions.map((action) => (
-          <li key={action.id}>
-            {action.route ? (
-              <Link
-                to={action.route}
-                className="inline-flex rounded-md border border-border-subtle bg-surface-1/40 px-3 py-1.5 text-xs text-accent hover:border-accent/40"
-              >
-                {action.label} →
-              </Link>
-            ) : (
-              <div className="text-xs text-text-secondary">
+      <div className="mt-2 flex flex-wrap gap-2">
+        {actions
+          .filter((action) => action.route)
+          .map((action) => (
+            <Link
+              key={action.id}
+              to={action.route as string}
+              className="inline-flex rounded-md border border-border-subtle bg-surface-1/40 px-3 py-1.5 text-xs text-accent hover:border-accent/40"
+            >
+              {action.label} →
+            </Link>
+          ))}
+      </div>
+      {actions.some((action) => !action.route && action.explanation) && (
+        <ul className="mt-2 space-y-1">
+          {actions
+            .filter((action) => !action.route && action.explanation)
+            .map((action) => (
+              <li key={action.id} className="text-xs text-text-secondary">
                 <span className="font-medium text-text-primary">{action.label}: </span>
                 {action.explanation}
-              </div>
-            )}
-          </li>
-        ))}
-      </ul>
+              </li>
+            ))}
+        </ul>
+      )}
     </section>
   )
 }

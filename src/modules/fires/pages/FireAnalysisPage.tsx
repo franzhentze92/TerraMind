@@ -53,7 +53,8 @@ export function FireAnalysisPage() {
   const summary = summaryQuery.data
   const ds = summary?.data_status
   const items = eventsQuery.data?.items ?? []
-  const total = eventsQuery.data?.pagination.total ?? 0
+  // Counter must never report fewer results than the rows actually visible.
+  const total = Math.max(eventsQuery.data?.pagination.total ?? 0, items.length)
   const limit = eventsQuery.data?.pagination.limit ?? FIRE_EVENTS_DEFAULT_LIMIT
   const offset = eventsQuery.data?.pagination.offset ?? 0
   const rangeStart = total === 0 ? 0 : offset + 1
@@ -124,7 +125,8 @@ export function FireAnalysisPage() {
                 </span>
                 <span>·</span>
                 <span>
-                  Fuentes {ds.sources_queried_successfully}/{ds.sources_expected} operativas
+                  Proveedores FIRMS: {ds.sources_queried_successfully} de {ds.sources_expected}{' '}
+                  operativos
                 </span>
               </>
             )}

@@ -1,6 +1,7 @@
 import { Badge } from '@/shared/components/Badge'
 import { OperationalEmptyState } from '@/shared/components'
 import { useIncidentVerificationResolution } from '../hooks/useVerificationResolution'
+import { useIncidentVerificationPlan } from '../hooks/useVerificationPlans'
 import { needResolutionStatusLabel } from '../utils/verification-labels'
 
 interface Props {
@@ -9,9 +10,14 @@ interface Props {
 
 export function IncidentVerificationResolutionSection({ incidentId }: Props) {
   const query = useIncidentVerificationResolution(incidentId)
+  const planQuery = useIncidentVerificationPlan(incidentId)
   const data = query.data
+  const plan = planQuery.data
+  const planNeeds = (plan?.needs as unknown[] | undefined) ?? []
+  // Verification only "requires" resolution when the plan has active needs.
+  const verificationRequired = Boolean(plan) && planNeeds.length > 0
 
-  if (query.isLoading) {
+  if (query.isLoading || planQuery.isLoading) {
     return (
       <section className="rounded-lg border border-border-subtle bg-surface-2/30 p-4">
         <p className="text-sm text-text-tertiary">Cargando resolución de verificación…</p>
@@ -27,12 +33,24 @@ export function IncidentVerificationResolutionSection({ incidentId }: Props) {
   const keyEvidence = (data.key_evidence as Array<Record<string, unknown>> | undefined) ?? []
 
   if (resolutions.length === 0) {
+    if (!verificationRequired) {
+      return (
+        <section id="resolucion" className="scroll-mt-6 rounded-lg border border-border-subtle bg-surface-2/30 p-4">
+          <OperationalEmptyState
+            compact
+            title="No se requiere resolución de verificación"
+            explanation="El plan determinó que no existen preguntas activas que deban resolverse mediante evidencia adicional."
+            status="not_required"
+          />
+        </section>
+      )
+    }
     return (
       <section id="resolucion" className="scroll-mt-6 rounded-lg border border-border-subtle bg-surface-2/30 p-4">
         <OperationalEmptyState
           compact
-          title="Aún no existe una resolución"
-          explanation="La resolución se genera después de validar evidencia suficiente para responder una pregunta de verificación."
+          title="Resolución pendiente de evidencia"
+          explanation="La resolución se genera después de validar evidencia suficiente para responder las preguntas de verificación activas."
           sourceProcess="Evidencia validada → resolución de verificación"
           status="pending"
         />
@@ -93,9 +111,7 @@ export function IncidentVerificationResolutionSection({ incidentId }: Props) {
               className="rounded border border-border-subtle/60 bg-surface-1/40 p-2 text-xs"
             >
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-medium text-text-primary">
-                  Need {String(r.verification_need_id).slice(0, 8)}…
-                </span>
+                <span className="font-medium text-text-primary">Pregunta de verificación</span>
                 <Badge variant="default">
                   {needResolutionStatusLabel(String(r.resolution_status))}
                 </Badge>

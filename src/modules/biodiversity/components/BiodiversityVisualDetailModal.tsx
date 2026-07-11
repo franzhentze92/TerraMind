@@ -6,6 +6,10 @@ import type {
 import { X, ExternalLink } from 'lucide-react'
 import { Badge } from '@/shared/components/Badge'
 import { cn } from '@/shared/utils/cn'
+import {
+  biodiversityProviderLabel,
+  biodiversityQualityGradeLabel,
+} from '@/modules/biodiversity/utils/biodiversity-labels'
 
 interface BiodiversityVisualDetailModalProps {
   detail?: BiodiversityVisualDetailDto | null
@@ -69,7 +73,9 @@ export function BiodiversityVisualDetailModal({
 
               <div className="flex flex-wrap gap-2">
                 {obs?.isRecent && <Badge variant="accent">Reciente</Badge>}
-                {obs?.qualityGrade && <Badge variant="default">{obs.qualityGrade}</Badge>}
+                {obs?.qualityGrade && (
+                  <Badge variant="default">{biodiversityQualityGradeLabel(obs.qualityGrade)}</Badge>
+                )}
                 {obs?.coordinatesPrivacyLabel && (
                   <Badge variant="warning">{obs.coordinatesPrivacyLabel}</Badge>
                 )}
@@ -80,7 +86,12 @@ export function BiodiversityVisualDetailModal({
               )}
 
               <div className="rounded-lg border border-border-subtle bg-surface-2/40 p-3 text-xs text-text-tertiary">
-                <p>Fuente: {obs?.source ?? ('source' in (fallback ?? {}) ? fallback?.source : '')}</p>
+                <p>
+                  Fuente:{' '}
+                  {biodiversityProviderLabel(
+                    obs?.source ?? ('source' in (fallback ?? {}) ? (fallback?.source ?? '') : ''),
+                  )}
+                </p>
                 {obs?.imageLicense && <p>Licencia imagen: {obs.imageLicense}</p>}
                 <p>Atribución: {obs?.imageAttribution ?? ''}</p>
                 {obs?.zoneName && <p>Territorio: {obs.zoneName}</p>}

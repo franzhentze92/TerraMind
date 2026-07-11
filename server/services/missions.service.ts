@@ -13,6 +13,14 @@ import {
   listAssignmentsForMission,
 } from '@/pipeline/stores/mission-assignments.store'
 import { filterRowsByActiveOrganization } from '../auth/tenant-list-scope.js'
+import { isInternalDemoMissionTitle, isInternalDemoIncidentId } from '@/modules/executive-demo/demo-config'
+
+/** Classify a mission for operational-vs-demo separation (matches ExecutiveMetricsService). */
+function classifyMission(mission: { title?: string | null; incident_id: string }): 'operational' | 'demo' {
+  if (isInternalDemoMissionTitle(mission.title ?? '')) return 'demo'
+  if (isInternalDemoIncidentId(mission.incident_id)) return 'demo'
+  return 'operational'
+}
 
 export async function listMissionsDto(
   filters: {
@@ -20,13 +28,21 @@ export async function listMissionsDto(
   incident_id?: string
   verification_plan_id?: string
   limit?: number
+  include_demo?: boolean
   },
   auth?: RequestAuthContext,
 ) {
   const rows = await listMissions(filters)
   const scoped = auth ? filterRowsByActiveOrganization(auth, rows as Array<{ organization_id?: string | null }>) : rows
-  const items = []
+  const includeDemo = filters.include_demo === true
+  const items: Array<Record<string, unknown>> = []
+  let demo_excluded = 0
   for (const m of scoped) {
+    const classification = classifyMission(m)
+    if (classification === 'demo' && !includeDemo) {
+      demo_excluded += 1
+      continue
+    }
     const tasks = await listMissionTasks(m.id)
     const evidence = await listMissionEvidenceRequirements(m.id)
     const incident = await getIncidentById(m.incident_id)
@@ -35,6 +51,7 @@ export async function listMissionsDto(
       mission_type: m.mission_type,
       title: m.title,
       status: m.status,
+      classification,
       incident_id: m.incident_id,
       incident_status: incident?.status ?? null,
       verification_plan_id: m.verification_plan_id,
@@ -48,7 +65,7 @@ export async function listMissionsDto(
       created_at: m.created_at,
     })
   }
-  return { items, generated_at: new Date().toISOString() }
+  return { items, demo_excluded, generated_at: new Date().toISOString() }
 }
 
 export async function getMissionDetail(id: string) {
@@ -89,9 +106,9 @@ export async function getMissionEvidenceDto(id: string) {
 }
 
 export async function getIncidentMissions(incidentId: string, auth?: RequestAuthContext) {
-  return listMissionsDto({ incident_id: incidentId, limit: 50 }, auth)
+  return listMissionsDto({ incident_id: incidentId, limit: 50, include_demo: true }, auth)
 }
 
 export async function getVerificationPlanMissions(planId: string, auth?: RequestAuthContext) {
-  return listMissionsDto({ verification_plan_id: planId, limit: 50 }, auth)
+  return listMissionsDto({ verification_plan_id: planId, limit: 50, include_demo: true }, auth)
 }

@@ -1,5 +1,9 @@
 import type { BiodiversityObservationVisual } from '@/modules/biodiversity/biodiversity-visual.types'
 import { cn } from '@/shared/utils/cn'
+import {
+  biodiversityProviderLabel,
+  biodiversityQualityGradeLabel,
+} from '@/modules/biodiversity/utils/biodiversity-labels'
 
 interface BiodiversityRecentObservationsFeedProps {
   observations: BiodiversityObservationVisual[]
@@ -52,12 +56,15 @@ export function BiodiversityRecentObservationsFeed({
             <p className="text-sm font-medium text-text-primary line-clamp-1">
               {obs.commonName ?? obs.taxonName}
             </p>
+            {obs.commonName && obs.commonName !== obs.taxonName && (
+              <p className="text-[11px] italic text-text-tertiary line-clamp-1">{obs.taxonName}</p>
+            )}
             <p className="text-xs text-text-secondary line-clamp-1">
               {obs.zoneName} · {obs.taxonomicGroupLabel}
             </p>
             <p className="mt-1 text-[10px] text-text-tertiary">
-              {obs.source.toUpperCase()}
-              {obs.qualityGrade ? ` · ${obs.qualityGrade}` : ''}
+              {biodiversityProviderLabel(obs.source)}
+              {obs.qualityGrade ? ` · ${biodiversityQualityGradeLabel(obs.qualityGrade)}` : ''}
               {obs.observedAt ? ` · ${obs.observedAt.slice(0, 10)}` : ''}
             </p>
           </div>

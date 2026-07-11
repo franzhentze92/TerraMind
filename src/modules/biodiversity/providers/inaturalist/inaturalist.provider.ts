@@ -30,6 +30,9 @@ function buildInatSearchParams(query: BiodiversitySearchQuery, page: number, per
     geo: true,
     order: 'desc',
     order_by: 'observed_on',
+    // Prefer Spanish common names when iNaturalist has a reliable localization.
+    locale: 'es',
+    preferred_place_id: 7250, // Guatemala — regional common-name preference
   }
 
   if (query.taxonId) params.taxon_id = query.taxonId

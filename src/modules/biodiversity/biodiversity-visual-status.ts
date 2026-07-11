@@ -30,7 +30,7 @@ export function formatResearchGradeLabel(
   researchGradePct: number | null,
   inaturalistCount: number,
 ): string {
-  if (inaturalistCount === 0) return 'Research grade: N/D'
-  if (researchGradePct === null) return 'Research grade: N/D'
-  return `Research grade: ${researchGradePct}%`
+  if (inaturalistCount === 0) return 'Grado de investigación: N/D'
+  if (researchGradePct === null) return 'Grado de investigación: N/D'
+  return `Grado de investigación: ${researchGradePct}%`
 }

@@ -38,8 +38,6 @@ export function PriorityDetailPage() {
         ]}
       />
 
-      <IntelligenceFlowSections resourceType="priority" resourceId={priorityId} />
-
       <div className="mb-4 flex flex-wrap gap-2">
         <Badge variant="warning">{attentionLevelLabel(p.attention_level)}</Badge>
         <Badge variant="default">{verificationLevelLabel(p.verification_level)}</Badge>
@@ -117,6 +115,8 @@ export function PriorityDetailPage() {
           Ver evento térmico relacionado →
         </Link>
       )}
+
+      <IntelligenceFlowSections resourceType="priority" resourceId={priorityId} />
 
       <details className="mt-4 text-xs text-text-tertiary">
         <summary className="cursor-pointer">Detalle técnico del modelo</summary>

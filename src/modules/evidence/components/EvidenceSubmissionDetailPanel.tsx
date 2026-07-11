@@ -1,5 +1,6 @@
 import { useEvidenceSubmissionDetail, useEvidenceValidation } from '../hooks/useMissionEvidence'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
+import { evidenceTypeLabel, humanizeToken } from '@/shared/product-language'
 
 interface EvidenceSubmissionDetailPanelProps {
   submissionId: string
@@ -43,15 +44,11 @@ export function EvidenceSubmissionDetailPanel({
       <div className="space-y-2 text-xs">
         <p>
           <span className="text-text-tertiary">Estado:</span>{' '}
-          <span className="text-text-primary">{String(submission.status)}</span>
+          <span className="text-text-primary">{humanizeToken(String(submission.status))}</span>
         </p>
         <p>
           <span className="text-text-tertiary">Tipo:</span>{' '}
-          {String(submission.evidence_type)}
-        </p>
-        <p>
-          <span className="text-text-tertiary">Submitter:</span>{' '}
-          {String(submission.submitted_by_id)}
+          {evidenceTypeLabel(String(submission.evidence_type))}
         </p>
         <p>
           <span className="text-text-tertiary">Capturada:</span>{' '}
@@ -72,7 +69,8 @@ export function EvidenceSubmissionDetailPanel({
         <div className="mt-4 rounded border border-border-subtle/80 bg-surface-1/30 p-3">
           <p className="text-xs font-medium text-text-primary">Validación de calidad</p>
           <p className="mt-1 text-xs text-text-secondary">
-            Estado: {String(validation.status)} · Fuerza: {String(validation.evidence_strength)}
+            Estado: {humanizeToken(String(validation.status))} · Fuerza:{' '}
+            {humanizeToken(String(validation.evidence_strength))}
           </p>
           <p className="text-xs text-text-tertiary">
             Calidad general: {String(validation.overall_quality_score)}/100
@@ -100,7 +98,8 @@ export function EvidenceSubmissionDetailPanel({
               <p className="text-[10px] font-medium text-text-primary">Checks</p>
               {checks.slice(0, 6).map((c) => (
                 <p key={String(c.id)} className="text-[10px] text-text-tertiary">
-                  {String(c.dimension)} · {String(c.check_code)} · {String(c.outcome)}
+                  {humanizeToken(String(c.dimension))} · {humanizeToken(String(c.check_code))} ·{' '}
+                  {humanizeToken(String(c.outcome))}
                 </p>
               ))}
             </div>
@@ -142,9 +141,8 @@ export function EvidenceSubmissionDetailPanel({
           <p className="text-xs font-medium text-text-primary">Cobertura preliminar por requisito</p>
           {links.map((l) => (
             <p key={String(l.id)} className="mt-1 text-xs text-text-secondary">
-              {String(l.requirement_id).slice(0, 8)}… · {String(l.match_type)} ·{' '}
-              {String(l.preliminary_coverage)}
-              {Boolean(l.valid_coverage_status) && ` · ${String(l.valid_coverage_status)}`}
+              {humanizeToken(String(l.match_type))} · {humanizeToken(String(l.preliminary_coverage))}
+              {Boolean(l.valid_coverage_status) && ` · ${humanizeToken(String(l.valid_coverage_status))}`}
             </p>
           ))}
         </div>
@@ -154,7 +152,7 @@ export function EvidenceSubmissionDetailPanel({
         <p className="text-xs font-medium text-text-primary">Timeline de intake</p>
         {events.map((e) => (
           <p key={String(e.id)} className="mt-1 text-xs text-text-tertiary">
-            {String(e.event_type)} · {formatGuatemalaDateTime(String(e.created_at))}
+            {humanizeToken(String(e.event_type))} · {formatGuatemalaDateTime(String(e.created_at))}
           </p>
         ))}
       </div>

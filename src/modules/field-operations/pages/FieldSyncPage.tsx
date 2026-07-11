@@ -12,6 +12,8 @@ import { OfflineEvidenceRepository } from '@/modules/field-operations/offline-ev
 import { OfflinePackageRepository } from '@/modules/field-operations/offline-packages/offline-package.repository'
 import type { LocalEvidenceBundle } from '@/modules/field-operations/offline-evidence/offline-evidence.types'
 import type { SyncSession } from '@/modules/field-operations/field-sync/field-sync.types'
+import { resolveFieldSyncStatus } from '@/modules/field-operations/field-sync/field-sync-status'
+import { FieldSyncStatusCard } from '@/modules/field-operations/field-sync/components/FieldSyncStatusCard'
 
 export function FieldSyncPage() {
   const sync = useFieldMobileSync()
@@ -39,15 +41,22 @@ export function FieldSyncPage() {
   }, [])
 
   const activeSessions = sessions.filter((s) => !s.cancelled && s.status !== 'synced')
+  const online = typeof navigator === 'undefined' ? true : navigator.onLine
+  const syncStatus = resolveFieldSyncStatus({
+    featureEnabled: sync.realSyncEnabled,
+    authenticated: true,
+    organizationEligible: true,
+    online,
+    hasPendingWork: bundles.length > 0,
+    syncRunning: sync.running,
+    hasError: loadError != null || sync.lastResult?.ok === false,
+  })
 
   return (
     <div className="mx-auto max-w-lg p-4" data-testid="field-sync-page">
       <h1 className="text-lg font-medium text-text-primary">Sincronización</h1>
-      <p className="mt-1 text-xs text-text-secondary">
-        {sync.realSyncEnabled
-          ? t('sync_available', 'es')
-          : 'La sincronización todavía no está habilitada para esta cuenta. El trabajo local permanecerá guardado.'}
-      </p>
+
+      <FieldSyncStatusCard status={syncStatus} className="mt-3" />
 
       {loading && <OperationalListSkeleton rows={2} className="mt-4" />}
 

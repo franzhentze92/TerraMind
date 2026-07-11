@@ -106,9 +106,76 @@ export const EXCLUSION_REASON_LABELS: Record<string, string> = {
   pending_processing: 'Pendiente de procesamiento',
 }
 
-/** Look up a visible label for an internal token, falling back to the token. */
+/** Visible Spanish labels for organization/platform roles. */
+export const ROLE_LABELS: Record<string, string> = {
+  platform_admin: 'Administrador de plataforma',
+  organization_admin: 'Administrador de organización',
+  operations_coordinator: 'Coordinador de operaciones',
+  field_supervisor: 'Supervisor de campo',
+  field_technician: 'Técnico de campo',
+  analyst: 'Analista',
+  viewer: 'Consulta',
+}
+
+/** Visible Spanish labels for membership status. */
+export const MEMBERSHIP_STATUS_LABELS: Record<string, string> = {
+  invited: 'Invitado',
+  active: 'Activo',
+  suspended: 'Suspendido',
+  revoked: 'Revocado',
+  pending: 'Pendiente',
+}
+
+/** Visible Spanish labels for evidence types. */
+export const EVIDENCE_TYPE_LABELS: Record<string, string> = {
+  photo: 'Fotografía',
+  video: 'Video',
+  structured_observation: 'Observación estructurada',
+  document: 'Documento',
+  audio: 'Audio',
+  gps_track: 'Recorrido GPS',
+  sensor_reading: 'Lectura de sensor',
+}
+
+/** Visible Spanish labels for assignment / participation roles. */
+export const PARTICIPATION_LABELS: Record<string, string> = {
+  primary: 'Principal',
+  joined: 'Incorporado',
+  secondary: 'Secundario',
+  support: 'Apoyo',
+  observer: 'Observador',
+}
+
+/**
+ * Fallback for any snake_case / kebab enum that lacks an explicit label.
+ * Converts `some_internal_value` → `Some internal value` so raw codes never
+ * reach the UI even when a dictionary entry is missing.
+ */
+export function humanizeToken(token: string): string {
+  const cleaned = token.replace(/[_-]+/g, ' ').trim()
+  if (!cleaned) return token
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1)
+}
+
+/** Look up a visible label for an internal token, falling back to a humanized form. */
 export function productLabel(token: string): string {
-  return PRODUCT_LANGUAGE[token] ?? token
+  return PRODUCT_LANGUAGE[token] ?? humanizeToken(token)
+}
+
+export function roleLabel(role: string): string {
+  return ROLE_LABELS[role] ?? humanizeToken(role)
+}
+
+export function membershipStatusLabel(status: string): string {
+  return MEMBERSHIP_STATUS_LABELS[status] ?? humanizeToken(status)
+}
+
+export function evidenceTypeLabel(type: string): string {
+  return EVIDENCE_TYPE_LABELS[type] ?? humanizeToken(type)
+}
+
+export function participationLabel(role: string): string {
+  return PARTICIPATION_LABELS[role] ?? humanizeToken(role)
 }
 
 export function scopeLabel(scope: MetricScope): string {

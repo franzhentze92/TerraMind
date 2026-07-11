@@ -13,6 +13,7 @@ import {
 import { ResponseStatusBadge } from '../components/ResponseStatusBadge'
 import { decisionStatusLabel, responseLevelLabel } from '../utils/response-status-labels'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
+import { humanizeToken } from '@/shared/product-language'
 import { useIncidentDetail } from '@/modules/incidents/hooks/useIncidents'
 import {
   buildIncidentBreadcrumbLabel,
@@ -277,9 +278,9 @@ export function ResponseOrchestrationDetailPage() {
           <ul className="space-y-2 text-sm">
             {actionRows.map((a) => (
               <li key={String(a.id)} className="rounded border border-border-subtle p-2">
-                <p className="font-medium">{String(a.action_type)}</p>
+                <p className="font-medium">{humanizeToken(String(a.action_type))}</p>
                 <p className="text-xs text-text-tertiary">
-                  Estado: {String(a.status)} · Prioridad: {String(a.priority)}
+                  Estado: {humanizeToken(String(a.status))} · Prioridad: {String(a.priority)}
                   {a.external_reference ? (
                     <>
                       {' '}

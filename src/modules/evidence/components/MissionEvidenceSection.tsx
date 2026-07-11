@@ -3,6 +3,7 @@ import { Badge } from '@/shared/components/Badge'
 import { OperationalEmptyState } from '@/shared/components'
 import { useMissionEvidence, useEvidenceIntake, useMissionEvidenceQuality } from '../hooks/useMissionEvidence'
 import { EvidenceSubmissionDetailPanel } from './EvidenceSubmissionDetailPanel'
+import { evidenceTypeLabel, humanizeToken } from '@/shared/product-language'
 
 const STATUS_LABELS: Record<string, string> = {
   received: 'Recibida',
@@ -121,8 +122,8 @@ export function MissionEvidenceSection({ missionId }: MissionEvidenceSectionProp
         <div className="mt-2 space-y-1">
           {(coverage?.requirements ?? []).map((item) => (
             <p key={item.requirement_id} className="text-xs text-text-secondary">
-              {item.evidence_type}: {item.submission_count}/{item.minimum_count} ·{' '}
-              {item.preliminary_status}
+              {evidenceTypeLabel(String(item.evidence_type))}: {item.submission_count}/
+              {item.minimum_count} · {humanizeToken(String(item.preliminary_status))}
             </p>
           ))}
           {(coverage?.requirements ?? []).length === 0 && (
@@ -141,7 +142,7 @@ export function MissionEvidenceSection({ missionId }: MissionEvidenceSectionProp
         <div className="space-y-2">
           {requirements.map((req) => (
             <div key={String(req.id)} className="rounded border border-border-subtle px-3 py-2 text-xs">
-              <p className="font-medium text-text-primary">{String(req.evidence_type)}</p>
+              <p className="font-medium text-text-primary">{evidenceTypeLabel(String(req.evidence_type))}</p>
               <p className="text-text-tertiary">
                 Mínimo {String(req.minimum_count)} ·{' '}
                 {req.required ? 'obligatorio' : 'opcional'}
@@ -162,7 +163,7 @@ export function MissionEvidenceSection({ missionId }: MissionEvidenceSectionProp
               className="block w-full rounded border border-border-subtle px-3 py-2 text-left text-xs hover:border-accent/40"
             >
               <div className="flex items-center justify-between gap-2">
-                <span className="font-medium text-text-primary">{String(sub.evidence_type)}</span>
+                <span className="font-medium text-text-primary">{evidenceTypeLabel(String(sub.evidence_type))}</span>
                 <Badge variant="default">
                   {STATUS_LABELS[String(sub.status)] ?? String(sub.status)}
                 </Badge>

@@ -26,7 +26,7 @@ import {
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { APP_CONFIG } from '@/core/config'
-import { useAuth, useHasPermission } from '@/core/auth/AuthProvider'
+import { useAuth } from '@/core/auth/AuthProvider'
 import { OrganizationSelector } from '@/modules/auth/components/OrganizationSelector'
 import {
   NAV_SECTION_LABELS,
@@ -127,7 +127,6 @@ function SidebarNav({
   onNavigate?: () => void
 }) {
   const { authContext } = useAuth()
-  const canManageOrg = useHasPermission('organization.settings')
 
   const visibleSections = useMemo(() => {
     const fieldOnly = isFieldTechnicianOnly(authContext)
@@ -165,29 +164,6 @@ function SidebarNav({
           </div>
         ))}
       </AnimatePresence>
-
-      {canManageOrg && !collapsed && (
-        <div className="mb-4">
-          {!visibleSections.some((s) => s.key === 'administracion') && (
-            <p className="mb-1 px-2 text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-              {NAV_SECTION_LABELS.administracion}
-            </p>
-          )}
-          <NavLink
-            to="/admin/organizacion"
-            onClick={onNavigate}
-            className={({ isActive }) =>
-              cn(
-                'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm',
-                isActive ? 'bg-surface-3 text-text-primary' : 'text-text-secondary hover:text-text-primary',
-              )
-            }
-          >
-            <Users className="h-4 w-4" />
-            Organización
-          </NavLink>
-        </div>
-      )}
     </nav>
   )
 }

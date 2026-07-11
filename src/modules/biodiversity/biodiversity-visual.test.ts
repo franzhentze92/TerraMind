@@ -55,9 +55,9 @@ describe('biodiversity-visual-select', () => {
 
 describe('biodiversity-visual-status', () => {
   it('shows N/D when no iNaturalist records', () => {
-    expect(formatResearchGradeLabel(0, 0)).toBe('Research grade: N/D')
-    expect(formatResearchGradeLabel(null, 5)).toBe('Research grade: N/D')
-    expect(formatResearchGradeLabel(40, 10)).toBe('Research grade: 40%')
+    expect(formatResearchGradeLabel(0, 0)).toBe('Grado de investigación: N/D')
+    expect(formatResearchGradeLabel(null, 5)).toBe('Grado de investigación: N/D')
+    expect(formatResearchGradeLabel(40, 10)).toBe('Grado de investigación: 40%')
   })
 
   it('returns empty state message', () => {

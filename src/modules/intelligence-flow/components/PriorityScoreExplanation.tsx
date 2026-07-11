@@ -1,6 +1,9 @@
 import {
+  actionLevelDescription,
   actionLevelLabel,
+  attentionLevelDescription,
   attentionLevelLabel,
+  verificationLevelDescription,
   verificationLevelLabel,
 } from '@/modules/priorities/utils/priority-labels'
 
@@ -30,30 +33,36 @@ export function PriorityScoreExplanation({
   const dominantReason = reasons[0] ?? 'Sin factores dominantes registrados'
 
   return (
-    <section className="space-y-4" data-testid="priority-score-explanation">
+    <section className="grid gap-3 md:grid-cols-3" data-testid="priority-score-explanation">
       <ScoreBlock
         title="Atención"
+        subtitle="Qué tan relevante es dar seguimiento"
         score={attentionScore}
         level={attentionLevelLabel(attentionLevel)}
-        why={`Por qué: ${dominantReason}`}
-        next="Revisar en mapa y cola de prioridades"
+        levelMeaning={attentionLevelDescription(attentionLevel)}
+        why={dominantReason}
+        tone="attention"
       />
       <ScoreBlock
-        title="Verificación"
+        title="Valor de verificar"
+        subtitle="Cuánto ayudaría confirmar el caso"
         score={verificationScore}
         level={verificationLevelLabel(verificationLevel)}
-        why="Qué falta: confirmar persistencia y evidencia de campo si aplica"
-        next="Revisar plan de verificación del incidente"
+        levelMeaning={verificationLevelDescription(verificationLevel)}
+        why="Confirmar persistencia y, si aplica, evidencia de campo."
+        tone="verification"
       />
       <ScoreBlock
-        title="Acción"
+        title="Preparación operativa"
+        subtitle="Qué preparación conviene anticipar"
         score={actionScore}
         level={actionLevelLabel(actionLevel)}
-        why={`Siguiente paso operativo: ${recommendedNextStep}`}
-        next={recommendedNextStep}
+        levelMeaning={actionLevelDescription(actionLevel)}
+        why={recommendedNextStep}
+        tone="action"
       />
       {limitations.length > 0 && (
-        <p className="text-[11px] text-text-tertiary">
+        <p className="text-[11px] text-text-tertiary md:col-span-3">
           Limitaciones: {limitations.slice(0, 2).join(' · ')}
         </p>
       )}
@@ -61,36 +70,50 @@ export function PriorityScoreExplanation({
   )
 }
 
+const TONE_BAR: Record<string, string> = {
+  attention: 'bg-confidence-medium/70',
+  verification: 'bg-accent/70',
+  action: 'bg-confidence-high/70',
+}
+
 function ScoreBlock({
   title,
+  subtitle,
   score,
   level,
+  levelMeaning,
   why,
-  next,
+  tone,
 }: {
   title: string
+  subtitle: string
   score: number
   level: string
+  levelMeaning: string
   why: string
-  next: string
+  tone: string
 }) {
-  const pct = Math.min(100, Math.max(0, score))
+  const value = Math.round(Math.min(100, Math.max(0, score)))
   return (
     <div className="rounded-lg border border-border-subtle bg-surface-1/30 p-3">
-      <div className="flex items-end justify-between gap-2">
-        <div>
-          <p className="text-[10px] uppercase tracking-wider text-text-tertiary">{title}</p>
-          <p className="text-xl font-semibold text-text-primary">
-            {score.toFixed(1)}{' '}
-            <span className="text-sm font-normal text-text-secondary">— {level}</span>
-          </p>
-        </div>
+      <p className="text-[10px] uppercase tracking-wider text-text-tertiary">{title}</p>
+      <p className="text-[11px] text-text-tertiary">{subtitle}</p>
+      <p className="mt-1 text-2xl font-semibold text-text-primary">
+        {value}
+        <span className="text-sm font-normal text-text-tertiary"> / 100</span>
+      </p>
+      <p className="text-sm font-medium text-text-secondary">{level}</p>
+      <div
+        className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-3"
+        role="progressbar"
+        aria-valuenow={value}
+        aria-valuemin={0}
+        aria-valuemax={100}
+      >
+        <div className={`h-full rounded-full ${TONE_BAR[tone] ?? 'bg-accent/70'}`} style={{ width: `${value}%` }} />
       </div>
-      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-3">
-        <div className="h-full rounded-full bg-accent/70" style={{ width: `${pct}%` }} />
-      </div>
-      <p className="mt-2 text-xs text-text-secondary">{why}</p>
-      <p className="mt-1 text-[11px] text-text-tertiary">{next}</p>
+      <p className="mt-2 text-xs text-text-secondary">{levelMeaning}</p>
+      <p className="mt-1 text-[11px] text-text-tertiary">{why}</p>
     </div>
   )
 }

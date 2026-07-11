@@ -70,7 +70,7 @@ export function SourcesStatusDrawer() {
     <DrawerShell
       open={sourcesOpen}
       onClose={() => setSourcesOpen(false)}
-      title="Fuentes activas"
+      title="Estado de fuentes de datos"
       testId="sources-status-drawer"
     >
       {dqQuery.isError && (

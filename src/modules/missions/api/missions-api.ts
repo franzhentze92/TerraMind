@@ -1,8 +1,11 @@
+import { authFetch } from '@/core/auth/auth-fetch'
+
 export interface MissionSummaryDto {
   id: string
   mission_type: string
   title: string
   status: string
+  classification?: 'operational' | 'demo'
   incident_id: string
   incident_status: string | null
   verification_plan_id: string
@@ -17,7 +20,7 @@ export interface MissionSummaryDto {
 }
 
 async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(path, { credentials: 'include' })
+  const res = await authFetch(path)
   if (!res.ok) throw new Error(`API error ${res.status}`)
   return res.json() as Promise<T>
 }
@@ -28,7 +31,7 @@ export function fetchMissions(params: Record<string, string | undefined> = {}) {
     if (v) qs.set(k, v)
   }
   const suffix = qs.toString() ? `?${qs}` : ''
-  return apiFetch<{ items: MissionSummaryDto[]; generated_at: string }>(
+  return apiFetch<{ items: MissionSummaryDto[]; demo_excluded?: number; generated_at: string }>(
     `/api/operations/missions${suffix}`,
   )
 }
@@ -83,9 +86,8 @@ export interface MissionWorkflowResult {
 }
 
 async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(path, {
+  const res = await authFetch(path, {
     method: 'POST',
-    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })

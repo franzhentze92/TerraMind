@@ -1,3 +1,5 @@
+import { authFetch } from '@/core/auth/auth-fetch'
+
 export interface ResponseListItemDto {
   incident_id: string
   assessment_id: string
@@ -26,7 +28,7 @@ export interface ResponseExecutiveItemDto {
 }
 
 async function apiFetch<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, { credentials: 'include', ...init })
+  const res = await authFetch(path, init)
   if (!res.ok) throw new Error(`API error ${res.status}`)
   return res.json() as Promise<T>
 }

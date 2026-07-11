@@ -2,7 +2,14 @@ import { Link, useParams } from 'react-router-dom'
 import { PageHeader } from '@/shared/components/PageHeader'
 import { Badge } from '@/shared/components/Badge'
 import { useMissionDetail } from '../hooks/useMissions'
-import { missionStatusLabel, missionTypeLabel } from '../utils/mission-labels'
+import {
+  missionAssigneeTypeLabel,
+  missionAssignmentStatusLabel,
+  missionStatusLabel,
+  missionTaskStatusLabel,
+  missionTypeLabel,
+} from '../utils/mission-labels'
+import { evidenceTypeLabel } from '@/shared/product-language'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
 import { MissionWorkflowActions } from '../components/MissionWorkflowActions'
 import { MissionEvidenceSection } from '@/modules/evidence/components/MissionEvidenceSection'
@@ -39,8 +46,6 @@ export function MissionDetailPage() {
         ]}
       />
 
-      <IntelligenceFlowSections resourceType="mission" resourceId={missionId} />
-
       <div className="mb-4 flex flex-wrap gap-2">
         <Badge variant="default">{missionStatusLabel(String(mission.status))}</Badge>
         <Badge variant="default">Prioridad {String(mission.priority)}</Badge>
@@ -51,20 +56,34 @@ export function MissionDetailPage() {
         <p className="mt-1 text-text-secondary">{String(mission.objective)}</p>
 
         {mission.active_assignment ? (
-          <div className="mt-4 rounded border border-border-subtle/60 bg-surface-1/40 p-3 text-xs">
-            <p className="font-medium text-text-primary">Asignación operacional</p>
-            <p className="mt-1 text-text-secondary">
-              Responsable: {String((mission.active_assignment as Record<string, unknown>).assignee_id)}
-            </p>
-            <p className="text-text-tertiary">
-              Estado: {String((mission.active_assignment as Record<string, unknown>).status)}
-            </p>
-            {Boolean((mission.active_assignment as Record<string, unknown>).block_reason) && (
-              <p className="mt-1 text-confidence-low">
-                Bloqueo: {String((mission.active_assignment as Record<string, unknown>).block_reason)}
-              </p>
-            )}
-          </div>
+          (() => {
+            const assignment = mission.active_assignment as Record<string, unknown>
+            return (
+              <div className="mt-4 rounded border border-border-subtle/60 bg-surface-1/40 p-3 text-xs">
+                <p className="font-medium text-text-primary">Asignación operacional</p>
+                <p className="mt-1 text-text-secondary">
+                  Responsable:{' '}
+                  {assignment.assignee_type
+                    ? missionAssigneeTypeLabel(String(assignment.assignee_type))
+                    : 'Asignado'}
+                </p>
+                <p className="text-text-tertiary">
+                  Estado: {missionAssignmentStatusLabel(String(assignment.status))}
+                </p>
+                {Boolean(assignment.block_reason) && (
+                  <p className="mt-1 text-confidence-low">
+                    Bloqueo: {String(assignment.block_reason)}
+                  </p>
+                )}
+                {Boolean(assignment.assignee_id) && (
+                  <details className="mt-2 text-text-tertiary">
+                    <summary className="cursor-pointer select-none">Detalle técnico</summary>
+                    <p className="mt-1">Identificador: {String(assignment.assignee_id)}</p>
+                  </details>
+                )}
+              </div>
+            )
+          })()
         ) : (
           <p className="mt-3 text-xs text-text-tertiary">Sin responsable asignado.</p>
         )}
@@ -74,9 +93,6 @@ export function MissionDetailPage() {
             <Link to={`/incidentes/${mission.incident_id}`} className="text-accent hover:underline">
               Ver incidente
             </Link>
-          </p>
-          <p className="text-xs text-text-tertiary">
-            Plan: {String(mission.verification_plan_id).slice(0, 8)}…
           </p>
           <p className="text-xs text-text-tertiary">
             Inicio más temprano: {formatGuatemalaDateTime(String(mission.earliest_start_at))}
@@ -122,7 +138,7 @@ export function MissionDetailPage() {
                 <p className="font-medium text-text-primary">
                   {String(t.sequence)}. {String(t.title)}
                 </p>
-                <span className="text-text-tertiary">{String(t.status)}</span>
+                <span className="text-text-tertiary">{missionTaskStatusLabel(String(t.status))}</span>
               </div>
               <p className="mt-1 text-text-secondary">{String(t.instructions)}</p>
             </div>
@@ -135,7 +151,7 @@ export function MissionDetailPage() {
         <div className="mt-3 space-y-2">
           {evidence.map((e) => (
             <div key={String(e.id)} className="rounded border border-border-subtle px-3 py-2 text-xs">
-              <p className="font-medium text-text-primary">{String(e.evidence_type)}</p>
+              <p className="font-medium text-text-primary">{evidenceTypeLabel(String(e.evidence_type))}</p>
               <p className="text-text-tertiary">
                 Mínimo {String(e.minimum_count)} · {e.required ? 'obligatorio' : 'opcional'}
               </p>
@@ -154,7 +170,8 @@ export function MissionDetailPage() {
                 className="rounded border border-border-subtle px-3 py-2 text-xs"
               >
                 <p className="font-medium text-text-primary">
-                  {String(h.action)} · {String(h.from_status)} → {String(h.to_status)}
+                  {missionAssignmentStatusLabel(String(h.to_status))}
+                  {h.from_status ? ` (desde ${missionAssignmentStatusLabel(String(h.from_status))})` : ''}
                 </p>
                 <p className="text-text-secondary">{String(h.reason)}</p>
               </div>
@@ -173,7 +190,7 @@ export function MissionDetailPage() {
           {transitions.map((tr) => (
             <div key={String(tr.id)} className="rounded border border-border-subtle px-3 py-2 text-xs">
               <p className="font-medium text-text-primary">
-                {String(tr.from_status)} → {String(tr.to_status)}
+                {missionStatusLabel(String(tr.from_status))} → {missionStatusLabel(String(tr.to_status))}
               </p>
               <p className="text-text-secondary">{String(tr.reason)}</p>
               <p className="text-text-tertiary">
@@ -183,6 +200,8 @@ export function MissionDetailPage() {
           ))}
         </div>
       </section>
+
+      <IntelligenceFlowSections resourceType="mission" resourceId={missionId} />
     </div>
   )
 }

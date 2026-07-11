@@ -1,9 +1,10 @@
 import type { OfflinePackageManifest } from '@/modules/field-operations/offline-packages/offline-package.types'
+import { authFetch } from '@/core/auth/auth-fetch'
 
 const API = '/api/operations'
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(url, init)
+  const res = await authFetch(url, init)
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     throw new Error((body as { error?: string }).error ?? `HTTP ${res.status}`)

@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom'
-import { PageHeader, StageNavigationLinks } from '@/shared/components'
+import { PageHeader } from '@/shared/components'
 import { Badge } from '@/shared/components/Badge'
 import { useIncidentDetail, useIncidentHistory } from '../hooks/useIncidents'
 import {
@@ -18,6 +18,7 @@ import {
   verificationLevelLabel,
 } from '@/modules/priorities/utils/priority-labels'
 import { lifecycleStateLabel } from '@/modules/lifecycle/utils/lifecycle-labels'
+import { participationLabel, humanizeToken } from '@/shared/product-language'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
 import { VerificationPlanSection } from '@/modules/verification/components/VerificationPlanSection'
 import { IncidentVerificationResolutionSection } from '@/modules/verification/components/IncidentVerificationResolutionSection'
@@ -78,31 +79,11 @@ export function IncidentDetailPage() {
             >
               Ver historia
             </Link>
-            <Link
-              to={`/informes/incidentes/${incidentId}`}
-              className="rounded border border-border-subtle px-3 py-1.5 text-xs hover:border-accent/40"
-            >
-              Generar informe
-            </Link>
           </div>
         }
       />
 
-      <IntelligenceFlowSections resourceType="incident" resourceId={incidentId} />
-
-      <div className="mb-4 mt-2">
-        <StageNavigationLinks
-          links={[
-            { label: 'Ver verificación', to: `/verificaciones?incident=${incidentId}` },
-            ...(canViewResponse && responseQuery.data
-              ? [{ label: 'Ver respuesta', to: `/respuesta/${incidentId}` }]
-              : []),
-          ]}
-          emptyMessage="Todavía no existe un plan de verificación para este incidente."
-        />
-      </div>
-
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 mt-2 flex flex-wrap gap-2">
         <Badge variant={incidentStatusVariant(String(detail.status))}>
           {incidentStatusLabel(String(detail.status))}
         </Badge>
@@ -189,9 +170,9 @@ export function IncidentDetailPage() {
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <Link to={`/incendios/${m.event_id}`} className="font-medium text-accent">
-                  Evento {String(m.event_id).slice(0, 8)}…
+                  Ver evento térmico
                 </Link>
-                <span className="text-text-tertiary">{String(m.membership_role)}</span>
+                <span className="text-text-tertiary">{participationLabel(String(m.membership_role))}</span>
               </div>
               <p className="mt-1 text-text-secondary">
                 {m.department_name ? String(m.department_name) : 'Sin departamento'} ·{' '}
@@ -213,7 +194,7 @@ export function IncidentDetailPage() {
               key={String((h as Record<string, unknown>).id)}
               className="rounded border border-border-subtle px-3 py-2 text-xs"
             >
-              <p className="font-medium text-text-primary">{String((h as Record<string, unknown>).action)}</p>
+              <p className="font-medium text-text-primary">{humanizeToken(String((h as Record<string, unknown>).action))}</p>
               <p className="text-text-tertiary">
                 {formatGuatemalaDateTime(String((h as Record<string, unknown>).created_at))}
               </p>
@@ -224,6 +205,8 @@ export function IncidentDetailPage() {
           )}
         </div>
       </section>
+
+      <IntelligenceFlowSections resourceType="incident" resourceId={incidentId} />
     </div>
   )
 }

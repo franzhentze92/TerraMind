@@ -85,8 +85,21 @@ for (const page of listPages) {
 }
 
 check('missions:canonical-counts', read('src/modules/missions/pages/MissionsPage.tsx').includes('useCanonicalOperationalCounts'))
-check('incidents:legacy-note', read('src/modules/incidents/pages/IncidentsPage.tsx').includes('incidentsLegacy'))
-check('resolution:empty-state', read('src/modules/verification/components/IncidentVerificationResolutionSection.tsx').includes('Aún no existe una resolución'))
+// Post-consolidation hotfix: incidents now separate operational/historical/demo
+// via explicit classification tabs instead of a single legacy note.
+const incidentsSrc = read('src/modules/incidents/pages/IncidentsPage.tsx')
+check(
+  'incidents:classification-tabs',
+  incidentsSrc.includes('Históricos') && incidentsSrc.includes('Demostración') && incidentsSrc.includes('Operacionales'),
+)
+// Post-consolidation hotfix: resolution empty state distinguishes "not required"
+// (no active needs) from "pending evidence".
+const resolutionSrc = read('src/modules/verification/components/IncidentVerificationResolutionSection.tsx')
+check(
+  'resolution:empty-state',
+  resolutionSrc.includes('No se requiere resolución de verificación') &&
+    resolutionSrc.includes('Resolución pendiente de evidencia'),
+)
 
 const forbiddenOnlyInUi = FORBIDDEN_UI_TERMS.filter((t) =>
   ['tenant-owned', 'ready_for_validation', 'pending sync', 'allowlist'].includes(t),

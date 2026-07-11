@@ -83,7 +83,7 @@ export function BiodiversityZoneDetailPanel({
               <Stat label="Especies" value={detail.summary.species_count} />
               <Stat label="Observaciones" value={detail.summary.observations_count} />
               <Stat label="Recientes" value={detail.summary.recent_count} />
-              <Stat label="Research iNat" value={detail.summary.research_grade_count} />
+              <Stat label="Grado de investigación (iNat)" value={detail.summary.research_grade_count} />
             </div>
             <p className="text-sm leading-relaxed text-text-secondary">{detail.summary.narrative}</p>
             <p className="text-xs text-text-tertiary">{detail.disclaimer}</p>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { BiodiversityFeaturedSpeciesDto } from '@/modules/biodiversity/biodiversity-visual.types'
 import { Badge } from '@/shared/components/Badge'
 import { cn } from '@/shared/utils/cn'
+import { biodiversityProviderLabel } from '@/modules/biodiversity/utils/biodiversity-labels'
 
 interface BiodiversityFeaturedSpeciesProps {
   species: BiodiversityFeaturedSpeciesDto[]
@@ -91,7 +92,7 @@ function FeaturedSpeciesCard({
         <p className="mt-1 text-[10px] text-text-tertiary">
           {item.taxonomicGroupLabel} · {item.primaryZoneName}
         </p>
-        <p className="mt-1 text-[10px] text-text-tertiary uppercase">{item.source}</p>
+        <p className="mt-1 text-[10px] text-text-tertiary">{biodiversityProviderLabel(item.source)}</p>
       </div>
     </button>
   )

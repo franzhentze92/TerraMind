@@ -13,6 +13,8 @@ import {
   verificationNeedTypeLabel,
   verificationPlanStatusLabel,
 } from '../utils/verification-labels'
+import { domainLabel } from '@/modules/priorities/utils/priority-labels'
+import { ClassificationBadge } from '@/modules/executive-metrics/components/ClassificationBadge'
 import { cn } from '@/shared/utils/cn'
 import { useCanonicalOperationalCounts } from '@/shared/hooks/useCanonicalOperationalCounts'
 
@@ -66,15 +68,19 @@ export function VerificationsPage() {
             className="block rounded-lg border border-border-subtle bg-surface-2/30 p-4 hover:border-accent/40"
           >
             <div className="flex flex-wrap items-start justify-between gap-2">
-              <div>
+              <div className="min-w-0">
                 <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-                  Incidente · prioridad {item.plan_priority}
-                </p>
-                <h3 className="text-sm font-semibold text-text-primary">
                   {item.primary_need_type
                     ? verificationNeedTypeLabel(item.primary_need_type)
-                    : 'Sin necesidad principal'}
+                    : 'Verificación'}{' '}
+                  · prioridad {item.plan_priority}
+                </p>
+                <h3 className="text-sm font-semibold text-text-primary">
+                  {item.incident_display_name ?? 'Incidente'}
                 </h3>
+                <p className="mt-0.5 text-xs text-text-secondary">
+                  {item.domain ? domainLabel(item.domain) : 'Ubicación no disponible'}
+                </p>
                 {item.recommended_method_label && (
                   <p className="mt-1 text-xs text-text-secondary">
                     {item.recommended_method_label}
@@ -83,14 +89,31 @@ export function VerificationsPage() {
                 )}
               </div>
               <div className="flex flex-wrap gap-1.5">
+                {item.classification && <ClassificationBadge classification={item.classification} />}
                 <Badge variant="default">{verificationPlanStatusLabel(item.status)}</Badge>
                 {item.requires_field && <Badge variant="default">Campo</Badge>}
               </div>
             </div>
-            <p className="mt-2 text-xs text-text-tertiary">
-              {item.needs_count} necesidad(es) · ventana{' '}
-              {(item.recommended_window as { end_hours?: number })?.end_hours ?? '—'}h
-            </p>
+
+            {item.status === 'not_required' ? (
+              <p className="mt-2 text-xs text-text-tertiary">
+                No se requiere verificación adicional: el contexto remoto actual es suficiente para las
+                preguntas abiertas.
+              </p>
+            ) : item.primary_need_question ? (
+              <p className="mt-2 text-xs text-text-secondary">
+                <span className="text-text-tertiary">Pregunta activa: </span>
+                {item.primary_need_question}
+              </p>
+            ) : null}
+
+            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs text-text-tertiary">
+                {item.needs_count} pregunta(s) activa(s) · ventana{' '}
+                {(item.recommended_window as { end_hours?: number })?.end_hours ?? '—'}h
+              </p>
+              <span className="text-xs text-accent">Ver incidente →</span>
+            </div>
           </Link>
         ))}
 

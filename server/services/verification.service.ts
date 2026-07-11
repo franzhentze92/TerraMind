@@ -10,6 +10,15 @@ import {
 } from '@/pipeline/stores/verification-plans.store'
 import { getIncidentById } from '@/pipeline/stores/incidents.store'
 import { filterRowsByActiveOrganization } from '../auth/tenant-list-scope.js'
+import { buildIncidentDisplayName } from '@/modules/incidents/utils/incident-display-name'
+import { isInternalDemoIncidentId } from '@/modules/executive-demo/demo-config'
+
+function classifyPlanIncident(incident: { id: string; organization_id?: string | null } | null): 'operational' | 'legacy' | 'demo' {
+  if (!incident) return 'operational'
+  if (isInternalDemoIncidentId(String(incident.id))) return 'demo'
+  if ((incident.organization_id ?? null) == null) return 'legacy'
+  return 'operational'
+}
 
 export async function listVerificationPlansDto(
   filters: {
@@ -58,6 +67,15 @@ export async function listVerificationPlansDto(
       id: plan.id,
       incident_id: plan.incident_id,
       incident_status: incident?.status ?? null,
+      incident_type: incident?.incident_type ?? null,
+      incident_display_name: incident
+        ? buildIncidentDisplayName({
+            incident_type: String(incident.incident_type),
+            status: String(incident.status),
+            event_count: Number(incident.event_count),
+          })
+        : null,
+      classification: classifyPlanIncident(incident),
       domain: incident?.domain ?? (plan.incident_snapshot as { domain?: string }).domain,
       status: plan.status,
       plan_priority: plan.plan_priority,

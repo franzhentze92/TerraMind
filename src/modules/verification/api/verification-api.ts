@@ -1,7 +1,12 @@
+import { authFetch } from '@/core/auth/auth-fetch'
+
 export interface VerificationPlanSummaryDto {
   id: string
   incident_id: string
   incident_status: string | null
+  incident_type?: string | null
+  incident_display_name?: string | null
+  classification?: 'operational' | 'legacy' | 'demo'
   domain: string | null
   status: string
   plan_priority: number
@@ -20,7 +25,7 @@ export interface VerificationPlanSummaryDto {
 }
 
 async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(path, { credentials: 'include' })
+  const res = await authFetch(path)
   if (!res.ok) throw new Error(`API error ${res.status}`)
   return res.json() as Promise<T>
 }

@@ -34,6 +34,7 @@ import type {
   BiodiversityObservationVisual,
 } from '@/modules/biodiversity/biodiversity-visual.types'
 import { biodiversityVisualStatusMessage } from '@/modules/biodiversity/biodiversity-visual-status'
+import { biodiversityProviderLabel } from '@/modules/biodiversity/utils/biodiversity-labels'
 
 const MAP_LAYERS: Array<{ id: BiodiversityMapLayer; label: string }> = [
   { id: 'richness', label: 'Riqueza' },
@@ -136,7 +137,7 @@ export function BiodiversityAnalysisPage() {
                   value={data.national_summary.observations_count}
                   hint={
                     data.national_summary.truncated
-                      ? 'Muestra truncada por límite'
+                      ? 'Límite de consulta alcanzado (no es un error): se muestra una parte de la muestra'
                       : 'En la ventana seleccionada'
                   }
                 />
@@ -305,7 +306,7 @@ export function BiodiversityAnalysisPage() {
                       key={s.provider}
                       className="flex items-center justify-between text-xs text-text-secondary"
                     >
-                      <span className="uppercase">{s.provider}</span>
+                      <span>{biodiversityProviderLabel(s.provider)}</span>
                       <span>
                         {s.records} reg. · {s.reachable ? 'OK' : 'no disponible'}
                       </span>

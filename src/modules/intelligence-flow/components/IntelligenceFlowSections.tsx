@@ -13,14 +13,15 @@ export function IntelligenceFlowSections({
   const flowQuery = useIntelligenceFlow(resourceType, resourceId)
 
   return (
-    <div className="mb-6 space-y-4">
+    <div className="mt-4 space-y-4" data-testid="intelligence-flow-sections">
+      <IntelligenceFlowActionsPanel flow={flowQuery.data} />
       <IntelligenceFlowNavigator
+        collapsible
         flow={flowQuery.data}
         isLoading={flowQuery.isLoading}
         isError={flowQuery.isError}
         onRetry={() => flowQuery.refetch()}
       />
-      <IntelligenceFlowActionsPanel flow={flowQuery.data} />
     </div>
   )
 }

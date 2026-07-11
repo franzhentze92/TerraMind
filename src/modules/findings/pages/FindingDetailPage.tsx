@@ -5,6 +5,7 @@ import { useFindingDetail } from '../hooks/useFindings'
 import {
   findingConfidenceLabel,
   findingDomainLabel,
+  findingRuleInterpretation,
   findingSeverityLabel,
   findingStatusLabel,
 } from '../utils/finding-labels'
@@ -40,8 +41,6 @@ export function FindingDetailPage() {
         updatedAt={formatGuatemalaDateTime(finding.generated_at)}
       />
 
-      <IntelligenceFlowSections resourceType="finding" resourceId={findingId} />
-
       <div className="mb-4 flex flex-wrap gap-2">
         <Badge variant="default">{findingSeverityLabel(finding.severity_label)}</Badge>
         <Badge variant="default">{findingConfidenceLabel(finding.confidence.level)}</Badge>
@@ -63,9 +62,17 @@ export function FindingDetailPage() {
           </h2>
           <ul className="mt-2 list-disc pl-4 text-sm text-text-secondary">
             {finding.triggered_rules.map((r) => (
-              <li key={r}>{r}</li>
+              <li key={r}>{findingRuleInterpretation(r)}</li>
             ))}
           </ul>
+          {finding.triggered_rules.length > 0 && (
+            <details className="mt-3 text-xs text-text-tertiary">
+              <summary className="cursor-pointer select-none">Detalle técnico</summary>
+              <p className="mt-1">
+                Reglas aplicadas: {finding.triggered_rules.join(', ')}
+              </p>
+            </details>
+          )}
         </section>
       </div>
 
@@ -94,8 +101,18 @@ export function FindingDetailPage() {
           Confianza y limitaciones
         </h2>
         <p className="mt-2 text-sm text-text-secondary">
-          Confianza: {findingConfidenceLabel(finding.confidence.level)} ({finding.confidence.reasons.length} factores)
+          Confianza: {findingConfidenceLabel(finding.confidence.level)}
+          {finding.confidence.reasons.length > 0
+            ? ` · ${finding.confidence.reasons.length} ${finding.confidence.reasons.length === 1 ? 'factor considerado' : 'factores considerados'}`
+            : ' · basada en reglas base de contexto territorial'}
         </p>
+        {finding.confidence.reasons.length > 0 && (
+          <ul className="mt-1 list-disc pl-4 text-xs text-text-tertiary">
+            {finding.confidence.reasons.map((reason) => (
+              <li key={reason}>{reason}</li>
+            ))}
+          </ul>
+        )}
         <ul className="mt-2 list-disc pl-4 text-sm text-text-secondary">
           {finding.limitations.map((l) => (
             <li key={l}>{l}</li>
@@ -125,9 +142,11 @@ export function FindingDetailPage() {
         </Link>
       )}
 
+      <IntelligenceFlowSections resourceType="finding" resourceId={findingId} />
+
       <details className="mt-4 text-xs text-text-tertiary">
         <summary className="cursor-pointer">Ver metodología técnica</summary>
-        <p className="mt-2">Rule set {finding.rule_set_version}</p>
+        <p className="mt-2">Conjunto de reglas {finding.rule_set_version}</p>
       </details>
     </div>
   )
