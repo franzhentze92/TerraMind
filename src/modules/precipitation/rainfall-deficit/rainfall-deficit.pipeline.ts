@@ -15,6 +15,17 @@ import {
 } from '@/modules/precipitation/chirps-v3/chirps-pentad.calendar'
 import type { RainfallDeficitObservation } from '@/modules/precipitation/chirps-v3/chirps-v3.observations'
 import { computeWindowMetrics } from '@/modules/precipitation/rainfall-deficit/rainfall-deficit.climatology'
+import {
+  isClimatologyAvailable,
+  loadClimatologyDataset,
+  windowSamplesForCell,
+  type ClimatologyDataset,
+} from '@/modules/precipitation/chirps-v3/chirps-climatology.query'
+import {
+  buildMunicipalContext,
+  municipalitiesForCells,
+  type MunicipalContext,
+} from '@/modules/precipitation/rainfall-deficit/rainfall-deficit.municipal-context'
 import { clusterCandidateCells } from '@/modules/precipitation/rainfall-deficit/rainfall-deficit.cluster'
 import {
   CANONICAL_WINDOW_KEY,
@@ -34,6 +45,8 @@ import type { ChirpsGridCell } from '@/modules/precipitation/chirps-v3/chirps-gr
 export interface PentadGridSeries {
   /** pentadKey → cellKey → mm */
   byPentad: Map<string, Map<string, number>>
+  /** cellKey → cell center (lat/lon) recovered from observation geometry. */
+  cellMeta: Map<string, { lat: number; lon: number }>
   refs: ChirpsPentadRef[]
 }
 
@@ -45,10 +58,25 @@ function pentadKey(ref: ChirpsPentadRef): string {
   return `${ref.year}-${ref.month}-${ref.pentad}`
 }
 
+function polygonCenter(geometry: RainfallDeficitObservation['geometry']): { lat: number; lon: number } | undefined {
+  if (!geometry || geometry.type !== 'Polygon') return undefined
+  const ring = (geometry.coordinates as number[][][])[0]
+  if (!ring || ring.length === 0) return undefined
+  let lon = 0
+  let lat = 0
+  const n = ring.length
+  for (const [x, y] of ring) {
+    lon += x!
+    lat += y!
+  }
+  return { lat: lat / n, lon: lon / n }
+}
+
 export function buildPentadSeriesFromObservations(
   observations: RainfallDeficitObservation[],
 ): PentadGridSeries {
   const byPentad = new Map<string, Map<string, number>>()
+  const cellMeta = new Map<string, { lat: number; lon: number }>()
   const refSet = new Map<string, ChirpsPentadRef>()
 
   for (const obs of observations) {
@@ -67,12 +95,16 @@ export function buildPentadSeriesFromObservations(
     const ck = cellKey(row, col)
     if (!byPentad.has(pk)) byPentad.set(pk, new Map())
     byPentad.get(pk)!.set(ck, a.precipitationMm)
+    if (!cellMeta.has(ck)) {
+      const center = polygonCenter(obs.geometry)
+      if (center) cellMeta.set(ck, center)
+    }
   }
 
   const refs = [...refSet.values()].sort((a, b) =>
     `${a.year}${a.month}${a.pentad}`.localeCompare(`${b.year}${b.month}${b.pentad}`),
   )
-  return { byPentad, refs }
+  return { byPentad, cellMeta, refs }
 }
 
 function sumWindowForCell(
@@ -113,14 +145,33 @@ export interface CellCandidate {
   consecutivePentads: number
 }
 
+function endSlotFromRefs(windowRefs: ChirpsPentadRef[]): number | undefined {
+  const last = windowRefs.at(-1)
+  if (!last) return undefined
+  return (last.month - 1) * 6 + last.pentad
+}
+
+function buildClimatologyIndex(ds: ClimatologyDataset): Map<string, number> {
+  const idx = new Map<string, number>()
+  for (let i = 0; i < ds.grid.cells.length; i++) {
+    const c = ds.grid.cells[i]!
+    idx.set(cellKey(c.row, c.col), i)
+  }
+  return idx
+}
+
 export function findCellCandidates(
   series: PentadGridSeries,
   endDate: Date,
   cellConsecutive: Record<string, number>,
+  climatology?: ClimatologyDataset | null,
 ): { candidates: CellCandidate[]; nextConsecutive: Record<string, number> } {
   const windowRefs30 = pentadsForWindow(endDate, RAINFALL_DEFICIT_WINDOWS.days30.days)
   const windowRefs15 = pentadsForWindow(endDate, RAINFALL_DEFICIT_WINDOWS.days15.days)
   const windowRefs60 = pentadsForWindow(endDate, RAINFALL_DEFICIT_WINDOWS.days60.days)
+
+  const climIndex = climatology ? buildClimatologyIndex(climatology) : undefined
+  const endSlot = endSlotFromRefs(windowRefs30)
 
   const allCells = new Set<string>()
   for (const m of series.byPentad.values()) {
@@ -133,7 +184,22 @@ export function findCellCandidates(
   for (const ck of allCells) {
     const [row, col] = ck.split(',').map(Number)
     const observed30 = sumWindowForCell(series, windowRefs30, ck)
-    const hist30 = historicalSamplesForCell(series, windowRefs30, ck)
+
+    // Prefer the pre-built 1991–2020 climatology; fall back to in-series baseline.
+    let hist30: number[] | undefined
+    if (climatology && climIndex && endSlot !== undefined) {
+      const cellIdx = climIndex.get(ck)
+      if (cellIdx !== undefined) {
+        hist30 = windowSamplesForCell(
+          climatology,
+          cellIdx,
+          endSlot,
+          RAINFALL_DEFICIT_WINDOWS.days30.pentads,
+        ).samples
+      }
+    }
+    if (!hist30) hist30 = historicalSamplesForCell(series, windowRefs30, ck)
+
     const metrics30 = computeWindowMetrics(
       observed30,
       hist30,
@@ -141,6 +207,7 @@ export function findCellCandidates(
       RAINFALL_DEFICIT_WINDOWS.days30.pentads,
     )
     const decision = evaluateCandidateDecision(ck, metrics30, hist30, cellConsecutive[ck] ?? 0)
+    const meta = series.cellMeta.get(ck)
     if (decision.isCandidate) {
       const prev = cellConsecutive[ck] ?? 0
       nextConsecutive[ck] = prev + 1
@@ -148,8 +215,8 @@ export function findCellCandidates(
         cell: {
           row: row!,
           col: col!,
-          lat: 0,
-          lon: 0,
+          lat: meta?.lat ?? 0,
+          lon: meta?.lon ?? 0,
           precipitationMm: observed30,
           isNoData: false,
         },
@@ -188,6 +255,7 @@ export function buildEventsFromCandidates(
   existing: RainfallDeficitEnvironmentalEvent[],
   endDate: Date,
   productStatus: 'preliminary' | 'final',
+  municipalContext?: MunicipalContext | null,
 ): RainfallDeficitEnvironmentalEvent[] {
   const clusters = clusterCandidateCells(candidates.map((c) => c.cell))
   const now = endDate.toISOString()
@@ -202,6 +270,10 @@ export function buildEventsFromCandidates(
     const intensity = classifyIntensity(metrics30, maxPentads, false)
     const eventId = `rainfall_deficit_${cluster.id}_${CANONICAL_WINDOW_KEY}`
     const prev = existing.find((e) => e.id === eventId)
+
+    const municipal = municipalContext
+      ? municipalitiesForCells(municipalContext, cluster.cells)
+      : undefined
 
     const lifecycle = resolveLifecycle({
       previous: prev?.lifecycleState,
@@ -231,6 +303,9 @@ export function buildEventsFromCandidates(
         persistenceDays: maxPentads * 5,
         affectedAreaKm2: cluster.areaKm2,
         affectedCellCount: cluster.cellCount,
+        municipalityCount: municipal?.municipalityCount,
+        departmentCount: municipal?.departmentCount,
+        municipalityNames: municipal?.names,
         currentProductStatus: productStatus,
         sourceVersion: CHIRPS_V3_SOURCE_VERSION,
         timestep: 'pentad',
@@ -276,16 +351,28 @@ export function runDetectionPipeline(input: {
   existingEvents: RainfallDeficitEnvironmentalEvent[]
   cellConsecutive: Record<string, number>
   endDate?: Date
+  /** Inject climatology/municipal context (defaults: auto-load if available). */
+  climatology?: ClimatologyDataset | null
+  municipalContext?: MunicipalContext | null
+  useStoredClimatology?: boolean
 }): {
   events: RainfallDeficitEnvironmentalEvent[]
   nextConsecutive: Record<string, number>
 } {
   const endDate = input.endDate ?? new Date()
   const series = buildPentadSeriesFromObservations(input.observations)
+
+  const useStored = input.useStoredClimatology ?? true
+  const climatology =
+    input.climatology ?? (useStored && isClimatologyAvailable() ? loadClimatologyDataset() : null)
+  const municipalContext =
+    input.municipalContext ?? (climatology ? buildMunicipalContext(climatology.grid) : null)
+
   const { candidates, nextConsecutive } = findCellCandidates(
     series,
     endDate,
     input.cellConsecutive,
+    climatology,
   )
   const productStatus =
     input.observations.some((o) => o.attributes.productStatus === 'preliminary')
@@ -296,6 +383,7 @@ export function runDetectionPipeline(input: {
     input.existingEvents,
     endDate,
     productStatus,
+    municipalContext,
   )
   return { events, nextConsecutive }
 }

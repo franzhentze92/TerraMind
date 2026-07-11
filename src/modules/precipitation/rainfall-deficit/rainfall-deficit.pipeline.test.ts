@@ -53,6 +53,7 @@ describe('rainfall deficit pipeline', () => {
       existingEvents: [],
       cellConsecutive: {},
       endDate: new Date('2024-03-31'),
+      useStoredClimatology: false,
     })
     expect(events.length).toBe(0)
   })
@@ -77,6 +78,7 @@ describe('rainfall deficit pipeline', () => {
       existingEvents: [],
       cellConsecutive: { '0,0': 2, '0,1': 2, '1,0': 2, '1,1': 2 },
       endDate: new Date('2024-05-31'),
+      useStoredClimatology: false,
     })
     expect(events.length).toBeGreaterThan(0)
     expect(events[0]!.attributes.windows.days30.relativeDeficitPercent).toBeGreaterThan(30)
@@ -90,12 +92,14 @@ describe('rainfall deficit pipeline', () => {
       existingEvents: [],
       cellConsecutive: {},
       endDate: new Date('2024-06-05'),
+      useStoredClimatology: false,
     })
     const second = runDetectionPipeline({
       observations: obs,
       existingEvents: first.events,
       cellConsecutive: first.nextConsecutive,
       endDate: new Date('2024-06-05'),
+      useStoredClimatology: false,
     })
     expect(second.events.length).toBe(first.events.length)
   })

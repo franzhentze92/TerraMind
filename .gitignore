@@ -43,6 +43,11 @@ data/climate/chirps/**/raw/
 data/climate/chirps/**/processed/
 data/climate/chirps/**/_diag/
 data/climate/chirps/**/*.tif
+data/climate/chirps/**/climatology/pentads/
+data/climate/chirps/**/climatology/climatology.bin
+data/climate/chirps/**/climatology/climatology.meta.json
+data/climate/chirps/**/climatology/grid.json
+data/climate/chirps/**/climatology/_checkpoint.json
 
 artifacts/review/
 review-output.json

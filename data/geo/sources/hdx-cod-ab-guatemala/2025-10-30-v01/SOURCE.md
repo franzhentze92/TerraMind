@@ -28,6 +28,7 @@ Atribución requerida al usar o redistribuir:
 | `gtm_admin_boundaries.geojson.zip` | `f178eda98c46329380bdbb43f0637b4c43535bc843de6a0b8b960193b8f4363f` |
 | `extracted/gtm_admin0.geojson` | `5fdf634557291e46f917c4f4151dbcf984a295d1ddffc257cc9826800e6539b9` |
 | `extracted/gtm_admin1.geojson` | `a2c65090aad6932f526f10b818ff671346ea0f2b21e0c73618e4c2755565adf7` |
+| `extracted/gtm_admin2.geojson` | `faaf1922df4ac0c5c43f3d7255a7551369294fef1d008ac52dc4de9b7bbb3144` |
 
 ## Niveles administrativos usados (Commit 3A)
 
@@ -35,7 +36,23 @@ Atribución requerida al usar o redistribuir:
 |-------|---------|------------|---------------|
 | ADM0 | `gtm_admin0.geojson` | 1 | `geo_countries` (GT) |
 | ADM1 | `gtm_admin1.geojson` | 22 | `geo_departments` |
-| ADM2 | `gtm_admin2.geojson` | 342 | **No importado** (Commit 3B) |
+| ADM2 | `gtm_admin2.geojson` | 342 | **Agregación municipal** de déficit de precipitación (Rainfall Deficit Activation) |
+
+## ADM2 — agregación municipal (Rainfall Deficit)
+
+- Importación **no destructiva**: el archivo `extracted/gtm_admin2.geojson` ya estaba
+  versionado en el repositorio (misma fuente oficial HDX COD-AB que ADM1); solo se
+  re-extrajo a disco. No se modificó ADM0 ni ADM1.
+- 342 features = 340 municipios + tratamiento especial de 2 lagos (Amatitlán, Atitlán).
+  341 `Polygon` + 1 `MultiPolygon`.
+- Campos usados: `adm2_pcode` (GT + 4 dígitos), `adm2_name`, `adm1_pcode`, `adm1_name`,
+  `area_sqkm`, `center_lat`, `center_lon`.
+- Uso: asignación celda CHIRPS → municipio por punto-en-polígono (con soporte de huecos
+  y multipartes) y agregación **ponderada por área** (coseno de latitud). Los percentiles
+  se calculan a nivel municipal a partir de la serie municipal acumulada; **nunca** se
+  promedian percentiles por celda.
+- Municipios sin centro de celda (muy pequeños/slivers) usan la celda más cercana como
+  respaldo y se marcan como baja cobertura.
 
 ## CRS
 
