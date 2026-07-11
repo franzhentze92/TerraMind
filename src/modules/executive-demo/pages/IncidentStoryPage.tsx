@@ -1,16 +1,30 @@
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ModuleHeader } from '@/shared/components'
+import { PageHeader } from '@/shared/components/PageHeader'
 import { useIncidentStory } from '../hooks/useExecutiveDemo'
 import { IncidentStoryTimeline } from '../components/StoryTimeline'
 import { DemoBanner } from '../components/ExecutiveDashboardPanels'
 import { incidentReportPdfUrl } from '../api/executive-demo-api'
+import { useIncidentDetail } from '@/modules/incidents/hooks/useIncidents'
+import { buildIncidentBreadcrumbLabel, buildIncidentDisplayName } from '@/modules/incidents/utils/incident-display-name'
+import { IntelligenceFlowSections } from '@/modules/intelligence-flow/components/IntelligenceFlowSections'
 
 export function IncidentStoryPage() {
   const { incidentId } = useParams()
   const [includeDemo, setIncludeDemo] = useState(true)
   const query = useIncidentStory(incidentId, includeDemo)
+  const incidentQuery = useIncidentDetail(incidentId)
   const story = query.data
+  const incident = incidentQuery.data
+
+  const displayName = incident
+    ? buildIncidentDisplayName({
+        incident_type: String(incident.incident_type ?? ''),
+        lifecycle_state: String(incident.lifecycle_state ?? ''),
+        department_name: incident.department_name as string | null,
+        event_count: Number(incident.event_count ?? 1),
+      })
+    : 'Historia del incidente'
 
   if (query.isLoading) {
     return <p className="p-6 text-sm text-text-tertiary">Cargando historia del incidente…</p>
@@ -31,11 +45,28 @@ export function IncidentStoryPage() {
   }
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto p-4 md:p-6">
-      <ModuleHeader
-        title="Historia del incidente"
-        description="Narrativa cronológica · observación → respuesta"
+    <div className="flex h-full flex-col overflow-y-auto p-4 md:p-6" data-testid="incident-story-page">
+      <PageHeader
+        title={displayName}
+        subtitle="Narrativa cronológica · observación → respuesta"
+        breadcrumbs={[
+          { label: 'Situación Nacional', to: '/situacion' },
+          { label: 'Incidentes', to: '/incidentes' },
+          {
+            label: incident
+              ? buildIncidentBreadcrumbLabel({
+                  incident_type: String(incident.incident_type ?? ''),
+                  lifecycle_state: String(incident.lifecycle_state ?? ''),
+                  department_name: incident.department_name as string | null,
+                  event_count: Number(incident.event_count ?? 1),
+                })
+              : 'Historia',
+          },
+          { label: 'Historia' },
+        ]}
       />
+
+      <IntelligenceFlowSections resourceType="incident" resourceId={incidentId} />
 
       <div className="mb-4 flex flex-wrap items-center gap-3">
         <label className="flex items-center gap-2 text-sm text-text-secondary">

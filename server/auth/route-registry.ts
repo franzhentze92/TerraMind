@@ -151,6 +151,18 @@ export const OPERATIONAL_ROUTE_REGISTRY: OperationalRouteSpec[] = [
     status: 'protected',
     routeFile: 'findings.ts',
   },
+  {
+    method: 'GET',
+    path: '/api/intelligence-flow/:resourceType/:resourceId',
+    resource: 'intelligence_flow',
+    permission: 'incidents.view',
+    authorizer: 'authorizeIncidentAccess',
+    tenantPath: 'incident.organization_id',
+    usesServiceRole: true,
+    rateLimit: 'default_read',
+    status: 'protected',
+    routeFile: 'intelligence-flow.ts',
+  },
   // Intelligence — priorities
   {
     method: 'GET',

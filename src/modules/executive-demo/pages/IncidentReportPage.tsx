@@ -1,9 +1,10 @@
 import { Link, useParams } from 'react-router-dom'
-import { ModuleHeader } from '@/shared/components'
+import { PageHeader } from '@/shared/components/PageHeader'
 import { useIncidentReport } from '../hooks/useExecutiveDemo'
 import { IncidentStoryTimeline } from '../components/StoryTimeline'
 import { DemoBanner } from '../components/ExecutiveDashboardPanels'
 import { incidentReportPdfUrl } from '../api/executive-demo-api'
+import { IntelligenceFlowSections } from '@/modules/intelligence-flow/components/IntelligenceFlowSections'
 
 export function IncidentReportPage() {
   const { incidentId } = useParams()
@@ -18,7 +19,18 @@ export function IncidentReportPage() {
   }
 
   return (
-    <div className="executive-report overflow-y-auto p-4 md:p-8">
+    <div className="executive-report overflow-y-auto p-4 md:p-8" data-testid="incident-report-page">
+      <PageHeader
+        title={report.title}
+        subtitle={`Clasificación: ${report.classification}`}
+        breadcrumbs={[
+          { label: 'Situación Nacional', to: '/situacion' },
+          { label: 'Informes', to: '/informes' },
+          { label: report.title.slice(0, 48) },
+        ]}
+      />
+      {report.story.is_internal_demo && <DemoBanner />}
+      <IntelligenceFlowSections resourceType="incident" resourceId={incidentId} />
       <div className="mb-4 flex flex-wrap gap-2 print:hidden">
         <a
           href={incidentReportPdfUrl(incidentId!, true)}
@@ -30,12 +42,7 @@ export function IncidentReportPage() {
           Ver historia
         </Link>
       </div>
-
-      <header className="mb-6 border-b border-border-subtle pb-4">
-        <ModuleHeader title={report.title} description={`Clasificación: ${report.classification}`} />
-        {report.story.is_internal_demo && <DemoBanner />}
-        <p className="text-sm text-text-secondary">{report.story.coverage.label}</p>
-      </header>
+      <p className="mb-6 text-sm text-text-secondary">{report.story.coverage.label}</p>
 
       {report.sections.map((s) => (
         <section key={s.id} className="mb-6">

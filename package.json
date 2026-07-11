@@ -79,6 +79,7 @@
     "product-truth:audit": "tsx scripts/product-truth-audit.ts",
     "product-navigation:audit": "tsx scripts/product-navigation-audit.ts",
     "national-situation:audit": "tsx scripts/national-situation-audit.ts",
+    "intelligence-flow:audit": "tsx scripts/intelligence-flow-audit.ts",
     "auth:bootstrap-admin": "tsx scripts/bootstrap-platform-admin.ts",
     "auth:activation-8b7f4": "tsx scripts/auth-activation-8b7f4.ts",
     "field-sync:pilot-preflight": "tsx scripts/field-sync-pilot.ts --mode=preflight",

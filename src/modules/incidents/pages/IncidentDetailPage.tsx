@@ -25,6 +25,7 @@ import { IncidentMissionsSection } from '@/modules/missions/components/IncidentM
 import { useResponseDetail } from '@/modules/response-orchestration/hooks/useResponseOrchestration'
 import { ResponseStatusBadge } from '@/modules/response-orchestration/components/ResponseStatusBadge'
 import { useHasPermission } from '@/core/auth/AuthProvider'
+import { IntelligenceFlowSections } from '@/modules/intelligence-flow/components/IntelligenceFlowSections'
 
 export function IncidentDetailPage() {
   const { incidentId } = useParams()
@@ -65,6 +66,7 @@ export function IncidentDetailPage() {
         title={displayName}
         subtitle={incidentTypeLabel(String(detail.incident_type))}
         breadcrumbs={[
+          { label: 'Situación Nacional', to: '/situacion' },
           { label: 'Incidentes', to: '/incidentes' },
           { label: breadcrumbLabel },
         ]}
@@ -85,6 +87,8 @@ export function IncidentDetailPage() {
           </div>
         }
       />
+
+      <IntelligenceFlowSections resourceType="incident" resourceId={incidentId} />
 
       <div className="mb-4 mt-2">
         <StageNavigationLinks
@@ -158,13 +162,13 @@ export function IncidentDetailPage() {
       )}
 
       {incidentId && (
-        <section className="mb-6">
+        <section className="mb-6" id="verificacion">
           <VerificationPlanSection incidentId={incidentId} />
         </section>
       )}
 
       {incidentId && (
-        <section className="mb-6">
+        <section className="mb-6" id="resolucion">
           <IncidentVerificationResolutionSection incidentId={incidentId} />
         </section>
       )}

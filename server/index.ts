@@ -31,6 +31,7 @@ import { handleExecutiveDashboardRoutes } from './routes/executive-dashboard.js'
 import { handleExecutiveMetricsRoutes } from './routes/executive-metrics.js'
 import { handleIncidentStoryRoutes } from './routes/incident-story.js'
 import { handleReportsRoutes } from './routes/reports.js'
+import { handleIntelligenceFlowRoutes } from './routes/intelligence-flow.js'
 
 config({ path: resolve(process.cwd(), '.env') })
 
@@ -71,6 +72,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
   if (await handleExecutiveDashboardRoutes(req, res, pathname, url.searchParams)) return
   if (await handleIncidentStoryRoutes(req, res, pathname, url.searchParams)) return
   if (await handleReportsRoutes(req, res, pathname, url.searchParams)) return
+  if (await handleIntelligenceFlowRoutes(req, res, pathname)) return
 
   if (pathname === '/api/health' && req.method === 'GET') {
     jsonResponse(req, res, { status: 'ok', service: 'terramind-pipeline' })

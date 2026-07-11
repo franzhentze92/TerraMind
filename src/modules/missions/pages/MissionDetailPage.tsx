@@ -1,5 +1,5 @@
 import { Link, useParams } from 'react-router-dom'
-import { ModuleHeader } from '@/shared/components'
+import { PageHeader } from '@/shared/components/PageHeader'
 import { Badge } from '@/shared/components/Badge'
 import { useMissionDetail } from '../hooks/useMissions'
 import { missionStatusLabel, missionTypeLabel } from '../utils/mission-labels'
@@ -8,6 +8,7 @@ import { MissionWorkflowActions } from '../components/MissionWorkflowActions'
 import { MissionEvidenceSection } from '@/modules/evidence/components/MissionEvidenceSection'
 import { MissionResolutionContributionsSection } from '@/modules/verification/components/MissionResolutionContributionsSection'
 import { OfflinePackageSection } from '@/modules/field-operations/offline-packages/components/OfflinePackageSection'
+import { IntelligenceFlowSections } from '@/modules/intelligence-flow/components/IntelligenceFlowSections'
 
 export function MissionDetailPage() {
   const { missionId } = useParams()
@@ -27,11 +28,18 @@ export function MissionDetailPage() {
   const transitions = (mission.transitions as Array<Record<string, unknown>> | undefined) ?? []
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto p-6">
-      <ModuleHeader
+    <div className="flex h-full flex-col overflow-y-auto p-6" data-testid="mission-detail-page">
+      <PageHeader
         title={String(mission.title)}
-        description={missionTypeLabel(String(mission.mission_type))}
+        subtitle={missionTypeLabel(String(mission.mission_type))}
+        breadcrumbs={[
+          { label: 'Situación Nacional', to: '/situacion' },
+          { label: 'Misiones', to: '/misiones' },
+          { label: String(mission.title).slice(0, 48) },
+        ]}
       />
+
+      <IntelligenceFlowSections resourceType="mission" resourceId={missionId} />
 
       <div className="mb-4 flex flex-wrap gap-2">
         <Badge variant="default">{missionStatusLabel(String(mission.status))}</Badge>
@@ -95,7 +103,9 @@ export function MissionDetailPage() {
         }
       />
 
-      <MissionEvidenceSection missionId={String(mission.id)} />
+      <section id="evidencia" className="scroll-mt-6">
+        <MissionEvidenceSection missionId={String(mission.id)} />
+      </section>
       <OfflinePackageSection
         missionId={String(mission.id)}
         missionTitle={String(mission.title)}

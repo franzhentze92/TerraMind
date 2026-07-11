@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
-import { useState } from 'react'
-import { ModuleHeader } from '@/shared/components'
+import { useMemo, useState } from 'react'
+import { PageHeader } from '@/shared/components/PageHeader'
 import { Badge } from '@/shared/components/Badge'
 import { useFindingsList } from '../hooks/useFindings'
 import {
@@ -22,13 +22,33 @@ function severityVariant(
 
 export function FindingsPage() {
   const [status, setStatus] = useState<string>('active')
-  const query = useFindingsList({ status: status || undefined })
+  const [severity, setSeverity] = useState<string>('')
+  const [findingType, setFindingType] = useState<string>('')
+  const [confidence, setConfidence] = useState<string>('')
+  const [department, setDepartment] = useState<string>('')
+
+  const query = useFindingsList({
+    status: status || undefined,
+    finding_type: findingType || undefined,
+    confidence: confidence || undefined,
+    department_code: department || undefined,
+  })
+
+  const items = useMemo(() => {
+    const raw = query.data?.items ?? []
+    if (!severity) return raw
+    return raw.filter((item) => item.severity_label === severity)
+  }, [query.data?.items, severity])
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto p-6">
-      <ModuleHeader
+    <div className="flex h-full flex-col overflow-y-auto p-6" data-testid="findings-page">
+      <PageHeader
         title="Hallazgos"
-        description="Interpretaciones compuestas derivadas de eventos y contextos persistidos, con evidencia trazable."
+        subtitle="Interpretaciones compuestas derivadas de eventos y contextos persistidos, con evidencia trazable."
+        breadcrumbs={[
+          { label: 'Situación Nacional', to: '/situacion' },
+          { label: 'Hallazgos' },
+        ]}
       />
 
       <div className="mb-4 flex flex-wrap gap-2">
@@ -49,13 +69,59 @@ export function FindingsPage() {
         ))}
       </div>
 
+      <div className="mb-4 grid gap-2 md:grid-cols-4">
+        <select
+          value={severity}
+          onChange={(e) => setSeverity(e.target.value)}
+          className="rounded-md border border-border-subtle bg-surface-1 px-2 py-1.5 text-xs text-text-primary"
+          aria-label="Filtrar por severidad"
+        >
+          <option value="">Todas las severidades</option>
+          {['attention', 'elevated_attention', 'monitoring'].map((s) => (
+            <option key={s} value={s}>
+              {findingSeverityLabel(s)}
+            </option>
+          ))}
+        </select>
+        <select
+          value={findingType}
+          onChange={(e) => setFindingType(e.target.value)}
+          className="rounded-md border border-border-subtle bg-surface-1 px-2 py-1.5 text-xs text-text-primary"
+          aria-label="Filtrar por categoría"
+        >
+          <option value="">Todas las categorías</option>
+          <option value="fire_activity">Actividad térmica</option>
+          <option value="land_cover_context">Contexto de cobertura</option>
+        </select>
+        <select
+          value={confidence}
+          onChange={(e) => setConfidence(e.target.value)}
+          className="rounded-md border border-border-subtle bg-surface-1 px-2 py-1.5 text-xs text-text-primary"
+          aria-label="Filtrar por confianza"
+        >
+          <option value="">Toda confianza</option>
+          {['high', 'medium', 'low'].map((c) => (
+            <option key={c} value={c}>
+              {findingConfidenceLabel(c)}
+            </option>
+          ))}
+        </select>
+        <input
+          value={department}
+          onChange={(e) => setDepartment(e.target.value)}
+          placeholder="Código departamento"
+          className="rounded-md border border-border-subtle bg-surface-1 px-2 py-1.5 text-xs text-text-primary"
+          aria-label="Filtrar por ubicación"
+        />
+      </div>
+
       {query.isLoading && <p className="text-sm text-text-tertiary">Cargando hallazgos…</p>}
       {query.isError && (
         <p className="text-sm text-confidence-low">No se pudieron cargar los hallazgos.</p>
       )}
 
       <div className="space-y-3">
-        {(query.data?.items ?? []).map((item) => (
+        {items.map((item) => (
           <Link
             key={item.id}
             to={`/hallazgos/${item.id}`}
@@ -84,10 +150,14 @@ export function FindingsPage() {
               {item.source_domains.map((d) => (
                 <span key={d}>{findingDomainLabel(d)}</span>
               ))}
+              <span>· Entidad {item.entity_type}</span>
             </div>
+            <p className="mt-2 text-[11px] text-accent/90">
+              Siguiente paso: abrir detalle para ver prioridad e incidente vinculados
+            </p>
           </Link>
         ))}
-        {!query.isLoading && (query.data?.items.length ?? 0) === 0 && (
+        {!query.isLoading && items.length === 0 && (
           <p className="text-sm text-text-tertiary">
             No hay hallazgos para los filtros seleccionados.
           </p>

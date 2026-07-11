@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import { useState } from 'react'
-import { ModuleHeader } from '@/shared/components'
+import { PageHeader } from '@/shared/components/PageHeader'
+import { OperationalEmptyState } from '@/shared/components/OperationalEmptyState'
 import { Badge } from '@/shared/components/Badge'
 import { useHasPermission } from '@/core/auth/AuthProvider'
 import {
@@ -12,6 +13,12 @@ import {
 import { ResponseStatusBadge } from '../components/ResponseStatusBadge'
 import { decisionStatusLabel, responseLevelLabel } from '../utils/response-status-labels'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
+import { useIncidentDetail } from '@/modules/incidents/hooks/useIncidents'
+import {
+  buildIncidentBreadcrumbLabel,
+  buildIncidentDisplayName,
+} from '@/modules/incidents/utils/incident-display-name'
+import { IntelligenceFlowSections } from '@/modules/intelligence-flow/components/IntelligenceFlowSections'
 
 function Section({ title, children, variant = 'default' }: { title: string; children: React.ReactNode; variant?: 'default' | 'recommended' | 'decision' }) {
   const border =
@@ -38,6 +45,7 @@ export function ResponseOrchestrationDetailPage() {
   const canModify = useHasPermission('responses.modify')
   const canReject = useHasPermission('responses.reject')
 
+  const incidentQuery = useIncidentDetail(incidentId)
   const [modifyOpen, setModifyOpen] = useState(false)
   const [modifiedDecision, setModifiedDecision] = useState('')
   const [rationale, setRationale] = useState('')
@@ -56,9 +64,12 @@ export function ResponseOrchestrationDetailPage() {
   if (data.ownership_unresolved) {
     return (
       <div className="p-6">
-        <ModuleHeader title="Ownership sin resolver" description="Este incidente no tiene organización asignada." />
+        <PageHeader
+          title="Organización pendiente"
+          subtitle="Este incidente no tiene organización asignada."
+        />
         <p className="mt-4 text-sm text-text-secondary">
-          No se generan assessments tenant-owned. Requiere revisión administrativa y estrategia de backfill.
+          No se genera evaluación de respuesta hasta asignar organización. Requiere revisión administrativa.
         </p>
         <Link to="/respuesta" className="mt-4 inline-block text-sm text-accent hover:underline">
           Volver al listado
@@ -71,19 +82,41 @@ export function ResponseOrchestrationDetailPage() {
   const decisionStatus = String(decision?.decision_status ?? 'recommended')
   const canActOnDecision = decisionId && !['superseded', 'cancelled'].includes(decisionStatus)
 
-  return (
-    <div className="flex h-full flex-col overflow-y-auto p-6">
-      <div className="mb-4 flex items-center gap-3">
-        <Link to="/respuesta" className="text-xs text-accent hover:underline">
-          ← Respuesta
-        </Link>
-        <ResponseStatusBadge badge={String(data.badge ?? 'pendiente_decision')} />
-      </div>
+  const incDetail = incidentQuery.data
+  const members = (incDetail?.members as Array<Record<string, unknown>> | undefined) ?? []
+  const primaryMember = members.find((m) => m.membership_role === 'primary') ?? members[0]
+  const displayName = incDetail
+    ? buildIncidentDisplayName({
+        incident_type: String(incDetail.incident_type),
+        status: String(incDetail.status),
+        event_count: Number(incDetail.event_count),
+        department_name: primaryMember?.department_name as string | null | undefined,
+        lifecycle_state: primaryMember?.lifecycle_state as string | null | undefined,
+      })
+    : 'Incidente'
+  const breadcrumbLabel = incDetail
+    ? buildIncidentBreadcrumbLabel({
+        incident_type: String(incDetail.incident_type),
+        department_name: primaryMember?.department_name as string | null | undefined,
+        lifecycle_state: primaryMember?.lifecycle_state as string | null | undefined,
+        event_count: Number(incDetail.event_count),
+      })
+    : 'Incidente'
 
-      <ModuleHeader
-        title={`Respuesta · incidente ${incidentId?.slice(0, 8)}…`}
-        description="Recomendación del motor y decisión humana están separadas. Ninguna acción de alto riesgo se autoejecuta."
+  return (
+    <div className="flex h-full flex-col overflow-y-auto p-6" data-testid="response-detail-page">
+      <PageHeader
+        title={`Respuesta · ${displayName}`}
+        subtitle="Recomendación de TerraMind y decisión humana están separadas."
+        breadcrumbs={[
+          { label: 'Situación Nacional', to: '/situacion' },
+          { label: 'Respuesta', to: '/respuesta' },
+          { label: breadcrumbLabel },
+        ]}
+        meta={<ResponseStatusBadge badge={String(data.badge ?? 'pendiente_decision')} />}
       />
+
+      <IntelligenceFlowSections resourceType="response" resourceId={incidentId} />
 
       <div className="mt-6 space-y-4">
         <Section title="1. Contexto del incidente">
@@ -102,7 +135,7 @@ export function ResponseOrchestrationDetailPage() {
           </p>
         </Section>
 
-        <Section title="3. Recomendación del motor" variant="recommended">
+        <Section title="Recomienda TerraMind" variant="recommended">
           {recommendation ? (
             <div className="space-y-2 text-sm">
               <p>
@@ -115,7 +148,11 @@ export function ResponseOrchestrationDetailPage() {
               <Badge variant="warning">Recomendación — no es decisión aprobada</Badge>
             </div>
           ) : (
-            <p className="text-sm text-text-tertiary">Sin assessment activo.</p>
+            <OperationalEmptyState
+              title="Sin evaluación de respuesta"
+              explanation="Aún no existe una evaluación de respuesta. Se generará después de resolver una verificación."
+              primaryCta={{ label: 'Ver incidente', to: `/incidentes/${incidentId}` }}
+            />
           )}
         </Section>
 
@@ -146,7 +183,7 @@ export function ResponseOrchestrationDetailPage() {
           </pre>
         </Section>
 
-        <Section title="7. Decisión humana" variant="decision">
+        <Section title="Decisión humana" variant="decision">
           {decision ? (
             <div className="space-y-2 text-sm">
               <p>
