@@ -1,6 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
-import { ModuleHeader } from '@/shared/components'
+import {
+  ModuleHeader,
+  FilterEmptyState,
+  OperationalEmptyState,
+  OperationalListSkeleton,
+  OperationalErrorState,
+} from '@/shared/components'
 import { Badge } from '@/shared/components/Badge'
 import { usePrioritiesList } from '../hooks/usePriorities'
 import {
@@ -25,8 +31,11 @@ export function PrioritiesPage() {
     attention_level: attentionLevel || undefined,
   })
 
+  const items = query.data?.items ?? []
+  const listEmpty = !query.isLoading && !query.isError && items.length === 0
+
   return (
-    <div className="flex h-full flex-col overflow-y-auto p-6">
+    <div className="flex h-full flex-col overflow-y-auto p-6" data-testid="priorities-page">
       <ModuleHeader
         title="Prioridades"
         description="Cola operacional de atención, verificación y acción derivada de hallazgos compuestos."
@@ -50,13 +59,18 @@ export function PrioritiesPage() {
         ))}
       </div>
 
-      {query.isLoading && <p className="text-sm text-text-tertiary">Cargando cola…</p>}
+      {query.isLoading && <OperationalListSkeleton />}
       {query.isError && (
-        <p className="text-sm text-confidence-low">No se pudo cargar la cola de prioridades.</p>
+        <OperationalErrorState
+          title="No se pudo cargar la cola de prioridades"
+          explanation="Verifica tu conexión e intenta de nuevo."
+          friendlyCode="PRI-LIST"
+          onRetry={() => void query.refetch()}
+        />
       )}
 
       <div className="space-y-3">
-        {(query.data?.items ?? []).map((item, index) => (
+        {items.map((item, index) => (
           <Link
             key={item.id}
             to={`/prioridades/${item.id}`}
@@ -106,12 +120,6 @@ export function PrioritiesPage() {
               </ul>
             )}
 
-            {item.priority_limitations.length > 0 && (
-              <p className="mt-2 text-[11px] text-text-tertiary line-clamp-1">
-                {item.priority_limitations[0]}
-              </p>
-            )}
-
             <div className="mt-2 flex flex-wrap gap-2 text-[10px] text-text-tertiary">
               {item.dominant_domains.map((d) => (
                 <span key={d}>{domainLabel(d)}</span>
@@ -119,8 +127,20 @@ export function PrioritiesPage() {
             </div>
           </Link>
         ))}
-        {!query.isLoading && (query.data?.items.length ?? 0) === 0 && (
-          <p className="text-sm text-text-tertiary">No hay evaluaciones de prioridad activas.</p>
+
+        {listEmpty && attentionLevel && (
+          <FilterEmptyState
+            resourceLabel="prioridades"
+            onClearFilters={() => setAttentionLevel('')}
+          />
+        )}
+        {listEmpty && !attentionLevel && (
+          <OperationalEmptyState
+            title="No hay prioridades activas"
+            explanation="Las evaluaciones aparecen cuando existen hallazgos o eventos que requieren atención operacional."
+            sourceProcess="Hallazgos → evaluación de prioridad"
+            status="pending"
+          />
         )}
       </div>
     </div>

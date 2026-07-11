@@ -1,4 +1,5 @@
 import { Badge } from '@/shared/components/Badge'
+import { OperationalEmptyState } from '@/shared/components'
 import { useIncidentVerificationPlan } from '../hooks/useVerificationPlans'
 import { usePlanResolutionSummary } from '../hooks/useVerificationResolution'
 import {
@@ -33,11 +34,13 @@ export function VerificationPlanSection({ incidentId }: Props) {
 
   if (query.isError || !plan) {
     return (
-      <section className="rounded-lg border border-border-subtle bg-surface-2/30 p-4">
-        <h2 className="mb-2 text-sm font-semibold text-text-primary">Plan de verificación</h2>
-        <p className="text-sm text-text-tertiary">
-          Sin plan de verificación activo para este incidente.
-        </p>
+      <section id="verificacion" className="scroll-mt-6 rounded-lg border border-border-subtle bg-surface-2/30 p-4">
+        <OperationalEmptyState
+          compact
+          title="No existen preguntas activas de verificación"
+          explanation="El sistema no ha identificado incertidumbres que requieran una acción adicional para este incidente."
+          status="not_required"
+        />
       </section>
     )
   }
@@ -71,7 +74,12 @@ export function VerificationPlanSection({ incidentId }: Props) {
       )}
 
       {needs.length === 0 ? (
-        <p className="text-xs text-text-tertiary">Verificación no requerida en este momento.</p>
+        <OperationalEmptyState
+          compact
+          title="No se requiere verificación adicional"
+          explanation="La revisión remota o el contexto actual es suficiente para las preguntas abiertas."
+          status="not_required"
+        />
       ) : (
         <div className="space-y-4">
           {needs.map((need) => {

@@ -1,6 +1,11 @@
 import { Link, useSearchParams } from 'react-router-dom'
 import { ClipboardList } from 'lucide-react'
-import { PageHeader, OperationalEmptyState } from '@/shared/components'
+import {
+  PageHeader,
+  OperationalEmptyState,
+  OperationalErrorState,
+  OperationalListSkeleton,
+} from '@/shared/components'
 import { Badge } from '@/shared/components/Badge'
 import { useHasPermission } from '@/core/auth/AuthProvider'
 import { useMissionsList } from '../hooks/useMissions'
@@ -8,6 +13,7 @@ import { missionStatusLabel, missionTypeLabel } from '../utils/mission-labels'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
 import { cn } from '@/shared/utils/cn'
 import { MissionsAssignmentsPanel } from '../components/MissionsAssignmentsPanel'
+import { useCanonicalOperationalCounts } from '@/shared/hooks/useCanonicalOperationalCounts'
 
 const TABS = [
   { key: 'all', label: 'Todas', status: '' },
@@ -24,14 +30,23 @@ export function MissionsPage() {
   const tab = searchParams.get('tab') ?? 'all'
   const activeTab = TABS.find((t) => t.key === tab) ?? TABS[0]
   const canAssign = useHasPermission('missions.assign')
+  const canViewVerification = useHasPermission('verification_plans.view')
+  const counts = useCanonicalOperationalCounts()
   const query = useMissionsList({
     status: activeTab.status && activeTab.status !== '__assignments__' ? activeTab.status : undefined,
   })
 
   const visibleTabs = TABS.filter((t) => t.key !== 'assignments' || canAssign)
+  const items = query.data?.items ?? []
+  const listEmpty = items.length === 0 && !query.isLoading && !query.isError
+
+  const demoNote =
+    listEmpty && tab === 'all' && counts.missionsDemo > 0
+      ? `Hay ${counts.missionsDemo} misión(es) de demostración interna disponibles.`
+      : undefined
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto p-6">
+    <div className="flex h-full flex-col overflow-y-auto p-6" data-testid="missions-page">
       <PageHeader
         title="Misiones"
         subtitle="Unidades de trabajo derivadas de planes de verificación elegibles."
@@ -73,13 +88,18 @@ export function MissionsPage() {
         <MissionsAssignmentsPanel />
       ) : (
         <>
-          {query.isLoading && <p className="text-sm text-text-tertiary">Cargando misiones…</p>}
+          {query.isLoading && <OperationalListSkeleton />}
           {query.isError && (
-            <p className="text-sm text-confidence-low">No se pudo cargar la lista de misiones.</p>
+            <OperationalErrorState
+              title="No se pudo cargar la lista de misiones"
+              explanation="Verifica tu conexión e intenta de nuevo."
+              friendlyCode="MSN-LIST"
+              onRetry={() => void query.refetch()}
+            />
           )}
 
           <div className="space-y-3">
-            {(query.data?.items ?? []).map((item) => (
+            {items.map((item) => (
               <Link
                 key={item.id}
                 to={`/misiones/${item.id}`}
@@ -107,13 +127,38 @@ export function MissionsPage() {
                 </p>
               </Link>
             ))}
-            {(query.data?.items ?? []).length === 0 && !query.isLoading && (
+
+            {listEmpty && tab === 'unassigned' && (
+              <OperationalEmptyState
+                icon={<ClipboardList className="h-5 w-5" />}
+                title="No hay misiones listas para asignar"
+                explanation="Las misiones aparecerán aquí cuando alcancen el estado listo y todavía no tengan responsable."
+                sourceProcess="Plan de verificación → misión lista"
+                primaryAction={{ label: 'Ver todas las misiones', href: '/misiones' }}
+              />
+            )}
+
+            {listEmpty && tab === 'assigned' && (
+              <OperationalEmptyState
+                title="No hay misiones asignadas"
+                explanation="No hay misiones asignadas a tu equipo en este momento."
+                primaryAction={{ label: 'Ver misiones sin asignar', href: '/misiones?tab=unassigned' }}
+              />
+            )}
+
+            {listEmpty && tab !== 'unassigned' && tab !== 'assigned' && (
               <OperationalEmptyState
                 icon={<ClipboardList className="h-5 w-5" />}
                 title="No hay misiones operacionales"
-                explanation="Se crean desde planes de verificación que requieren trabajo de campo."
+                explanation="Las misiones se crean cuando un plan de verificación requiere trabajo de campo."
                 sourceProcess="Verificación → misión"
-                primaryCta={{ label: 'Ver verificaciones', to: '/verificaciones' }}
+                supplementalNote={demoNote}
+                primaryAction={
+                  canViewVerification
+                    ? { label: 'Ver verificaciones', href: '/verificaciones' }
+                    : undefined
+                }
+                secondaryAction={{ label: 'Actualizar', onClick: () => void query.refetch() }}
               />
             )}
           </div>

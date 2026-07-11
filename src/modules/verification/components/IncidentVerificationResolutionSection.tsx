@@ -1,4 +1,5 @@
 import { Badge } from '@/shared/components/Badge'
+import { OperationalEmptyState } from '@/shared/components'
 import { useIncidentVerificationResolution } from '../hooks/useVerificationResolution'
 import { needResolutionStatusLabel } from '../utils/verification-labels'
 
@@ -25,7 +26,19 @@ export function IncidentVerificationResolutionSection({ incidentId }: Props) {
   const pending = (data.pending_reevaluations as Array<Record<string, unknown>> | undefined) ?? []
   const keyEvidence = (data.key_evidence as Array<Record<string, unknown>> | undefined) ?? []
 
-  if (resolutions.length === 0) return null
+  if (resolutions.length === 0) {
+    return (
+      <section id="resolucion" className="scroll-mt-6 rounded-lg border border-border-subtle bg-surface-2/30 p-4">
+        <OperationalEmptyState
+          compact
+          title="Aún no existe una resolución"
+          explanation="La resolución se genera después de validar evidencia suficiente para responder una pregunta de verificación."
+          sourceProcess="Evidencia validada → resolución de verificación"
+          status="pending"
+        />
+      </section>
+    )
+  }
 
   return (
     <section className="rounded-lg border border-border-subtle bg-surface-2/30 p-4">

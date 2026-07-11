@@ -1,10 +1,11 @@
 import { Link } from 'react-router-dom'
 
-import { ModuleHeader } from '@/shared/components'
+import { PageHeader, OperationalEmptyState, OperationalListSkeleton, FeatureDisabledState } from '@/shared/components'
 import { Badge } from '@/shared/components/Badge'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
 import { useLocalOfflinePackages } from '@/modules/field-operations/offline-packages/hooks/useOfflinePackages'
 import { canOpenLocalPackage, canStartFieldExecution } from '@/modules/field-operations/offline-packages/offline-package.repository'
+import { useRealSyncPilot } from '@/modules/field-operations/field-sync/hooks/useRealSyncPilot'
 
 function localStatusLabel(status: string): string {
   const map: Record<string, string> = {
@@ -27,28 +28,51 @@ function formatBytes(bytes: number): string {
 
 export function FieldPackagesPage() {
   const query = useLocalOfflinePackages()
+  const pilot = useRealSyncPilot(null)
   const now = new Date().toISOString()
   const items = query.data ?? []
 
+  if (!pilot.pilotActive && !query.isLoading && items.length === 0) {
+    return (
+      <div className="flex h-full flex-col overflow-y-auto p-6" data-testid="field-packages-page">
+        <PageHeader
+          title="Paquetes en campo"
+          subtitle="Paquetes offline descargados en este dispositivo."
+          breadcrumbs={[{ label: 'Campo', to: '/campo' }, { label: 'Paquetes' }]}
+        />
+        <FeatureDisabledState
+          title="El trabajo de campo no está habilitado para esta cuenta."
+          explanation="Cuando se habilite, podrás descargar paquetes con instrucciones, formularios y requisitos de evidencia."
+        />
+      </div>
+    )
+  }
+
   return (
-    <div className="flex h-full flex-col overflow-y-auto p-6">
-      <ModuleHeader
+    <div className="flex h-full flex-col overflow-y-auto p-6" data-testid="field-packages-page">
+      <PageHeader
         title="Paquetes en campo"
-        description="Paquetes offline descargados en este dispositivo."
+        subtitle="Paquetes offline descargados en este dispositivo."
+        breadcrumbs={[{ label: 'Campo', to: '/campo' }, { label: 'Paquetes' }]}
       />
 
-      {query.isLoading && <p className="text-sm text-text-tertiary">Cargando paquetes locales…</p>}
+      {query.isLoading && <OperationalListSkeleton rows={2} />}
 
       {!query.isLoading && items.length === 0 && (
-        <p className="text-sm text-text-tertiary">
-          No hay paquetes descargados. Genere y descargue un paquete desde el detalle de una misión.
-        </p>
+        <OperationalEmptyState
+          title="No hay paquetes offline descargados"
+          explanation="Los paquetes contienen las instrucciones, formularios y requisitos de evidencia de una misión."
+          sourceProcess="Misión asignada → descarga de paquete"
+          primaryAction={{ label: 'Ver misiones asignadas', href: '/campo' }}
+        />
       )}
 
       <div className="grid gap-3">
         {items.map((pkg) => {
           const openable = canOpenLocalPackage(pkg)
           const executable = canStartFieldExecution(pkg, now)
+          void openable
+          void executable
           return (
             <article
               key={pkg.package_id}
@@ -62,7 +86,7 @@ export function FieldPackagesPage() {
               <p className="text-xs text-text-tertiary">
                 Misión:{' '}
                 <Link to={`/misiones/${pkg.mission_id}`} className="text-accent hover:underline">
-                  {pkg.mission_id.slice(0, 8)}…
+                  Ver misión
                 </Link>
               </p>
               <p className="mt-1 text-xs text-text-secondary">
@@ -72,16 +96,6 @@ export function FieldPackagesPage() {
                 Descargado: {pkg.downloaded_at ? formatGuatemalaDateTime(pkg.downloaded_at) : '—'}
               </p>
               <p className="text-xs text-text-tertiary">Tamaño: {formatBytes(pkg.size_bytes)}</p>
-              {pkg.superseded_by && (
-                <p className="text-xs text-confidence-low">
-                  Reemplazado por: {pkg.superseded_by.slice(0, 8)}…
-                </p>
-              )}
-              {pkg.integrity_errors.length > 0 && (
-                <p className="mt-1 text-xs text-confidence-low">
-                  Errores: {pkg.integrity_errors.join(', ')}
-                </p>
-              )}
               <p className="mt-3">
                 <Link
                   to={`/campo/paquetes/${pkg.package_id}`}

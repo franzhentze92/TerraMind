@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useMemo, useState } from 'react'
-import { PageHeader } from '@/shared/components/PageHeader'
+import { PageHeader, FilterEmptyState, OperationalEmptyState, OperationalListSkeleton, OperationalErrorState } from '@/shared/components'
 import { Badge } from '@/shared/components/Badge'
 import { useFindingsList } from '../hooks/useFindings'
 import {
@@ -39,6 +39,20 @@ export function FindingsPage() {
     if (!severity) return raw
     return raw.filter((item) => item.severity_label === severity)
   }, [query.data?.items, severity])
+
+  const hasActiveFilters = Boolean(
+    severity || findingType || confidence || department || (status && status !== 'active'),
+  )
+
+  const clearFilters = () => {
+    setStatus('active')
+    setSeverity('')
+    setFindingType('')
+    setConfidence('')
+    setDepartment('')
+  }
+
+  const listEmpty = !query.isLoading && !query.isError && items.length === 0
 
   return (
     <div className="flex h-full flex-col overflow-y-auto p-6" data-testid="findings-page">
@@ -115,9 +129,14 @@ export function FindingsPage() {
         />
       </div>
 
-      {query.isLoading && <p className="text-sm text-text-tertiary">Cargando hallazgos…</p>}
+      {query.isLoading && <OperationalListSkeleton />}
       {query.isError && (
-        <p className="text-sm text-confidence-low">No se pudieron cargar los hallazgos.</p>
+        <OperationalErrorState
+          title="No se pudieron cargar los hallazgos"
+          explanation="Verifica tu conexión e intenta de nuevo."
+          friendlyCode="FND-LIST"
+          onRetry={() => void query.refetch()}
+        />
       )}
 
       <div className="space-y-3">
@@ -157,10 +176,16 @@ export function FindingsPage() {
             </p>
           </Link>
         ))}
-        {!query.isLoading && items.length === 0 && (
-          <p className="text-sm text-text-tertiary">
-            No hay hallazgos para los filtros seleccionados.
-          </p>
+        {listEmpty && hasActiveFilters && (
+          <FilterEmptyState resourceLabel="hallazgos" onClearFilters={clearFilters} />
+        )}
+        {listEmpty && !hasActiveFilters && (
+          <OperationalEmptyState
+            title="No hay hallazgos activos"
+            explanation="Los hallazgos se generan cuando TerraMind interpreta eventos y contextos territoriales."
+            sourceProcess="Eventos → interpretación compuesta"
+            status="pending"
+          />
         )}
       </div>
     </div>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { authFetch } from '@/core/auth/auth-fetch'
+import { OperationalEmptyState } from '@/shared/components'
 import { useHasPermission } from '@/core/auth/AuthProvider'
 
 interface MemberRow {
@@ -93,7 +94,7 @@ export function OrganizationAdminPage() {
       </nav>
 
       {canInvite && (
-        <section className="rounded border p-4">
+        <section className="rounded border p-4" id="invite">
           <h2 className="mb-3 font-medium">Invitar usuario</h2>
           <form className="flex flex-wrap gap-2" onSubmit={(e) => void createInvite(e)}>
             <input
@@ -115,6 +116,14 @@ export function OrganizationAdminPage() {
       {canManage && (
         <section className="rounded border p-4">
           <h2 className="mb-3 font-medium">Miembros</h2>
+          {members.length === 0 ? (
+            <OperationalEmptyState
+              compact
+              title="Esta organización solo tiene un administrador"
+              explanation="Invita a colegas para compartir acceso operacional."
+              primaryAction={{ label: 'Invitar miembro', href: '#invite' }}
+            />
+          ) : (
           <ul className="space-y-2 text-sm">
             {members.map((m) => (
               <li key={m.membership_id} className="flex flex-wrap items-center gap-2 border-b py-2">
@@ -124,12 +133,21 @@ export function OrganizationAdminPage() {
               </li>
             ))}
           </ul>
+          )}
         </section>
       )}
 
       {canInvite && (
         <section className="rounded border p-4">
           <h2 className="mb-3 font-medium">Invitaciones</h2>
+          {invitations.length === 0 ? (
+            <OperationalEmptyState
+              compact
+              title="No hay invitaciones pendientes"
+              explanation="Crea una invitación para agregar miembros a la organización."
+              primaryAction={{ label: 'Crear invitación', href: '#invite' }}
+            />
+          ) : (
           <ul className="space-y-2 text-sm">
             {invitations.map((inv) => (
               <li key={inv.id} className="border-b py-2">
@@ -137,6 +155,7 @@ export function OrganizationAdminPage() {
               </li>
             ))}
           </ul>
+          )}
         </section>
       )}
 

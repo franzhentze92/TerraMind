@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Badge } from '@/shared/components/Badge'
+import { OperationalEmptyState } from '@/shared/components'
 import { useMissionEvidence, useEvidenceIntake, useMissionEvidenceQuality } from '../hooks/useMissionEvidence'
 import { EvidenceSubmissionDetailPanel } from './EvidenceSubmissionDetailPanel'
 
@@ -151,7 +152,7 @@ export function MissionEvidenceSection({ missionId }: MissionEvidenceSectionProp
       </div>
 
       <div>
-        <p className="mb-2 text-xs font-medium text-text-primary">Submissions</p>
+        <p className="mb-2 text-xs font-medium text-text-primary">Evidencia recibida</p>
         <div className="space-y-2">
           {submissions.map((sub) => (
             <button
@@ -175,7 +176,13 @@ export function MissionEvidenceSection({ missionId }: MissionEvidenceSectionProp
             </button>
           ))}
           {submissions.length === 0 && !query.isLoading && (
-            <p className="text-xs text-text-tertiary">Sin evidencia recibida.</p>
+            <OperationalEmptyState
+              compact
+              title="No se ha recibido evidencia operacional"
+              explanation="La evidencia se genera cuando una misión de campo o una revisión estructurada entrega observaciones verificables."
+              sourceProcess="Misión → captura → envío"
+              status="pending"
+            />
           )}
         </div>
       </div>

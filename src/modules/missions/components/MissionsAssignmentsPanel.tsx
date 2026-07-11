@@ -1,7 +1,7 @@
-import { Link } from 'react-router-dom'
 import { ClipboardList } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { Badge } from '@/shared/components/Badge'
-import { OperationalEmptyState } from '@/shared/components'
+import { OperationalEmptyState, OperationalListSkeleton } from '@/shared/components'
 import { useMissionsList } from '../hooks/useMissions'
 import { missionStatusLabel } from '../utils/mission-labels'
 
@@ -26,15 +26,18 @@ export function MissionsAssignmentsPanel() {
     return (
       <OperationalEmptyState
         icon={<ClipboardList className="h-5 w-5" />}
-        title="No hay misiones listas para asignar"
-        explanation="Las asignaciones aparecerán cuando una misión alcance el estado listo."
-        sourceProcess="Planes de verificación → misión lista"
+        title="No hay asignaciones pendientes"
+        explanation="Las asignaciones se crean desde misiones listas para ejecución."
+        sourceProcess="Misión lista → asignación de responsable"
         requiredPermission="missions.assign"
-        primaryCta={{ label: 'Ver misiones', to: '/misiones' }}
-        secondaryCta={{ label: 'Ver verificaciones', to: '/verificaciones' }}
+        primaryAction={{ label: 'Ver misiones sin asignar', href: '/misiones?tab=unassigned' }}
+        secondaryAction={{ label: 'Ver todas las misiones', href: '/misiones' }}
       />
     )
   }
+
+  const anyLoading = queries.some((q) => q.isLoading)
+  if (anyLoading) return <OperationalListSkeleton rows={3} />
 
   return (
     <div className="space-y-6">
@@ -44,6 +47,9 @@ export function MissionsAssignmentsPanel() {
           <section key={section.title}>
             <h2 className="mb-2 text-sm font-semibold text-text-primary">{section.title}</h2>
             {query.isLoading && <p className="text-xs text-text-tertiary">Cargando…</p>}
+            {!query.isLoading && (query.data?.items ?? []).length === 0 && (
+              <p className="text-xs text-text-tertiary">Ninguna en esta sección.</p>
+            )}
             <div className="space-y-2">
               {(query.data?.items ?? []).map((item) => (
                 <Link

@@ -1,3 +1,4 @@
+import { OperationalEmptyState } from '@/shared/components'
 import { useFieldConflicts } from '@/modules/field-operations/field-mobile/hooks/useFieldCampo'
 import { t } from '@/modules/field-operations/field-mobile/i18n/field-mobile-i18n'
 
@@ -25,12 +26,18 @@ export function FieldConflictsPage() {
   const { conflicts } = useFieldConflicts()
 
   return (
-    <div className="mx-auto max-w-lg p-4">
+    <div className="mx-auto max-w-lg p-4" data-testid="field-conflicts-page">
       <h1 className="text-lg font-medium text-text-primary">Conflictos y bloqueos</h1>
       <p className="mt-1 text-sm text-text-secondary">{t('kept_locally_for_safety', 'es')}</p>
 
       {conflicts.length === 0 && (
-        <p className="mt-4 text-sm text-text-tertiary">No hay conflictos abiertos.</p>
+        <OperationalEmptyState
+          compact
+          className="mt-4"
+          title="No hay conflictos de sincronización"
+          explanation="Los conflictos aparecerán aquí si una misión cambia, se revoca un paquete o existe una diferencia entre el dispositivo y el servidor."
+          status="not_required"
+        />
       )}
 
       <ul className="mt-4 space-y-3">
@@ -40,7 +47,6 @@ export function FieldConflictsPage() {
               {t(CONFLICT_LABEL_KEYS[c.conflict_type] ?? 'needs_review', 'es')}
             </p>
             <p className="mt-1 text-xs text-text-secondary">{c.message}</p>
-            <p className="mt-1 text-xs text-text-tertiary">Clasificación: {c.classification}</p>
             <div className="mt-3 flex flex-wrap gap-2">
               {CONFLICT_ACTIONS.map((a) => (
                 <button
@@ -55,14 +61,6 @@ export function FieldConflictsPage() {
           </li>
         ))}
       </ul>
-
-      <section className="mt-8 rounded border border-dashed border-border-subtle p-4 text-xs text-text-tertiary">
-        <p className="font-medium text-text-secondary">Fixtures de conflicto (demo)</p>
-        <p className="mt-1">
-          Use la pantalla de sincronización con escenarios simulados: misión cancelada, paquete revocado, checksum
-          mismatch, red interrumpida.
-        </p>
-      </section>
     </div>
   )
 }

@@ -1,6 +1,12 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
-import { PageHeader } from '@/shared/components'
+import {
+  PageHeader,
+  FilterEmptyState,
+  OperationalEmptyState,
+  OperationalListSkeleton,
+  OperationalErrorState,
+} from '@/shared/components'
 import { Badge } from '@/shared/components/Badge'
 import { useIncidentsList } from '../hooks/useIncidents'
 import {
@@ -22,18 +28,23 @@ import { useResponsesList } from '@/modules/response-orchestration/hooks/useResp
 import { ResponseStatusBadge } from '@/modules/response-orchestration/components/ResponseStatusBadge'
 import type { ResponseBadgeKey } from '@/modules/response-orchestration/utils/response-status-labels'
 import { ClassificationBadge } from '@/modules/executive-metrics/components/ClassificationBadge'
+import { useCanonicalOperationalCounts } from '@/shared/hooks/useCanonicalOperationalCounts'
 
 export function IncidentsPage() {
   const [status, setStatus] = useState('')
   const query = useIncidentsList({ status: status || undefined })
   const canViewResponse = useHasPermission('responses.view')
+  const counts = useCanonicalOperationalCounts()
   const responsesQuery = useResponsesList()
   const responseByIncident = new Map(
     (responsesQuery.data?.items ?? []).map((r) => [r.incident_id, r]),
   )
 
+  const items = query.data?.items ?? []
+  const listEmpty = !query.isLoading && !query.isError && items.length === 0
+
   return (
-    <div className="flex h-full flex-col overflow-y-auto p-6">
+    <div className="flex h-full flex-col overflow-y-auto p-6" data-testid="incidents-page">
       <PageHeader
         title="Incidentes"
         subtitle="Situaciones operacionales que agrupan eventos territoriales correlacionados."
@@ -61,13 +72,18 @@ export function IncidentsPage() {
         ))}
       </div>
 
-      {query.isLoading && <p className="text-sm text-text-tertiary">Cargando incidentes…</p>}
+      {query.isLoading && <OperationalListSkeleton />}
       {query.isError && (
-        <p className="text-sm text-confidence-low">No se pudo cargar la lista de incidentes.</p>
+        <OperationalErrorState
+          title="No se pudo cargar la lista de incidentes"
+          explanation="Verifica tu conexión e intenta de nuevo."
+          friendlyCode="INC-LIST"
+          onRetry={() => void query.refetch()}
+        />
       )}
 
       <div className="space-y-3">
-        {(query.data?.items ?? []).map((item) => (
+        {items.map((item) => (
           <Link
             key={item.id}
             to={`/incidentes/${item.id}`}
@@ -111,8 +127,23 @@ export function IncidentsPage() {
             </div>
           </Link>
         ))}
-        {!query.isLoading && (query.data?.items?.length ?? 0) === 0 && (
-          <p className="text-sm text-text-tertiary">No hay incidentes registrados todavía.</p>
+
+        {listEmpty && status && (
+          <FilterEmptyState resourceLabel="incidentes" onClearFilters={() => setStatus('')} />
+        )}
+        {listEmpty && !status && (
+          <OperationalEmptyState
+            title="No hay incidentes operacionales pertenecientes a la organización"
+            explanation="Los incidentes se crean cuando eventos correlacionados requieren seguimiento operacional."
+            sourceProcess="Eventos → correlación → incidente"
+            supplementalNote={
+              counts.incidentsLegacy > 0
+                ? `${counts.incidentsLegacy} incidente(s) legacy están pendientes de ownership.`
+                : undefined
+            }
+            primaryAction={{ label: 'Ver actividad térmica', href: '/eventos' }}
+            secondaryAction={{ label: 'Situación nacional', href: '/situacion' }}
+          />
         )}
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useState } from 'react'
-import { PageHeader, OperationalEmptyState } from '@/shared/components'
+import { PageHeader, OperationalEmptyState, FilterEmptyState, OperationalListSkeleton, OperationalErrorState } from '@/shared/components'
 import { useResponsesList } from '../hooks/useResponseOrchestration'
 import { ResponseStatusBadge } from '../components/ResponseStatusBadge'
 import {
@@ -11,6 +11,7 @@ import {
 } from '../utils/response-status-labels'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
 import { cn } from '@/shared/utils/cn'
+import { useCanonicalOperationalCounts } from '@/shared/hooks/useCanonicalOperationalCounts'
 
 const FILTERS: Array<{ id: string; label: string }> = [
   { id: '', label: 'Todos' },
@@ -26,6 +27,9 @@ const FILTERS: Array<{ id: string; label: string }> = [
 export function ResponseOrchestrationListPage() {
   const [filter, setFilter] = useState('')
   const query = useResponsesList(filter || undefined)
+  const counts = useCanonicalOperationalCounts()
+  const items = query.data?.items ?? []
+  const listEmpty = !query.isLoading && !query.isError && items.length === 0
 
   return (
     <div className="flex h-full flex-col overflow-y-auto p-6">
@@ -56,13 +60,18 @@ export function ResponseOrchestrationListPage() {
         ))}
       </div>
 
-      {query.isLoading && <p className="text-sm text-text-tertiary">Cargando respuestas…</p>}
+      {query.isLoading && <OperationalListSkeleton />}
       {query.isError && (
-        <p className="text-sm text-confidence-low">No se pudo cargar el listado de respuestas.</p>
+        <OperationalErrorState
+          title="No se pudo cargar el listado de respuestas"
+          explanation="Verifica tu conexión e intenta de nuevo."
+          friendlyCode="RSP-LIST"
+          onRetry={() => void query.refetch()}
+        />
       )}
 
       <div className="space-y-3">
-        {(query.data?.items ?? []).map((item) => (
+        {items.map((item) => (
           <Link
             key={item.incident_id}
             to={`/respuesta/${item.incident_id}`}
@@ -92,10 +101,21 @@ export function ResponseOrchestrationListPage() {
             </p>
           </Link>
         ))}
-        {!query.isLoading && (query.data?.items?.length ?? 0) === 0 && (
+        {listEmpty && filter && (
+          <FilterEmptyState resourceLabel="evaluaciones" onClearFilters={() => setFilter('')} />
+        )}
+        {listEmpty && !filter && counts.incidentsOperational === 0 && (
           <OperationalEmptyState
-            title="No hay evaluaciones de respuesta"
-            explanation="Se generan después de resolver una verificación y completar las reevaluaciones posteriores."
+            title="No hay incidentes operacionales elegibles para evaluación de respuesta"
+            explanation="Se requiere un incidente con organización asignada y verificación resuelta."
+            sourceProcess="Resolución → evaluación de respuesta"
+            primaryAction={{ label: 'Ver incidentes', href: '/incidentes' }}
+          />
+        )}
+        {listEmpty && !filter && counts.incidentsOperational > 0 && (
+          <OperationalEmptyState
+            title="Aún no existe una evaluación de respuesta"
+            explanation="Se generará después de resolver una verificación y completar las reevaluaciones necesarias."
             sourceProcess="Resolución de verificación → evaluación de respuesta"
             primaryCta={{ label: 'Ver verificaciones', to: '/verificaciones' }}
             secondaryCta={{ label: 'Ver incidentes', to: '/incidentes' }}
