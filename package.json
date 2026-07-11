@@ -83,6 +83,7 @@
     "product-truth:audit": "tsx scripts/product-truth-audit.ts",
     "product-navigation:audit": "tsx scripts/product-navigation-audit.ts",
     "national-situation:audit": "tsx scripts/national-situation-audit.ts",
+    "thermal-module:audit": "tsx scripts/thermal-module-audit.ts",
     "intelligence-flow:audit": "tsx scripts/intelligence-flow-audit.ts",
     "operational-empty-states:audit": "tsx scripts/operational-empty-states-audit.ts",
     "professional-reports:audit": "tsx scripts/professional-reports-audit.ts",

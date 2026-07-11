@@ -2,6 +2,8 @@ import { FIRMS_INGEST_SOURCES } from '@/pipeline/connectors/firms.config'
 import type { FireDepartmentOptionDto } from '@/modules/fires/types/fire.dto'
 import type { FirePageFilters } from '@/modules/fires/api/fire-page-filters'
 import { countActiveFilters } from '@/modules/fires/api/fire-page-filters'
+import { sourceProductDisplayName } from '@/modules/fires/utils/source-labels'
+import { pluralizeCount } from '@/modules/fires/utils/thermal-labels'
 import { cn } from '@/shared/utils/cn'
 
 interface FireFiltersProps {
@@ -40,7 +42,9 @@ export function FireFilters({
         <p className="text-xs font-medium text-text-secondary">Filtros</p>
         <div className="flex items-center gap-3 text-xs text-text-tertiary">
           {resultCount !== undefined && (
-            <span aria-live="polite">{resultCount} resultado{resultCount === 1 ? '' : 's'}</span>
+            <span aria-live="polite">
+              {pluralizeCount(resultCount, 'resultado', 'resultados')}
+            </span>
           )}
           {active > 0 && (
             <button
@@ -136,7 +140,7 @@ export function FireFilters({
           <option value="">Todas las fuentes</option>
           {FIRMS_INGEST_SOURCES.map((s) => (
             <option key={s} value={s}>
-              {s}
+              {sourceProductDisplayName(s)}
             </option>
           ))}
         </select>

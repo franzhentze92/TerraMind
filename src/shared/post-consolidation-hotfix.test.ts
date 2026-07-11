@@ -79,11 +79,12 @@ describe('hotfix — no duplicate CTAs', () => {
 
 describe('hotfix — pipeline single status', () => {
   it('collapses multiple warning badges into one', () => {
-    const src = read('src/modules/fires/components/FirePipelineStatusLine.tsx')
-    expect(src).toContain('resolveFirePipelineStatus')
-    expect(src).toContain('Datos retrasados')
-    expect(src).not.toContain('Pipeline en advertencia')
-    expect(src).not.toContain('Pipeline desactualizado')
+    const line = read('src/modules/fires/components/FirePipelineStatusLine.tsx')
+    const status = read('src/modules/fires/utils/thermal-data-status.ts')
+    expect(line).toContain('resolveThermalDataStatus')
+    expect(status).toContain('Datos retrasados')
+    expect(line).not.toContain('Pipeline en advertencia')
+    expect(line).not.toContain('Pipeline desactualizado')
   })
 })
 

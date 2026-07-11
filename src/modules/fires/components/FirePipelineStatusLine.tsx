@@ -1,5 +1,5 @@
 import type { FirePipelineHealthDto } from '@/modules/fires/types/fire.dto'
-import { formatRelativeMinutes } from '@/modules/fires/utils/format'
+import { resolveThermalDataStatus } from '@/modules/fires/utils/thermal-data-status'
 import { Badge } from '@/shared/components/Badge'
 
 interface FirePipelineStatusLineProps {
@@ -16,42 +16,31 @@ interface PipelinePresentation {
   explanation: string
 }
 
-/**
- * Resolve a SINGLE canonical pipeline status. Previously the UI could show
- * several warning badges at once for the same underlying condition (delayed +
- * stale + consecutive failures). This collapses them into one badge and one
- * explanation.
- */
+function mapThermalState(
+  state: ReturnType<typeof resolveThermalDataStatus>['state'],
+): PipelineState {
+  switch (state) {
+    case 'current':
+    case 'partial':
+      return 'operational'
+    case 'delayed':
+    case 'no_recent_data':
+      return 'delayed'
+    case 'failing':
+      return 'failing'
+    default:
+      return 'delayed'
+  }
+}
+
+/** Legacy wrapper — prefer resolveThermalDataStatus + ThermalDataStatusLine. */
 export function resolveFirePipelineStatus(health: FirePipelineHealthDto): PipelinePresentation {
-  const lastSuccess = health.last_success_at ? formatRelativeMinutes(health.last_success_at) : null
-  const frequency = `La frecuencia esperada es cada ${health.interval_minutes} min.`
-  const lastSuccessText = lastSuccess
-    ? `La última actualización exitosa ocurrió ${lastSuccess}.`
-    : 'Todavía no hay una corrida exitosa registrada.'
-
-  if (health.alert_level === 'critical') {
-    return {
-      state: 'failing',
-      label: 'Pipeline con fallos',
-      variant: 'critical',
-      explanation: `${lastSuccessText} ${health.consecutive_failures > 0 ? `${health.consecutive_failures} fallo(s) consecutivo(s). ` : ''}${frequency}`,
-    }
-  }
-
-  if (!health.is_healthy || health.is_stale) {
-    return {
-      state: 'delayed',
-      label: 'Datos retrasados',
-      variant: 'warning',
-      explanation: `${lastSuccessText} ${frequency}`,
-    }
-  }
-
+  const status = resolveThermalDataStatus({ pipelineHealth: health })
   return {
-    state: 'operational',
-    label: 'Pipeline operativo',
-    variant: 'accent',
-    explanation: `${lastSuccessText} Actualización automática cada ${health.interval_minutes} min.`,
+    state: mapThermalState(status.state),
+    label: status.label,
+    variant: status.variant === 'default' ? 'accent' : status.variant,
+    explanation: status.explanation,
   }
 }
 

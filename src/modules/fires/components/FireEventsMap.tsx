@@ -38,6 +38,8 @@ import {
 } from '@/modules/fires/utils/fire-interpretation'
 import { riskLevelLabel } from '@/modules/fires/utils/format'
 import { sourceProductDisplayName } from '@/modules/fires/utils/source-labels'
+import { pluralizeCount } from '@/modules/fires/utils/thermal-labels'
+import { buildThermalEventDisplayName } from '@/modules/fires/utils/thermal-event-display'
 import { FireMapLegend } from '@/modules/fires/components/FireMapLegend'
 import { buildLandCoverMapSnippet } from '@/modules/fires/utils/land-cover-summary'
 import { cn } from '@/shared/utils/cn'
@@ -239,9 +241,13 @@ export function FireEventsMap({
                 .join('')}</div>`
             })()
           : ''
+      const popupTitle =
+        listItem != null
+          ? buildThermalEventDisplayName(listItem)
+          : (p.department_name ?? 'Evento térmico')
       el.innerHTML = `
         <div style="font-size:12px;line-height:1.5">
-          <strong>${p.department_name ?? 'Sin departamento'}</strong>
+          <strong>${popupTitle}</strong>
           <div style="margin-top:4px;color:#374151;font-weight:500">
             ${eventSemanticLabel(p.validation_status)}
           </div>
@@ -249,8 +255,8 @@ export function FireEventsMap({
           <div style="margin-top:6px;display:grid;gap:2px;color:#6b7280">
             <span>Estado: ${eventStatusLabel(p.status)}</span>
             <span>Validación: ${validationStatusLabel(p.validation_status)}</span>
-            <span>Detecciones: ${p.detection_count}</span>
-            <span>Satélites: ${p.satellite_count}</span>
+            <span>${pluralizeCount(p.detection_count, 'detección', 'detecciones')}</span>
+            <span>${pluralizeCount(p.satellite_count, 'fuente satelital', 'fuentes satelitales')}</span>
             ${sources ? `<span title="${listItem?.source_products.join(', ') ?? ''}">Fuentes: ${sources}</span>` : ''}
             <span>Última det.: ${formatGuatemalaDateTime(p.last_detected_at)}</span>
           </div>
@@ -343,8 +349,7 @@ export function FireEventsMap({
                   <strong>Detección satelital</strong><br/>
                   <span style="color:#374151">No representa incendio confirmado</span><br/>
                   <span title="${p.source_product}">${p.source_display_name}</span><br/>
-                  FRP: ${p.frp_mw ?? '—'} MW<br/>
-                  Confianza: ${p.confidence_normalized ?? '—'}
+                  Energía radiativa: ${p.frp_mw ?? '—'} MW<br/>Confianza: ${p.confidence_normalized ?? '—'}
                 </div>`,
               )
             }}

@@ -1,17 +1,24 @@
 import type { FireSummaryDto } from '@/modules/fires/types/fire.dto'
+import type { FirePeriodPreset } from '@/modules/fires/config/fire.constants'
+import { thermalPeriodLabel } from '@/modules/fires/utils/thermal-labels'
 import { cn } from '@/shared/utils/cn'
 
 interface FireSummaryStripProps {
   summary?: FireSummaryDto
+  period: FirePeriodPreset
+  filteredEventCount?: number
+  hasActiveFilters?: boolean
   isLoading?: boolean
 }
 
 function Metric({
   label,
+  sublabel,
   value,
   highlight,
 }: {
   label: string
+  sublabel?: string
   value: string | number
   highlight?: boolean
 }) {
@@ -25,6 +32,9 @@ function Metric({
       <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
         {label}
       </p>
+      {sublabel && (
+        <p className="mt-0.5 text-[10px] text-text-tertiary">{sublabel}</p>
+      )}
       <p
         className={cn(
           'mt-1 font-mono text-xl font-semibold',
@@ -37,7 +47,13 @@ function Metric({
   )
 }
 
-export function FireSummaryStrip({ summary, isLoading }: FireSummaryStripProps) {
+export function FireSummaryStrip({
+  summary,
+  period,
+  filteredEventCount,
+  hasActiveFilters,
+  isLoading,
+}: FireSummaryStripProps) {
   if (isLoading || !summary) {
     return (
       <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
@@ -48,18 +64,56 @@ export function FireSummaryStrip({ summary, isLoading }: FireSummaryStripProps) 
     )
   }
 
+  const periodText = thermalPeriodLabel(period)
+  const groupedEventsValue =
+    hasActiveFilters && filteredEventCount !== undefined
+      ? filteredEventCount
+      : summary.events_count
+
   return (
-    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-      <Metric label="Eventos térmicos" value={summary.events_count} />
-      <Metric label="Detecciones satelitales" value={summary.detections_count} />
-      <Metric
-        label="Requieren atención"
-        value={summary.attention_events_count}
-        highlight={summary.attention_events_count > 0}
-      />
-      <Metric label="Eventos probables" value={summary.probable_events_count} />
-      <Metric label="Multi-satélite" value={summary.multisatellite_events_count} />
-      <Metric label="Departamentos" value={summary.departments_affected_count} />
+    <div className="space-y-2">
+      <p className="text-xs text-text-tertiary">
+        Métricas del periodo ({periodText}).{' '}
+        {hasActiveFilters && filteredEventCount !== undefined && (
+          <span>
+            Con filtros activos: {filteredEventCount} evento
+            {filteredEventCount === 1 ? '' : 's'} visibles.
+          </span>
+        )}
+      </p>
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+        <Metric
+          label="Observaciones recibidas"
+          sublabel={periodText}
+          value={summary.observations_downloaded}
+        />
+        <Metric
+          label="Detecciones nacionales"
+          sublabel={periodText}
+          value={summary.detections_count}
+        />
+        <Metric
+          label="Eventos térmicos agrupados"
+          sublabel={hasActiveFilters ? 'según filtros' : periodText}
+          value={groupedEventsValue}
+        />
+        <Metric
+          label="Requieren atención"
+          sublabel={periodText}
+          value={summary.attention_events_count}
+          highlight={summary.attention_events_count > 0}
+        />
+        <Metric
+          label="Multi-satélite"
+          sublabel={periodText}
+          value={summary.multisatellite_events_count}
+        />
+        <Metric
+          label="Departamentos"
+          sublabel={periodText}
+          value={summary.departments_affected_count}
+        />
+      </div>
     </div>
   )
 }

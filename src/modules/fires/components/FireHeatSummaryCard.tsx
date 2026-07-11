@@ -195,7 +195,7 @@ export function FireHeatSummaryCard({ data, isLoading, isError }: FireHeatSummar
         to="/incendios"
         className="mt-4 flex items-center gap-1 text-xs font-medium text-accent hover:text-text-primary"
       >
-        Ver análisis de incendios
+        Ver actividad térmica
         <ChevronRight className="h-3.5 w-3.5" />
       </Link>
     </Card>

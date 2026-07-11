@@ -36,6 +36,11 @@ import {
   formatDistanceM,
   proximityLabelText,
 } from '@/modules/fires/utils/proximity-label'
+import { buildThermalEventDisplayName } from '@/modules/fires/utils/thermal-event-display'
+import {
+  THERMAL_METHODOLOGY_SUMMARY,
+  THERMAL_SCIENTIFIC_DISCLAIMER,
+} from '@/modules/fires/utils/thermal-labels'
 
 type DetailTab = 'resumen' | 'territorio' | 'condiciones' | 'ecologia' | 'historial'
 
@@ -113,12 +118,13 @@ export function FireEventDetailPanel({
         <div className="border-b border-border-subtle px-4 pt-3">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="text-base font-semibold text-text-primary">
-              {event.department_name ?? 'Sin departamento'}
+              {buildThermalEventDisplayName(event)}
             </h2>
             <Badge variant={riskBadgeVariant(event.risk_level)}>
               {riskLevelLabel(event.risk_level)}
             </Badge>
           </div>
+          <p className="mt-2 text-[11px] text-text-tertiary">{THERMAL_SCIENTIFIC_DISCLAIMER}</p>
           <div className="mt-2 flex flex-wrap gap-2 pb-3">
             <Badge variant="default">{eventStatusLabel(event.status)}</Badge>
             <Badge variant="accent">{validationStatusLabel(event.validation_status)}</Badge>
@@ -178,13 +184,17 @@ export function FireEventDetailPanel({
           <div role="tabpanel">
             {tab === 'resumen' && (
               <section className="space-y-4">
+                {event.interpretation && (
+                  <p className="text-sm leading-relaxed text-text-secondary">{event.interpretation}</p>
+                )}
+
                 <dl className="grid grid-cols-2 gap-3 text-xs">
                   <div>
-                    <dt className="text-text-tertiary">Detecciones</dt>
+                    <dt className="text-text-tertiary">Detecciones contribuyentes</dt>
                     <dd className="font-mono text-text-primary">{event.detection_count}</dd>
                   </div>
                   <div>
-                    <dt className="text-text-tertiary">Satélites</dt>
+                    <dt className="text-text-tertiary">Fuentes satelitales</dt>
                     <dd className="font-mono text-text-primary">{event.satellite_count}</dd>
                   </div>
                   <div>
@@ -206,7 +216,7 @@ export function FireEventDetailPanel({
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-text-tertiary">FRP máximo</dt>
+                    <dt className="text-text-tertiary">Energía radiativa máxima</dt>
                     <dd className="font-mono text-text-primary">
                       {event.max_frp_mw != null ? `${event.max_frp_mw.toFixed(2)} MW` : '—'}
                     </dd>
@@ -214,6 +224,9 @@ export function FireEventDetailPanel({
                 </dl>
                 <p className="text-[11px] leading-relaxed text-text-tertiary">
                   {event.evidence_summary}
+                </p>
+                <p className="text-[11px] leading-relaxed text-text-tertiary">
+                  {THERMAL_METHODOLOGY_SUMMARY}
                 </p>
 
                 <div>

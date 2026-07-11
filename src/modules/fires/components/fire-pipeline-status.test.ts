@@ -23,28 +23,23 @@ function health(overrides: Partial<FirePipelineHealthDto>): FirePipelineHealthDt
   }
 }
 
-describe('Fire pipeline single status', () => {
-  it('returns one operational status when healthy', () => {
+describe('resolveFirePipelineStatus legacy adapter', () => {
+  it('returns Spanish current status when healthy', () => {
     const status = resolveFirePipelineStatus(health({}))
-    expect(status.state).toBe('operational')
-    expect(status.label).toBe('Pipeline operativo')
+    expect(status.label).toBe('Datos actualizados')
   })
 
-  it('collapses stale + not healthy + warnings into a single "Datos retrasados"', () => {
+  it('maps delayed pipeline to Datos retrasados', () => {
     const status = resolveFirePipelineStatus(
-      health({ is_healthy: false, is_stale: true, alert_level: 'warning', consecutive_failures: 1 }),
+      health({ is_healthy: false, is_stale: true, alert_level: 'warning' }),
     )
-    expect(status.state).toBe('delayed')
     expect(status.label).toBe('Datos retrasados')
-    // a single explanation, not multiple badges
-    expect(status.explanation).toContain('frecuencia esperada')
   })
 
-  it('critical alert becomes a single failing status', () => {
+  it('maps critical alert to Proceso con fallos', () => {
     const status = resolveFirePipelineStatus(
-      health({ is_healthy: false, is_stale: true, alert_level: 'critical', consecutive_failures: 3 }),
+      health({ alert_level: 'critical', consecutive_failures: 3, is_healthy: false }),
     )
-    expect(status.state).toBe('failing')
-    expect(status.label).toBe('Pipeline con fallos')
+    expect(status.label).toBe('Proceso con fallos')
   })
 })

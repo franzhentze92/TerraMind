@@ -3,7 +3,6 @@ import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { RefreshCw, AlertTriangle } from 'lucide-react'
 import { useQueryClient } from '@tanstack/react-query'
 import { ModuleHeader } from '@/shared/components/ModuleHeader'
-import { Badge } from '@/shared/components/Badge'
 import { useFireSummaryForPeriod } from '@/modules/fires/hooks/useFireSummary'
 import { useFireEvents, useFireDepartments } from '@/modules/fires/hooks/useFireEvents'
 import { useFireEvent } from '@/modules/fires/hooks/useFireEvent'
@@ -12,21 +11,28 @@ import {
   useFireEventsGeoJson,
 } from '@/modules/fires/hooks/useFireGeoJson'
 import {
+  countActiveFilters,
   DEFAULT_FIRE_PAGE_FILTERS,
   buildIncendiosPath,
   parsePageFilters,
 } from '@/modules/fires/api/fire-page-filters'
 import type { FirePageFilters } from '@/modules/fires/api/fire-page-filters'
 import { FIRE_EVENTS_DEFAULT_LIMIT } from '@/modules/fires/config/fire.constants'
-import { formatGuatemalaTime, formatRelativeMinutes } from '@/modules/fires/utils/format'
 import { FireSummaryStrip } from '@/modules/fires/components/FireSummaryStrip'
 import { FireFilters } from '@/modules/fires/components/FireFilters'
 import { FireEventsTable } from '@/modules/fires/components/FireEventsTable'
 import { FireEventDetailPanel } from '@/modules/fires/components/FireEventDetailPanel'
 import { FireEventsMap } from '@/modules/fires/components/FireEventsMap'
 import { Switch } from '@/shared/components/Switch'
-import { FirePipelineStatusLine } from '@/modules/fires/components/FirePipelineStatusLine'
+import { ThermalDataStatusLine } from '@/modules/fires/components/ThermalDataStatusLine'
 import { useFirePipelineHealth } from '@/modules/fires/hooks/useFirePipelineHealth'
+import { computeThermalResultCounts } from '@/modules/fires/utils/thermal-result-count'
+import {
+  THERMAL_SCIENTIFIC_DISCLAIMER,
+  detectionsToggleLabel,
+  filterEmptyMessage,
+  thermalPeriodLabel,
+} from '@/modules/fires/utils/thermal-labels'
 import { ApiError } from '@/core/api/client'
 import { cn } from '@/shared/utils/cn'
 
@@ -51,12 +57,18 @@ export function FireAnalysisPage() {
   const pipelineHealthQuery = useFirePipelineHealth()
 
   const summary = summaryQuery.data
-  const ds = summary?.data_status
   const items = eventsQuery.data?.items ?? []
-  // Counter must never report fewer results than the rows actually visible.
-  const total = Math.max(eventsQuery.data?.pagination.total ?? 0, items.length)
+  const counts = computeThermalResultCounts({
+    serverFilteredTotal: eventsQuery.data?.pagination.total,
+    currentPageItems: items,
+    isFetching: eventsQuery.isFetching,
+    isPlaceholderData: eventsQuery.isPlaceholderData,
+  })
+  const activeFilterCount = countActiveFilters(filters)
+  const hasActiveFilters = activeFilterCount > 0
   const limit = eventsQuery.data?.pagination.limit ?? FIRE_EVENTS_DEFAULT_LIMIT
   const offset = eventsQuery.data?.pagination.offset ?? 0
+  const total = counts.visibleResultCount
   const rangeStart = total === 0 ? 0 : offset + 1
   const rangeEnd = Math.min(offset + limit, total)
   const totalPages = Math.max(1, Math.ceil(total / limit))
@@ -92,8 +104,8 @@ export function FireAnalysisPage() {
       <div className="flex-1 overflow-y-auto">
         <div className="mx-auto max-w-[1600px] px-6 py-8">
           <ModuleHeader
-            title="Incendios y focos de calor"
-            description="Detecciones satelitales y eventos térmicos identificados en Guatemala"
+            title="Actividad térmica"
+            description="Observaciones satelitales, detecciones nacionales y eventos térmicos agrupados en Guatemala"
             actions={
               <button
                 type="button"
@@ -107,44 +119,24 @@ export function FireAnalysisPage() {
             }
           />
 
-          <div className="mt-4 flex flex-col gap-2">
-            <div className="flex flex-wrap items-center gap-3 text-xs text-text-tertiary">
-              <span>Ventana: {filters.period}</span>
-            {ds && (
-              <>
-                <span>·</span>
-                <span>
-                  Ingesta FIRMS: {formatRelativeMinutes(ds.last_firms_ingestion_at) ?? '—'}
-                </span>
-                <span>·</span>
-                <span>
-                  Última adquisición:{' '}
-                  {ds.latest_satellite_acquisition_at
-                    ? formatGuatemalaTime(ds.latest_satellite_acquisition_at)
-                    : '—'}
-                </span>
-                <span>·</span>
-                <span>
-                  Proveedores FIRMS: {ds.sources_queried_successfully} de {ds.sources_expected}{' '}
-                  operativos
-                </span>
-              </>
-            )}
-            {ds?.is_stale && (
-              <Badge variant="warning">Datos desactualizados</Badge>
-            )}
-            {ds?.is_partial && (
-              <Badge variant="warning">Ingesta parcial</Badge>
-            )}
-            </div>
-            <FirePipelineStatusLine
-              health={pipelineHealthQuery.data}
-              isLoading={pipelineHealthQuery.isLoading}
+          <p className="mt-3 text-xs text-text-tertiary">{THERMAL_SCIENTIFIC_DISCLAIMER}</p>
+
+          <div className="mt-4">
+            <ThermalDataStatusLine
+              dataStatus={summary?.data_status}
+              pipelineHealth={pipelineHealthQuery.data}
+              isLoading={summaryQuery.isLoading || pipelineHealthQuery.isLoading}
             />
           </div>
 
           <div className="mt-6">
-            <FireSummaryStrip summary={summary} isLoading={summaryQuery.isLoading} />
+            <FireSummaryStrip
+              summary={summary}
+              period={filters.period}
+              filteredEventCount={hasActiveFilters ? total : undefined}
+              hasActiveFilters={hasActiveFilters}
+              isLoading={summaryQuery.isLoading}
+            />
           </div>
 
           <div className="mt-6">
@@ -182,17 +174,17 @@ export function FireAnalysisPage() {
                   </label>
                   <span
                     className={cn(
-                      'rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide',
+                      'rounded px-1.5 py-0.5 text-[10px] font-medium',
                       showDetections
                         ? 'bg-accent/15 text-accent'
                         : 'bg-surface-3 text-text-tertiary',
                     )}
                   >
-                    {showDetections ? 'ON' : 'OFF'}
+                    {detectionsToggleLabel(showDetections)}
                   </span>
                   <span
                     className="hidden text-text-tertiary sm:inline"
-                    title="Puntos individuales observados por los sensores. No representan incendios confirmados."
+                    title={THERMAL_SCIENTIFIC_DISCLAIMER}
                   >
                     ⓘ
                   </span>
@@ -255,7 +247,7 @@ export function FireAnalysisPage() {
               <div className="flex items-start gap-3 rounded-xl border border-confidence-low/30 bg-confidence-low/5 p-4">
                 <AlertTriangle className="mt-0.5 h-4 w-4 text-confidence-low" />
                 <p className="text-sm text-text-secondary">
-                  No se pudo cargar la lista de eventos.
+                  No se pudo cargar la lista de eventos térmicos.
                 </p>
               </div>
             )}
@@ -263,10 +255,13 @@ export function FireAnalysisPage() {
             {!eventsQuery.isLoading && !eventsQuery.isError && items.length === 0 && (
               <div className="rounded-xl border border-border-subtle bg-surface-2/40 p-8 text-center">
                 <p className="text-sm text-text-secondary">
-                  {total === 0 && filters.period === '48h'
-                    ? 'No se detectaron eventos térmicos en la ventana seleccionada.'
-                    : 'Ningún evento coincide con los filtros aplicados.'}
+                  {filterEmptyMessage(hasActiveFilters)}
                 </p>
+                {!hasActiveFilters && (
+                  <p className="mt-2 text-xs text-text-tertiary">
+                    Periodo: {thermalPeriodLabel(filters.period)}
+                  </p>
+                )}
               </div>
             )}
 

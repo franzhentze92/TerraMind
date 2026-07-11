@@ -18,7 +18,6 @@ export function useFireEvents(filters: FirePageFilters) {
       return fireApi.listEvents(apiQuery)
     },
     staleTime: 30_000,
-    placeholderData: (prev) => prev,
     enabled: authReady,
   })
 }
