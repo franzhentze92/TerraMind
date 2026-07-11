@@ -158,6 +158,8 @@ export interface NationalReportDto {
   /** Canonical metrics (Product Consolidation — Phase 1). Report figures must match these. */
   canonical_metrics?: import('@/modules/executive-metrics/executive-metric.types').ExecutiveMetric[]
   sections: Array<{ id: string; title: string; content: string; items?: unknown[] }>
+  /** Unified institutional model (Phase 6) — HTML and PDF render from this. */
+  institutional?: import('@/modules/institutional-reports/institutional-report.types').InstitutionalReport
 }
 
 export interface IncidentReportDto {
@@ -167,4 +169,5 @@ export interface IncidentReportDto {
   generated_at: string
   story: IncidentStoryDto
   sections: Array<{ id: string; title: string; content: string; items?: unknown[] }>
+  institutional?: import('@/modules/institutional-reports/institutional-report.types').InstitutionalReport
 }

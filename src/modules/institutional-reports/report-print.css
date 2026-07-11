@@ -1,0 +1,193 @@
+/* Product Consolidation Phase 6 — institutional report print styles */
+
+.institutional-report-document {
+  max-width: 210mm;
+  margin: 0 auto;
+  color: #1a1a1a;
+  font-family: system-ui, 'Segoe UI', sans-serif;
+  font-size: 11pt;
+  line-height: 1.45;
+}
+
+.institutional-report-cover {
+  text-align: center;
+  padding: 3rem 1.5rem 2rem;
+  border-bottom: 2px solid #0d4f4f;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.institutional-report-watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: rgba(180, 83, 9, 0.12);
+  transform: rotate(-18deg);
+  pointer-events: none;
+}
+
+.institutional-report-brand {
+  font-size: 0.75rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #555;
+}
+
+.institutional-report-title {
+  margin-top: 1rem;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #0d4f4f;
+}
+
+.institutional-report-subtitle {
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+  color: #444;
+}
+
+.institutional-report-cover-meta {
+  margin-top: 1.5rem;
+  font-size: 0.85rem;
+  color: #333;
+}
+
+.institutional-report-classification {
+  margin-top: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: #0d4f4f;
+}
+
+.institutional-report-section {
+  margin-bottom: 1.5rem;
+}
+
+.institutional-report-section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #0d4f4f;
+  border-bottom: 1px solid #d1d5db;
+  padding-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.institutional-report-section-badge {
+  margin-left: 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: #666;
+  text-transform: uppercase;
+}
+
+.institutional-report-section-body {
+  font-size: 0.9rem;
+  color: #333;
+}
+
+.institutional-report-table-wrap {
+  overflow-x: auto;
+  margin: 1rem 0;
+}
+
+.institutional-report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.institutional-report-table caption {
+  text-align: left;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #0d4f4f;
+}
+
+.institutional-report-table th,
+.institutional-report-table td {
+  border: 1px solid #d1d5db;
+  padding: 0.35rem 0.5rem;
+  text-align: left;
+}
+
+.institutional-report-table th {
+  background: #f3f4f6;
+  font-weight: 600;
+}
+
+.institutional-report-callout {
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+
+.institutional-report-callout--info {
+  border: 1px solid #bae6fd;
+  background: #f0f9ff;
+}
+
+.institutional-report-callout--warning {
+  border: 1px solid #fcd34d;
+  background: #fffbeb;
+}
+
+.institutional-report-callout--demo {
+  border: 1px solid #fdba74;
+  background: #fff7ed;
+}
+
+.institutional-report-footer {
+  margin-top: 2rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid #d1d5db;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: #666;
+}
+
+.institutional-report-header {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 18mm 15mm 20mm;
+  }
+
+  .institutional-report-document {
+    max-width: none;
+  }
+
+  .institutional-report-header {
+    display: flex;
+    justify-content: space-between;
+    position: running(report-header);
+    font-size: 8pt;
+    color: #666;
+  }
+
+  .page-break-after {
+    page-break-after: always;
+  }
+
+  .break-inside-avoid {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .print-hidden,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  .institutional-report-watermark {
+    color: rgba(180, 83, 9, 0.08);
+  }
+}

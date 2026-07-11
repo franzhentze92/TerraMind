@@ -1,6 +1,7 @@
 import PDFDocument from 'pdfkit'
 import type { IncidentReportDto, NationalReportDto, ReportClassification } from '@/modules/executive-demo/types/executive-demo.types'
 import { assertSafeExecutiveCopy } from '@/modules/executive-demo/copy-guard/executive-copy-guard'
+import { renderInstitutionalReportPdf } from './institutional-report-pdf.service.js'
 
 function classificationLabel(c: ReportClassification): string {
   const map: Record<ReportClassification, string> = {
@@ -54,6 +55,9 @@ function renderSection(
 }
 
 export async function renderNationalReportPdf(report: NationalReportDto): Promise<Buffer> {
+  if (report.institutional) {
+    return renderInstitutionalReportPdf(report.institutional)
+  }
   assertSafeExecutiveCopy(report.title)
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 50, size: 'A4', bufferPages: true })
@@ -170,6 +174,9 @@ export async function renderNationalReportPdf(report: NationalReportDto): Promis
 }
 
 export async function renderIncidentReportPdf(report: IncidentReportDto): Promise<Buffer> {
+  if (report.institutional) {
+    return renderInstitutionalReportPdf(report.institutional)
+  }
   assertSafeExecutiveCopy(report.title)
   return new Promise((resolve, reject) => {
     const doc = new PDFDocument({ margin: 50, size: 'A4', bufferPages: true })

@@ -11,6 +11,7 @@ import {
   renderIncidentReportPdf,
   renderNationalReportPdf,
 } from '../services/reports-pdf.service.js'
+import { institutionalReportFilename } from '@/modules/institutional-reports/report-filename.js'
 import { authorizeIncidentStoryAccess } from '../services/incident-story.service.js'
 
 export async function handleReportsRoutes(
@@ -43,9 +44,17 @@ export async function handleReportsRoutes(
     if (result === null) return true
     if (format === 'pdf') {
       const pdf = await renderNationalReportPdf(result)
+      const filename =
+        result.institutional != null
+          ? institutionalReportFilename('national', result.institutional.classification, {
+              periodFrom: result.period.from,
+              periodTo: result.period.to,
+              generatedAt: result.generated_at,
+            })
+          : 'terramind_informe_nacional_borrador.pdf'
       res.writeHead(200, {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': 'attachment; filename="terramind-national-report.pdf"',
+        'Content-Disposition': `attachment; filename="${filename}"`,
       })
       res.end(pdf)
       return true
@@ -86,9 +95,16 @@ export async function handleReportsRoutes(
     }
     if (format === 'pdf') {
       const pdf = await renderIncidentReportPdf(result)
+      const filename =
+        result.institutional != null
+          ? institutionalReportFilename('incident', result.institutional.classification, {
+              incidentSlug: result.title.replace(/^Informe por incidente · /, ''),
+              generatedAt: result.generated_at,
+            })
+          : `terramind_incidente_${incidentId.slice(0, 8)}_borrador.pdf`
       res.writeHead(200, {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="terramind-incident-${incidentId.slice(0, 8)}.pdf"`,
+        'Content-Disposition': `attachment; filename="${filename}"`,
       })
       res.end(pdf)
       return true

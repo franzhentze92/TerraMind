@@ -1,6 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { ModuleHeader } from '@/shared/components'
+import { ModuleHeader, OperationalDetailSkeleton } from '@/shared/components'
+import { InstitutionalReportView } from '@/modules/institutional-reports/components/InstitutionalReportView'
+import { classificationBanner, fromLegacyReportClassification } from '@/modules/institutional-reports/report-classification'
 import { useNationalReport } from '../hooks/useExecutiveDemo'
 import { DemoBanner } from '../components/ExecutiveDashboardPanels'
 import { nationalReportPdfUrl } from '../api/executive-demo-api'
@@ -16,6 +18,7 @@ export function NationalReportPage() {
   const [includeDemo, setIncludeDemo] = useState(false)
   const query = useNationalReport(period, includeDemo)
   const report = query.data
+  const institutional = report?.institutional
 
   return (
     <div className="executive-report print:bg-white print:text-black">
@@ -23,7 +26,7 @@ export function NationalReportPage() {
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4 print:hidden">
           <ModuleHeader
             title="Informe nacional"
-            description="TerraMind National Environmental Intelligence Report"
+            description="Informe Nacional de Inteligencia Ambiental · entregable institucional"
           />
           <div className="flex flex-wrap gap-2">
             {PERIODS.map((p) => (
@@ -38,7 +41,7 @@ export function NationalReportPage() {
             ))}
             <label className="flex items-center gap-2 text-xs">
               <input type="checkbox" checked={includeDemo} onChange={(e) => setIncludeDemo(e.target.checked)} />
-              Demo
+              Incluir demostración
             </label>
             <a
               href={nationalReportPdfUrl(period, includeDemo)}
@@ -46,34 +49,48 @@ export function NationalReportPage() {
             >
               Descargar PDF
             </a>
+            <button
+              type="button"
+              onClick={() => window.print()}
+              className="rounded border border-border-subtle px-3 py-1 text-xs"
+            >
+              Imprimir
+            </button>
             <Link to="/informes" className="rounded border border-border-subtle px-3 py-1 text-xs">
               ← Centro de informes
             </Link>
           </div>
         </div>
 
-        {query.isLoading && <p className="text-sm text-text-tertiary">Generando informe…</p>}
-        {report && (
-          <article className="mx-auto max-w-4xl space-y-8">
-            <header className="border-b border-border-subtle pb-6">
-              <p className="text-[10px] uppercase tracking-widest text-text-tertiary">TerraMind</p>
-              <h1 className="mt-2 text-2xl font-semibold text-text-primary">{report.title}</h1>
-              <p className="mt-1 text-sm text-text-secondary">
-                Clasificación: {report.classification} · Período: {report.period.preset}
-              </p>
-              <p className="text-xs text-text-tertiary">
-                Generado: {new Date(report.generated_at).toLocaleString('es-GT')}
-              </p>
-              {includeDemo && <div className="mt-4 print:hidden"><DemoBanner /></div>}
-            </header>
-
-            {report.sections.map((s) => (
-              <section key={s.id} className="break-inside-avoid">
-                <h2 className="text-lg font-medium text-text-primary">{s.title}</h2>
-                <p className="mt-2 whitespace-pre-wrap text-sm text-text-secondary">{s.content}</p>
-              </section>
-            ))}
-          </article>
+        {query.isLoading && (
+          <div>
+            <p className="mb-4 text-sm text-text-secondary">
+              Generando informe: preparando datos · construyendo secciones · renderizando mapa ·
+              finalizando documento…
+            </p>
+            <OperationalDetailSkeleton />
+          </div>
+        )}
+        {query.isError && (
+          <p className="text-sm text-confidence-low">
+            No se pudo generar el informe. Intente de nuevo o contacte al administrador.
+          </p>
+        )}
+        {institutional && (
+          <>
+            {includeDemo && (
+              <div className="mb-4 print:hidden">
+                <DemoBanner />
+              </div>
+            )}
+            <InstitutionalReportView report={institutional} />
+          </>
+        )}
+        {report && !institutional && (
+          <p className="text-sm text-confidence-low">
+            El modelo institucional no está disponible. Clasificación:{' '}
+            {classificationBanner(fromLegacyReportClassification(report.classification, includeDemo))}
+          </p>
         )}
       </div>
     </div>
