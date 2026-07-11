@@ -2,28 +2,62 @@ import { Link } from 'react-router-dom'
 import { useNationalSituation } from '../NationalSituationContext'
 import { useSituationRouteAccess } from '../hooks/useSituationRouteAccess'
 
-export function OperationalCycleStatus() {
-  const { dashboardQuery, metricsQuery } = useNationalSituation()
-  const metrics = metricsQuery.data?.metrics ?? []
+interface StatLine {
+  label: string
+  value: number
+  href: string
+  show: boolean
+}
 
-  const verifActive = metrics.find((m) => m.id === 'verification_needs_active')?.value ?? 0
-  const evidencePending = dashboardQuery.data?.recent_evidence.length ?? 0
-  const validations =
-    dashboardQuery.data?.data_audit.find((d) => d.stage === 'evidence_validations')?.count ?? 0
-  const resolutions = dashboardQuery.data?.recent_resolutions.length ?? 0
-  const assessments = metrics.find((m) => m.id === 'response_assessments')?.value ?? 0
+/**
+ * Consolidated "Estado operativo" panel — merges the former decision/action and
+ * operational-cycle blocks into a single, non-duplicated view. Operational
+ * metrics are kept strictly separate from historical records.
+ */
+export function OperationalCycleStatus() {
+  const { dashboardQuery, metricsQuery, pendingDecisionsCount } = useNationalSituation()
+  const dashboard = dashboardQuery.data
+  const metrics = metricsQuery.data?.metrics ?? []
 
   const canVerif = useSituationRouteAccess('/verificaciones')
   const canMissions = useSituationRouteAccess('/misiones')
   const canResponse = useSituationRouteAccess('/respuesta')
+  const canIncidents = useSituationRouteAccess('/incidentes')
 
-  const lines = [
+  const verifActive = metrics.find((m) => m.id === 'verification_needs_active')?.value ?? 0
+  const missions = dashboard?.missions_in_progress.length ?? 0
+  const evidencePending = dashboard?.recent_evidence.length ?? 0
+  const actionsInProgress = dashboard?.response_recommendations.length ?? 0
+
+  const legacyPlans = metrics.find((m) => m.id === 'verification_plans_legacy')?.value ?? 0
+  const legacyIncidents =
+    metrics
+      .find((m) => m.id === 'incidents_operational')
+      ?.breakdown.filter((b) => !b.included && b.classification === 'legacy')
+      .reduce((s, b) => s + b.value, 0) ?? 0
+
+  const operational: StatLine[] = [
     { label: 'Verificaciones activas', value: verifActive, href: '/verificaciones', show: canVerif },
+    { label: 'Misiones activas', value: missions, href: '/misiones', show: canMissions },
     { label: 'Evidencia pendiente', value: evidencePending, href: '/misiones', show: canMissions },
-    { label: 'Validaciones', value: validations, href: '/verificaciones', show: canVerif },
-    { label: 'Resoluciones', value: resolutions, href: '/verificaciones', show: canVerif },
-    { label: 'Evaluaciones de respuesta', value: assessments, href: '/respuesta', show: canResponse },
+    {
+      label: 'Decisiones pendientes',
+      value: pendingDecisionsCount,
+      href: '/respuesta',
+      show: canResponse,
+    },
+    { label: 'Acciones en curso', value: actionsInProgress, href: '/respuesta', show: canResponse },
   ].filter((l) => l.show)
+
+  const historical: StatLine[] = [
+    {
+      label: 'Planes de verificación',
+      value: legacyPlans,
+      href: '/verificaciones',
+      show: canVerif,
+    },
+    { label: 'Incidentes', value: legacyIncidents, href: '/incidentes?legacy=1', show: canIncidents },
+  ].filter((l) => l.show && l.value > 0)
 
   return (
     <section
@@ -31,11 +65,11 @@ export function OperationalCycleStatus() {
       data-testid="operational-cycle-status"
     >
       <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-        Estado del ciclo operativo
+        Estado operativo
       </p>
-      <ul className="mt-2 space-y-1">
-        {lines.map((line) => (
-          <li key={line.label} className="flex justify-between text-sm">
+      <ul className="mt-2 space-y-1.5">
+        {operational.map((line) => (
+          <li key={line.label} className="flex items-center justify-between text-sm">
             <Link to={line.href} className="text-text-secondary hover:text-accent">
               {line.label}
             </Link>
@@ -43,10 +77,24 @@ export function OperationalCycleStatus() {
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-[11px] text-text-tertiary">
-        El ciclo avanza cuando hay verificación resuelta con evidencia validada; las evaluaciones de
-        respuesta se generan después.
-      </p>
+
+      {historical.length > 0 && (
+        <div className="mt-3 border-t border-border-subtle pt-2">
+          <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+            Registros históricos
+          </p>
+          <ul className="mt-2 space-y-1.5">
+            {historical.map((line) => (
+              <li key={line.label} className="flex items-center justify-between text-sm">
+                <Link to={line.href} className="text-text-secondary hover:text-accent">
+                  {line.label}
+                </Link>
+                <span className="font-medium text-text-primary">{line.value}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </section>
   )
 }

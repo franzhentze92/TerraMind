@@ -1,6 +1,10 @@
 import { Link } from 'react-router-dom'
 import { useNationalSituation } from '../NationalSituationContext'
 import { useSituationRouteAccess } from '../hooks/useSituationRouteAccess'
+import { incidentStatusLabel } from '@/modules/incidents/utils/incident-labels'
+import { attentionLevelLabel } from '@/modules/priorities/utils/priority-labels'
+import { pluralizeCount } from '@/shared/format/plural'
+import { HISTORICAL_PENDING_ORG_SUFFIX } from '../utils/situation-labels'
 
 export function IncidentsOverview() {
   const { dashboardQuery, metricsQuery, includeDemo } = useNationalSituation()
@@ -42,24 +46,29 @@ export function IncidentsOverview() {
               ) : (
                 <span>{inc.story_coverage}</span>
               )}
-              <p className="text-[10px] text-text-tertiary">{inc.status} · {inc.attention_level}</p>
+              <p className="text-[10px] text-text-tertiary">
+                {incidentStatusLabel(inc.status)} · {attentionLevelLabel(inc.attention_level)}
+              </p>
             </li>
           ))}
         </ul>
       )}
       {legacyCount > 0 && (
         <div className="mt-3 rounded border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs">
-          <span className="text-amber-200">{legacyCount} incidentes legacy pendientes de ownership</span>
+          <span className="text-amber-200">
+            {pluralizeCount(legacyCount, 'registro histórico', 'registros históricos')}{' '}
+            {HISTORICAL_PENDING_ORG_SUFFIX}
+          </span>
           {canView && (
             <Link to="/incidentes?legacy=1" className="ml-2 text-accent">
-              Revisar legacy
+              Ver registros históricos
             </Link>
           )}
         </div>
       )}
       {includeDemo && dashboardQuery.data?.recommended_demo_incident_id && canView && (
         <p className="mt-2 text-[10px] text-violet-300">
-          Demo activa — incidente sugerido visible en mapa.
+          Demostración activa — incidente sugerido visible en el mapa.
         </p>
       )}
     </section>

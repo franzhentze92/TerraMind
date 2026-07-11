@@ -81,7 +81,20 @@ export interface ExecutiveDashboardDto {
     id: string
     title: string
     severity_label: string
+    finding_type: string
     department_name: string | null
+    href: string
+  }>
+  /** Real priority entities (finding_priority_assessments) — not findings. */
+  top_priorities: Array<{
+    id: string
+    title: string
+    department_name: string | null
+    attention_score: number
+    verification_score: number
+    action_score: number
+    attention_level: string
+    primary_factor: string | null
     href: string
   }>
   active_incidents: Array<{

@@ -87,7 +87,11 @@ check(
 
 const incidentsKpi = kpis.find((k) => k.id === 'incidents_operational')
 check('legacy-not-operational-headline', incidentsKpi?.value === 0)
-check('legacy-breakdown-visible', Boolean(incidentsKpi?.secondary?.includes('legacy')))
+check('legacy-breakdown-visible', Boolean(incidentsKpi?.secondary?.includes('histórico')))
+check(
+  'legacy-breakdown-no-english',
+  !/legacy|ownership/i.test(incidentsKpi?.secondary ?? ''),
+)
 
 const summaryNoAssessment = buildNationalExecutiveSummary(metrics, {
   generated_at: new Date().toISOString(),
@@ -98,6 +102,7 @@ const summaryNoAssessment = buildNationalExecutiveSummary(metrics, {
   metrics: [],
   summary: {} as never,
   priority_findings: [],
+  top_priorities: [],
   active_incidents: [],
   recent_changes: [],
   pending_verifications: [],
@@ -116,7 +121,7 @@ check(
 )
 check(
   'no-invented-change-delta',
-  summaryNoAssessment.what_changed.includes('No hay una comparación histórica suficiente'),
+  summaryNoAssessment.what_changed.includes('No hay suficiente historial comparable'),
 )
 
 // Page must not use forbidden patterns
@@ -166,9 +171,11 @@ for (const f of visibleFiles) {
   check(`no-phase-code:${f}`, codes.length === 0, codes.join(', '))
 }
 
-// Stale / partial error states exist
+// Stale / partial error states exist (health label lives in the presentation helper)
+const situationLabelsSrc = read('src/modules/national-situation/utils/situation-labels.ts')
+check('stale-badge', situationLabelsSrc.includes('Datos retrasados'))
 const headerSrc = read('src/modules/national-situation/components/SituationOperationalHeader.tsx')
-check('stale-badge', headerSrc.includes('Datos retrasados'))
+check('header-uses-health-resolver', headerSrc.includes('resolveSystemHealth'))
 
 const sourcesSrc = read('src/modules/national-situation/components/SourcesStatusDrawer.tsx')
 check('sources-drawer-not-fixed-footer', sourcesSrc.includes('sources-status-drawer'))

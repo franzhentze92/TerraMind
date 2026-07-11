@@ -91,6 +91,7 @@ function baseDashboard(overrides: Partial<ExecutiveDashboardDto> = {}): Executiv
     metrics: [],
     summary: {} as ExecutiveDashboardDto['summary'],
     priority_findings: [],
+    top_priorities: [],
     active_incidents: [],
     recent_changes: [],
     pending_verifications: [],
@@ -117,7 +118,8 @@ describe('national situation constants', () => {
   it('shows legacy breakdown without counting as operational', () => {
     const inc = buildPrimaryKpis(syntheticMetrics(), 0).find((k) => k.id === 'incidents_operational')
     expect(inc?.value).toBe(0)
-    expect(inc?.secondary).toMatch(/legacy/)
+    expect(inc?.secondary).toMatch(/histórico/)
+    expect(inc?.secondary).not.toMatch(/legacy|ownership/i)
   })
 
   it('labels current-state metrics', () => {
@@ -166,12 +168,13 @@ describe('national executive summary', () => {
       }),
       48,
     )
-    expect(s.what_changed).toMatch(/1 cambio/)
+    expect(s.what_changed).toMatch(/1 evento nuevo/)
+    expect(s.what_changed).toContain('Durante las últimas 48 horas')
   })
 
   it('states insufficient history when no changes', () => {
     const s = buildNationalExecutiveSummary(syntheticMetrics(), baseDashboard(), 48)
-    expect(s.what_changed).toContain('No hay una comparación histórica suficiente')
+    expect(s.what_changed).toContain('No hay suficiente historial comparable')
   })
 })
 

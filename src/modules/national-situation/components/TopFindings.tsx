@@ -1,6 +1,8 @@
 import { Link } from 'react-router-dom'
 import { useNationalSituation } from '../NationalSituationContext'
 import { useSituationRouteAccess } from '../hooks/useSituationRouteAccess'
+import { findingSeverityLabel } from '@/modules/findings/utils/finding-labels'
+import { findingTypeReason } from '../utils/situation-labels'
 
 const MAX_FINDINGS = 5
 
@@ -47,12 +49,17 @@ export function TopFindings({ compact = false }: { compact?: boolean }) {
                 </div>
                 <div>
                   <dt className="inline">Severidad: </dt>
-                  <dd className="inline text-text-secondary">{f.severity_label}</dd>
+                  <dd className="inline text-text-secondary">
+                    {findingSeverityLabel(f.severity_label)}
+                  </dd>
                 </div>
               </dl>
-              <p className="mt-1 text-[10px] text-text-secondary">
-                Razón: priorización activa en pipeline de inteligencia
-              </p>
+              {findingTypeReason(f.finding_type) && (
+                <p className="mt-1 text-[10px] text-text-secondary">
+                  <span className="text-text-tertiary">Razón de prioridad: </span>
+                  {findingTypeReason(f.finding_type)}
+                </p>
+              )}
             </li>
           ))}
         </ul>

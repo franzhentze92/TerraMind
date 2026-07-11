@@ -13,6 +13,9 @@ import { useFireEventLifecycle } from '@/modules/lifecycle/hooks/useLifecycle'
 import { lifecycleStateLabel } from '@/modules/lifecycle/utils/lifecycle-labels'
 import { validationStatusLabel } from '@/modules/fires/utils/fire-interpretation'
 import { riskLevelLabel } from '@/modules/fires/utils/format'
+import { incidentStatusLabel } from '@/modules/incidents/utils/incident-labels'
+import { attentionLevelLabel } from '@/modules/priorities/utils/priority-labels'
+import { cn } from '@/shared/utils/cn'
 import { Switch } from '@/shared/components/Switch'
 import { markSituationPerformance } from '@/modules/national-situation/situation-performance'
 import type { ExecutiveDashboardDto } from '../types/executive-demo.types'
@@ -68,7 +71,7 @@ function ExecutiveMapSidePanel({
                 <dt className="text-text-tertiary">Prioridad</dt>
                 <dd>
                   {priorityQuery.data?.assessment
-                    ? `${priorityQuery.data.assessment.attention_level} · ${riskLevelLabel(event.risk_level)}`
+                    ? `${attentionLevelLabel(priorityQuery.data.assessment.attention_level)} · ${riskLevelLabel(event.risk_level)}`
                     : riskLevelLabel(event.risk_level)}
                 </dd>
               </div>
@@ -89,7 +92,7 @@ function ExecutiveMapSidePanel({
               <div className="mt-4 rounded border border-border-subtle bg-surface-2/40 p-2">
                 <p className="text-[10px] font-medium uppercase text-text-tertiary">Incidente</p>
                 <p className="mt-1 text-xs">
-                  {incident.id.slice(0, 8)}… · {incident.status}
+                  {incident.id.slice(0, 8)}… · {incidentStatusLabel(incident.status)}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-2">
                   <Link to={`/incidentes/${incident.id}`} className="text-xs text-accent">
@@ -171,19 +174,19 @@ export function ExecutiveNationalMap({
           <span className="text-confidence-medium">● Evento</span>
           <span className="text-accent">● Prioridad</span>
           <span className="text-violet-400">◆ Incidente</span>
-          <span className="text-amber-400">◌ Legacy</span>
-          {includeDemo && <span className="text-violet-300">★ Demo</span>}
+          <span className="text-amber-400">◌ Registros históricos</span>
+          {includeDemo && <span className="text-violet-300">★ Demostración</span>}
           <label className="flex items-center gap-1.5">
             <Switch checked={showDetectionsLayer} onChange={setShowDetectionsLayer} />
             Detecciones
           </label>
           <label className="flex items-center gap-1.5">
             <Switch checked={showIncidentsLayer} onChange={setShowIncidentsLayer} />
-            Incidentes ({visibleIncidents.length})
+            Incidentes operativos ({visibleIncidents.length})
           </label>
           <label className="flex items-center gap-1.5">
             <Switch checked={showLegacyLayer} onChange={setShowLegacyLayer} />
-            Legacy
+            Registros históricos
           </label>
           <button
             type="button"
@@ -197,12 +200,12 @@ export function ExecutiveNationalMap({
 
       {!includeDemo && operationalIncidents.length === 0 && (
         <p className="mt-2 text-xs text-text-secondary">
-          Sin incidentes operacionales — eventos térmicos y prioridades visibles. Active legacy o demo si
-          corresponde.
+          Sin incidentes operativos. Los eventos térmicos y las prioridades permanecen visibles.
+          Active los registros históricos o de demostración cuando corresponda.
         </p>
       )}
 
-      <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_260px]">
+      <div className={cn('mt-3 grid gap-3', selectedEventId && 'lg:grid-cols-[1fr_300px]')}>
         <FireEventsMap
           key={centerToken}
           className="h-[360px] min-h-[300px] rounded-lg border border-border-subtle md:h-[400px]"
@@ -215,25 +218,8 @@ export function ExecutiveNationalMap({
           onSelectEvent={setSelectedEventId}
           onViewDetail={setSelectedEventId}
         />
-        {selectedEventId ? (
+        {selectedEventId && (
           <ExecutiveMapSidePanel eventId={selectedEventId} onClose={() => setSelectedEventId(undefined)} />
-        ) : (
-          <div className="hidden rounded-lg border border-dashed border-border-subtle bg-surface-1/30 px-4 py-6 text-xs text-text-tertiary lg:block">
-            Seleccione un evento en el mapa para ver prioridad, ciclo de vida, verificación e
-            incidente correlacionado.
-            {showIncidentsLayer && visibleIncidents.length > 0 && (
-              <ul className="mt-3 space-y-1">
-                {visibleIncidents.slice(0, 4).map((inc) => (
-                  <li key={inc.id}>
-                    <Link to={inc.href} className="text-accent">
-                      {inc.story_coverage || `${inc.id.slice(0, 8)}…`} · {inc.status}
-                      {inc.is_legacy && <span className="text-amber-400"> legacy</span>}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
         )}
       </div>
     </section>

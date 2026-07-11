@@ -58,7 +58,7 @@ export function SourcesStatusDrawer() {
     },
     {
       id: 'pipeline',
-      name: 'Pipeline TerraMind',
+      name: 'Procesos de datos TerraMind',
       status: dashboard?.system_status === 'operational' ? 'connected' : 'degraded',
       lastSync: dashboard?.generated_at,
       coverage: 'Eventos · hallazgos · prioridades',
@@ -148,6 +148,12 @@ export function SourcesStatusDrawer() {
   )
 }
 
+const SOURCE_STATUS_LABELS: Record<string, string> = {
+  connected: 'Conectada',
+  degraded: 'Con degradación',
+  offline: 'Sin conexión',
+}
+
 function StatusDot({ status }: { status: string }) {
   const color =
     status === 'connected'
@@ -155,5 +161,10 @@ function StatusDot({ status }: { status: string }) {
       : status === 'degraded'
         ? 'bg-amber-400'
         : 'bg-zinc-500'
-  return <span className={cn('h-2 w-2 rounded-full', color)} title={status} />
+  return (
+    <span
+      className={cn('h-2 w-2 rounded-full', color)}
+      title={SOURCE_STATUS_LABELS[status] ?? status}
+    />
+  )
 }

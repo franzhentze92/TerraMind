@@ -1,6 +1,8 @@
 import type { ExecutiveDashboardDto } from '@/modules/executive-demo/types/executive-demo.types'
 import type { ExecutiveMetric } from '@/modules/executive-metrics/executive-metric.types'
+import { pluralizeCount } from '@/shared/format/plural'
 import { filterEntriesByPeriod } from './national-situation.constants'
+import { periodWindowPhrase, spellCount } from './utils/situation-labels'
 
 export interface NationalExecutiveSummary {
   what_is_happening: string
@@ -24,9 +26,16 @@ function demoBreakdown(metrics: ExecutiveMetric[], id: string): number {
   return m?.breakdown.filter((b) => !b.included && b.classification === 'demo').reduce((s, b) => s + b.value, 0) ?? 0
 }
 
+/** Spanish sentence joining an arbitrary list with commas + "y". */
+function joinSpanish(parts: string[]): string {
+  if (parts.length === 0) return ''
+  if (parts.length === 1) return parts[0]
+  return `${parts.slice(0, -1).join(', ')} y ${parts[parts.length - 1]}`
+}
+
 /**
  * Deterministic executive summary for Situación Nacional (Phase 3 §7).
- * Uses canonical metrics + dashboard slices — no LLM.
+ * Uses canonical metrics + dashboard slices — no LLM, natural Spanish only.
  */
 export function buildNationalExecutiveSummary(
   metrics: ExecutiveMetric[],
@@ -44,39 +53,71 @@ export function buildNationalExecutiveSummary(
 
   const what_is_happening =
     events > 0 || findings > 0
-      ? `TerraMind monitorea ${events} evento(s) térmico(s) agrupados y ${findings} hallazgo(s) activos.`
+      ? `TerraMind monitorea ${pluralizeCount(events, 'evento térmico agrupado', 'eventos térmicos agrupados')} y ${pluralizeCount(findings, 'hallazgo activo', 'hallazgos activos')}.`
       : 'TerraMind está operativo; no hay eventos térmicos agrupados recientes en la ventana activa.'
 
   const periodChanges = dashboard
     ? filterEntriesByPeriod(dashboard.recent_changes, periodHours)
     : []
+  // Los cambios de prioridad se incorporarán cuando exista una fuente temporal canónica para esa etapa.
+  const newEvents = periodChanges.filter((e) => e.stage === 'event').length
+  const newFindings = periodChanges.filter((e) => e.stage === 'finding').length
+  const newIncidents = periodChanges.filter((e) => e.stage === 'incident').length
+  const newMissions = periodChanges.filter((e) => e.stage === 'mission').length
+  const deltaParts: string[] = []
+  if (newEvents > 0) deltaParts.push(pluralizeCount(newEvents, 'evento nuevo', 'eventos nuevos'))
+  if (newFindings > 0)
+    deltaParts.push(pluralizeCount(newFindings, 'hallazgo nuevo', 'hallazgos nuevos'))
+  if (newIncidents > 0)
+    deltaParts.push(pluralizeCount(newIncidents, 'incidente nuevo', 'incidentes nuevos'))
+  if (newMissions > 0)
+    deltaParts.push(pluralizeCount(newMissions, 'misión actualizada', 'misiones actualizadas'))
   const what_changed =
-    periodChanges.length > 0
-      ? `${periodChanges.length} cambio(s) registrados en la línea nacional durante el período seleccionado.`
-      : 'No hay una comparación histórica suficiente para determinar cambios en este período.'
+    deltaParts.length > 0
+      ? `Durante ${periodWindowPhrase(periodHours)} se registraron ${joinSpanish(deltaParts)}.`
+      : 'No hay suficiente historial comparable para identificar cambios durante este periodo.'
 
-  const topCount = Math.min(3, dashboard?.priority_findings.length ?? 0)
+  const topCount = dashboard?.top_priorities.length ?? 0
   const requires_attention =
     topCount > 0
-      ? `Revisar ${topCount} prioridad(es) destacadas en el mapa y la lista de hallazgos.`
+      ? `Revisar ${pluralizeCount(topCount, 'prioridad destacada', 'prioridades destacadas')} en el mapa y la cola de prioridades.`
       : findings > 0
-        ? 'Revisar hallazgos activos con mayor severidad en el mapa nacional.'
-        : 'Mantener monitoreo de fuentes FIRMS y pipelines de enriquecimiento.'
+        ? 'Revisar los hallazgos activos con mayor severidad en el mapa nacional.'
+        : 'Mantener el monitoreo de las fuentes FIRMS y de los procesos de enriquecimiento.'
 
   const parts: string[] = []
-  parts.push(`Verificaciones activas (operacional): ${verifNeeds}.`)
-  if (verifLegacy > 0) parts.push(`${verifLegacy} plan(es) legacy fuera del conteo operacional.`)
-  if (incidentsLegacy > 0) parts.push(`${incidentsLegacy} incidente(s) legacy pendientes de ownership.`)
+  parts.push(
+    verifNeeds > 0
+      ? `Hay ${pluralizeCount(verifNeeds, 'verificación operativa activa', 'verificaciones operativas activas')}.`
+      : 'No hay verificaciones operativas activas.',
+  )
+  const historical: string[] = []
+  if (verifLegacy > 0) {
+    historical.push(
+      `${spellCount(verifLegacy)} ${verifLegacy === 1 ? 'plan histórico' : 'planes históricos'}`,
+    )
+  }
+  if (incidentsLegacy > 0) {
+    historical.push(
+      `${spellCount(incidentsLegacy)} ${incidentsLegacy === 1 ? 'incidente' : 'incidentes'} pendientes de asignación organizacional`,
+    )
+  }
+  if (historical.length > 0) {
+    const verb = historical.length === 1 ? 'Existe' : 'Existen'
+    parts.push(`${verb} ${joinSpanish(historical)}.`)
+  }
   if (missionsDemo > 0 && dashboard?.include_demo) {
-    parts.push(`${missionsDemo} misión(es) de demostración visibles.`)
+    parts.push(
+      `${pluralizeCount(missionsDemo, 'misión de demostración visible', 'misiones de demostración visibles')}.`,
+    )
   }
   const in_verification = parts.join(' ')
 
   const terramind_recommends =
     assessments > 0
-      ? `${assessments} evaluación(es) de respuesta vigente(s) — revisar en Respuesta operacional.`
+      ? `Hay ${pluralizeCount(assessments, 'evaluación de respuesta vigente', 'evaluaciones de respuesta vigentes')} — revisar en Respuesta operacional.`
       : pendingDecisions > 0
-        ? `${pendingDecisions} decisión(es) pendiente(s) de resolución humana.`
+        ? `Hay ${pluralizeCount(pendingDecisions, 'decisión pendiente', 'decisiones pendientes')} de resolución humana.`
         : 'Aún no existe una recomendación operacional formal. Se generará después de resolver una verificación.'
 
   return {

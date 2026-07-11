@@ -1,6 +1,11 @@
 import { Link } from 'react-router-dom'
 import { useNationalSituation } from '../../NationalSituationContext'
 import { useSituationRouteAccess } from '../../hooks/useSituationRouteAccess'
+import {
+  needResolutionStatusLabel,
+  verificationPlanStatusLabel,
+} from '@/modules/verification/utils/verification-labels'
+import { evidenceSubmissionStatusLabel } from '../../utils/situation-labels'
 
 export function VerificacionTab() {
   const { dashboardQuery, metricsQuery } = useNationalSituation()
@@ -12,12 +17,12 @@ export function VerificacionTab() {
   return (
     <div className="space-y-4" data-testid="tab-verificacion">
       <MetricRow label="Necesidades de verificación activas" value={verifNeeds} href="/verificaciones" show={canView} />
-      <MetricRow label="Planes legacy" value={verifLegacy} href="/verificaciones" show={canView} />
+      <MetricRow label="Planes históricos" value={verifLegacy} href="/verificaciones" show={canView} />
       <ListSection
         title="Verificaciones pendientes"
         items={(dashboard?.pending_verifications ?? []).map((v) => ({
           id: v.id,
-          label: `${v.status} · incidente ${v.incident_id.slice(0, 8)}…`,
+          label: `${verificationPlanStatusLabel(v.status)} · incidente ${v.incident_id.slice(0, 8)}…`,
           href: v.href,
         }))}
         show={canView}
@@ -26,7 +31,7 @@ export function VerificacionTab() {
         title="Evidencia reciente"
         items={(dashboard?.recent_evidence ?? []).map((e) => ({
           id: e.id,
-          label: `${e.status} · misión ${e.mission_id.slice(0, 8)}…`,
+          label: `${evidenceSubmissionStatusLabel(e.status)} · misión ${e.mission_id.slice(0, 8)}…`,
           href: e.href,
         }))}
         show={canView}
@@ -35,7 +40,7 @@ export function VerificacionTab() {
         title="Resoluciones recientes"
         items={(dashboard?.recent_resolutions ?? []).map((r) => ({
           id: r.id,
-          label: r.status,
+          label: needResolutionStatusLabel(r.status),
           href: r.href,
         }))}
         show={canView}

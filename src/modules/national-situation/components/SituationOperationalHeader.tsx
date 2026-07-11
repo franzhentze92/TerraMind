@@ -4,6 +4,8 @@ import { freshnessLabel } from '@/modules/executive-metrics/data-quality-summary
 import { PageHeader } from '@/shared/components/PageHeader'
 import { useNationalSituation } from '../NationalSituationContext'
 import { SituationPeriodSelector } from './SituationPeriodSelector'
+import { resolveSystemHealth } from '../utils/situation-labels'
+import { pluralizeCount } from '@/shared/format/plural'
 import { cn } from '@/shared/utils/cn'
 
 export function SituationOperationalHeader() {
@@ -18,8 +20,7 @@ export function SituationOperationalHeader() {
 
   const dashboard = dashboardQuery.data
   const dq = dqQuery.data
-  const isStale = dq?.freshnessStatus === 'delayed' || dq?.freshnessStatus === 'stale'
-  const systemStatus = dashboard?.system_status ?? 'operando'
+  const health = resolveSystemHealth(dashboard?.system_status, dq?.freshnessStatus)
   const lastSync = dashboard?.last_sync_at
   const sourcesActive = dashboard?.sources_active ?? 0
 
@@ -32,16 +33,13 @@ export function SituationOperationalHeader() {
       }
       meta={
         <>
-          <StatusBadge
-            label={isStale ? 'Datos retrasados' : systemStatus === 'operational' ? 'Sistema operativo' : systemStatus}
-            tone={isStale ? 'warning' : 'ok'}
-          />
+          <StatusBadge label={health.label} tone={health.tone} />
           <span className="rounded-md border border-border-subtle px-2 py-0.5 text-xs text-text-secondary">
-            Pipelines con datos recientes: {sourcesActive}
+            {pluralizeCount(sourcesActive, 'proceso con datos recientes', 'procesos con datos recientes')}
           </span>
           {lastSync && (
             <span className="text-xs text-text-tertiary">
-              Última sync: {formatGuatemalaDateTime(lastSync)}
+              Última sincronización: {formatGuatemalaDateTime(lastSync)}
             </span>
           )}
           {dq && (
@@ -81,7 +79,7 @@ export function SituationOperationalHeader() {
               aria-label="Mostrar demostraciones"
               className="h-3.5 w-3.5"
             />
-            Demo
+            Demostración
           </label>
         </div>
       }
@@ -89,14 +87,16 @@ export function SituationOperationalHeader() {
   )
 }
 
-function StatusBadge({ label, tone }: { label: string; tone: 'ok' | 'warning' }) {
+function StatusBadge({ label, tone }: { label: string; tone: 'ok' | 'warning' | 'danger' }) {
   return (
     <span
       className={cn(
         'rounded-md px-2 py-0.5 text-xs font-medium',
         tone === 'ok'
           ? 'border border-emerald-500/30 bg-emerald-500/10 text-emerald-200'
-          : 'border border-amber-500/30 bg-amber-500/10 text-amber-200',
+          : tone === 'danger'
+            ? 'border border-red-500/30 bg-red-500/10 text-red-200'
+            : 'border border-amber-500/30 bg-amber-500/10 text-amber-200',
       )}
     >
       {label}

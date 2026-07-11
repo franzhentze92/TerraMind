@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { ResponseOrchestrationExecutivePanel } from '@/modules/response-orchestration/components/ResponseOrchestrationExecutivePanel'
 import { useNationalSituation } from '../../NationalSituationContext'
 import { useSituationRouteAccess } from '../../hooks/useSituationRouteAccess'
+import { decisionStatusLabel } from '../../utils/situation-labels'
 
 export function OperacionesTab() {
   const { dashboardQuery } = useNationalSituation()
@@ -31,7 +32,7 @@ export function OperacionesTab() {
                   <Link to={m.href} className="text-sm hover:text-accent">
                     {m.title}
                     {m.is_internal_demo && (
-                      <span className="ml-1 text-[10px] text-violet-300">(demo)</span>
+                      <span className="ml-1 text-[10px] text-violet-300">(demostración)</span>
                     )}
                   </Link>
                 </li>
@@ -61,7 +62,7 @@ export function OperacionesTab() {
             {dashboard!.pending_decisions.map((d, i) => (
               <li key={`${d.incident_id}-${i}`}>
                 <Link to={d.href} className="text-sm hover:text-accent">
-                  {d.decision_status} · {d.incident_id.slice(0, 8)}…
+                  {decisionStatusLabel(d.decision_status)} · {d.incident_id.slice(0, 8)}…
                 </Link>
               </li>
             ))}

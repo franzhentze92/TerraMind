@@ -119,8 +119,25 @@ export async function getExecutiveDashboard(
     id: String(f.id),
     title: String(f.title),
     severity_label: String(f.severity_label),
+    finding_type: String(f.finding_type),
     department_name: (f.geographic_context?.department_name as string | null) ?? null,
     href: `/hallazgos/${f.id}`,
+  }))
+
+  const { listPriorities } = await import('./priorities.service.js')
+  const prioritiesResult = await listPriorities({ limit: 3 }, auth).catch(() => ({ items: [] }))
+  const topPriorities = prioritiesResult.items.slice(0, 3).map((p) => ({
+    id: String(p.id),
+    title: p.department_name
+      ? `Evento térmico en ${p.department_name}`
+      : 'Evento térmico (ubicación pendiente)',
+    department_name: p.department_name ?? null,
+    attention_score: Number(p.attention_score),
+    verification_score: Number(p.verification_score),
+    action_score: Number(p.action_score),
+    attention_level: String(p.attention_level),
+    primary_factor: p.priority_reasons[0] ?? null,
+    href: `/prioridades/${p.id}`,
   }))
 
   let incidents = await listIncidents({ limit: 20 })
@@ -246,6 +263,7 @@ export async function getExecutiveDashboard(
     ],
     summary,
     priority_findings: priorityFindings,
+    top_priorities: topPriorities,
     active_incidents: activeIncidents,
     recent_changes: timeline.slice(0, 20),
     pending_verifications: scopedPlans.slice(0, 5).map((p) => ({

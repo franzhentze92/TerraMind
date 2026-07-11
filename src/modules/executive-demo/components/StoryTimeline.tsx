@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import type { NationalTimelineEntry, StoryStageEntry } from '../types/executive-demo.types'
 import { cn } from '@/shared/utils/cn'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
+import { epistemicLabel } from '@/modules/national-situation/utils/situation-labels'
 
 const EPISTEMIC_STYLES: Record<string, string> = {
   observed: 'border-l-emerald-500',
@@ -29,7 +30,7 @@ export function NationalTimeline({
     <section className="rounded-xl border border-border-subtle bg-surface-2/40 px-5 py-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-          Timeline nacional
+          Cronología nacional
         </p>
         <select
           value={filter}
@@ -56,9 +57,9 @@ export function NationalTimeline({
             <div className="flex flex-wrap items-center gap-2 text-[10px] text-text-tertiary">
               <span>{formatGuatemalaDateTime(e.timestamp)}</span>
               <span>{e.stage_label}</span>
-              <span>{e.epistemic}</span>
+              <span>{epistemicLabel(e.epistemic)}</span>
               {e.is_internal_demo && (
-                <span className="text-amber-400">demo interna</span>
+                <span className="text-amber-400">Demostración interna</span>
               )}
             </div>
             {e.href ? (
@@ -97,7 +98,7 @@ export function IncidentStoryTimeline({ stages }: { stages: StoryStageEntry[] })
                   {stage.order}. {stage.title}
                 </p>
                 <p className="text-[10px] text-text-tertiary">
-                  {stage.epistemic} · {stage.status}
+                  {epistemicLabel(stage.epistemic)} · {stage.status}
                   {stage.timestamp && ` · ${formatGuatemalaDateTime(stage.timestamp)}`}
                 </p>
               </div>

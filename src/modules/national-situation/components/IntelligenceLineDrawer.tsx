@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useNationalSituation } from '../NationalSituationContext'
 import { filterEntriesByPeriod } from '../national-situation.constants'
+import { epistemicLabel } from '../utils/situation-labels'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
 import { cn } from '@/shared/utils/cn'
 
@@ -136,7 +137,7 @@ export function IntelligenceLineDrawer() {
             className={cn('border-l-2 pl-3', EPISTEMIC_STYLES[e.epistemic] ?? 'border-l-zinc-500')}
           >
             <p className="text-[10px] text-text-tertiary">
-              {formatGuatemalaDateTime(e.timestamp)} · {e.stage_label} · {e.epistemic}
+              {formatGuatemalaDateTime(e.timestamp)} · {e.stage_label} · {epistemicLabel(e.epistemic)}
             </p>
             {e.href ? (
               <Link to={e.href} className="text-sm hover:text-accent">
@@ -156,7 +157,7 @@ export function IntelligenceLineDrawer() {
         }}
         className="mt-4 text-xs text-accent"
       >
-        Abrir pestaña Timeline completa →
+        Abrir la pestaña Cronología completa →
       </button>
     </DrawerShell>
   )

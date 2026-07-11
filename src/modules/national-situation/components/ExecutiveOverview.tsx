@@ -4,7 +4,6 @@ import { useNationalSituation } from '../NationalSituationContext'
 import { ExecutiveKpiGrid } from './ExecutiveKpiGrid'
 import { ExecutiveSummary } from './ExecutiveSummary'
 import { TopPriorities } from './TopPriorities'
-import { DecisionActionPanel } from './DecisionActionPanel'
 import { OperationalCycleStatus } from './OperationalCycleStatus'
 import { IntelligenceLinePreview } from './IntelligenceLineDrawer'
 import { SituationOperationalHeader } from './SituationOperationalHeader'
@@ -36,8 +35,7 @@ export function ExecutiveOverview() {
         />
       )}
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        <DecisionActionPanel />
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
         <OperationalCycleStatus />
         <IntelligenceLinePreview />
       </div>

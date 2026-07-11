@@ -3,7 +3,9 @@ import { Link } from 'react-router-dom'
 import type { DataClassification } from '@/modules/executive-metrics/metric-taxonomy'
 import { exclusionReasonLabel } from '@/shared/product-language'
 import { useNationalSituation } from '../NationalSituationContext'
-import { PRIMARY_KPI_LIMIT, metricMethodologyLines } from '../national-situation.constants'
+import { PRIMARY_KPI_LIMIT } from '../national-situation.constants'
+import { buildSituationMethodologyPresentation } from '../utils/methodology-presentation'
+import { situationClassificationLabel } from '../utils/situation-labels'
 import { markSituationPerformance } from '../situation-performance'
 
 const CLASS_DOT: Record<DataClassification, string> = {
@@ -47,6 +49,9 @@ export function ExecutiveKpiGrid() {
     )
   }
 
+  const methodology =
+    methodologyId != null ? buildSituationMethodologyPresentation(methodologyId) : null
+
   return (
     <>
       <div
@@ -55,6 +60,7 @@ export function ExecutiveKpiGrid() {
       >
         {primaryKpis.map((kpi) => {
           const excluded = kpi.breakdown.filter((b) => !b.included)
+          const hasMethodology = buildSituationMethodologyPresentation(kpi.id) != null
           return (
             <div
               key={kpi.id}
@@ -77,7 +83,9 @@ export function ExecutiveKpiGrid() {
                   {excluded.map((item, idx) => (
                     <li key={`${item.label}-${idx}`} className="flex items-center gap-1 text-[10px]">
                       <span className={`h-1 w-1 rounded-full ${CLASS_DOT[item.classification]}`} />
-                      <span className="text-text-secondary">{item.label}:</span>
+                      <span className="text-text-secondary">
+                        {situationClassificationLabel(item.classification)}:
+                      </span>
                       <span className="text-text-primary">{item.value}</span>
                       {item.reason && (
                         <span className="text-text-tertiary">· {exclusionReasonLabel(item.reason)}</span>
@@ -86,7 +94,7 @@ export function ExecutiveKpiGrid() {
                   ))}
                 </ul>
               )}
-              {metricMethodologyLines(kpi.id).length > 0 && (
+              {hasMethodology && (
                 <button
                   type="button"
                   onClick={() => setMethodologyId(kpi.id)}
@@ -99,19 +107,34 @@ export function ExecutiveKpiGrid() {
           )
         })}
       </div>
-      {methodologyId && (
-        <div className="mt-2 rounded-lg border border-border-subtle bg-surface-2/60 px-4 py-3 text-xs">
+      {methodology && (
+        <div
+          className="mt-2 rounded-lg border border-border-subtle bg-surface-2/60 px-4 py-3 text-xs"
+          data-testid="kpi-methodology-panel"
+        >
           <div className="flex items-center justify-between">
             <p className="font-medium text-text-primary">Metodología</p>
             <button type="button" onClick={() => setMethodologyId(null)} className="text-text-tertiary">
               Cerrar
             </button>
           </div>
-          <ul className="mt-2 space-y-1 text-text-secondary">
-            {metricMethodologyLines(methodologyId).map((line) => (
-              <li key={line}>{line}</li>
+          <p className="mt-2 text-sm text-text-primary">{methodology.summary}</p>
+          <dl className="mt-3 space-y-1.5">
+            {methodology.lines.map((line) => (
+              <div key={line.label} className="grid grid-cols-[minmax(0,9rem)_1fr] gap-x-2">
+                <dt className="text-text-tertiary">{line.label}</dt>
+                <dd className="text-text-secondary">{line.value}</dd>
+              </div>
             ))}
-          </ul>
+          </dl>
+          <details className="mt-3 border-t border-border-subtle pt-2">
+            <summary className="cursor-pointer text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+              Referencia técnica
+            </summary>
+            <pre className="mt-2 overflow-x-auto rounded border border-border-subtle bg-surface-1/50 p-2 font-mono text-[10px] text-text-tertiary">
+              {methodology.technicalReference}
+            </pre>
+          </details>
         </div>
       )}
     </>

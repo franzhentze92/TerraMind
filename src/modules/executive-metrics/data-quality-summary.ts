@@ -32,9 +32,9 @@ export function buildDataQualityLines(
 ): DataQualityLine[] {
   const lines: DataQualityLine[] = [
     { label: 'Operacional', value: summary.operationalRecords, tone: 'operational' },
-    { label: 'Legacy', value: summary.legacyRecords, tone: 'legacy' },
-    { label: 'Demo', value: summary.demoRecords, tone: 'demo' },
-    { label: 'Ownership pendiente', value: summary.unresolvedOwnershipRecords, tone: 'pending' },
+    { label: 'Registros históricos', value: summary.legacyRecords, tone: 'legacy' },
+    { label: 'Demostración', value: summary.demoRecords, tone: 'demo' },
+    { label: 'Organización pendiente', value: summary.unresolvedOwnershipRecords, tone: 'pending' },
     { label: 'Pendiente de procesamiento', value: summary.pendingProcessingRecords, tone: 'pending' },
   ]
   lines.push({

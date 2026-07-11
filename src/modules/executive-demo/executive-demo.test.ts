@@ -36,6 +36,7 @@ function baseDashboard(overrides: Partial<ExecutiveDashboardDto> = {}): Executiv
       pending_decision: 'x',
     },
     priority_findings: [],
+    top_priorities: [],
     active_incidents: [],
     recent_changes: [],
     pending_verifications: [],

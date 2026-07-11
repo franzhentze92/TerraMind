@@ -1,5 +1,7 @@
 import type { ExecutiveMetric } from '@/modules/executive-metrics/executive-metric.types'
 import { getMetricRegistryEntry } from '@/modules/executive-metrics/metric-registry'
+import { pluralizeCount } from '@/shared/format/plural'
+import { HISTORICAL_PENDING_ORG_SUFFIX } from './utils/situation-labels'
 
 /** Maximum primary KPIs visible in the executive overview (Phase 3 §2). */
 export const PRIMARY_KPI_LIMIT = 6
@@ -35,7 +37,7 @@ export const SITUATION_TABS = [
   { id: 'actividad', label: 'Actividad' },
   { id: 'verificacion', label: 'Verificación' },
   { id: 'operaciones', label: 'Operaciones' },
-  { id: 'timeline', label: 'Timeline' },
+  { id: 'timeline', label: 'Cronología' },
 ] as const
 
 export type SituationTabId = (typeof SITUATION_TABS)[number]['id']
@@ -92,7 +94,7 @@ export function buildPrimaryKpis(
     if (m.id === 'incidents_operational') {
       const legacy = legacyExcludedTotal(m)
       if (legacy > 0) {
-        secondary = `${legacy} legacy pendientes de ownership`
+        secondary = `${pluralizeCount(legacy, 'registro histórico', 'registros históricos')} ${HISTORICAL_PENDING_ORG_SUFFIX}`
       }
     }
     return {

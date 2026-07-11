@@ -70,6 +70,7 @@ function baseDashboard(overrides: Partial<ExecutiveDashboardDto> = {}): Executiv
       pending_decision: 'Sin decisiones pendientes.',
     },
     priority_findings: [],
+    top_priorities: [],
     active_incidents: [],
     recent_changes: [],
     pending_verifications: [],
