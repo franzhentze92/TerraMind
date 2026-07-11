@@ -75,6 +75,7 @@
     "reports:e2e": "vitest run src/modules/executive-demo/executive-demo.test.ts",
     "reports:generate-samples": "tsx scripts/generate-report-samples.ts",
     "screenshots:8c-demo": "tsx scripts/capture-8c-demo-screenshots.ts",
+    "runtime-auth-smoke": "tsx scripts/runtime-auth-smoke.ts",
     "auth:bootstrap-admin": "tsx scripts/bootstrap-platform-admin.ts",
     "auth:activation-8b7f4": "tsx scripts/auth-activation-8b7f4.ts",
     "field-sync:pilot-preflight": "tsx scripts/field-sync-pilot.ts --mode=preflight",
@@ -142,6 +143,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.4.0",
+    "@noble/hashes": "^2.2.0",
     "@supabase/supabase-js": "^2.99.1",
     "@tanstack/react-query": "^5.101.2",
     "clsx": "^2.1.1",

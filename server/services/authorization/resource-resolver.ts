@@ -80,16 +80,17 @@ export async function loadTaskSnapshot(taskId: string): Promise<TenantResourceSn
 
 export async function loadFindingSnapshot(findingId: string): Promise<TenantResourceSnapshot | null> {
   if (isAuthTestMode()) return testFindingSnapshot(findingId)
+  // composite_findings is national/global intelligence data without an organization_id column.
   const { getSupabaseAdmin } = await import('@/pipeline/stores/supabase.client.js')
   const { data } = await getSupabaseAdmin()
     .from('composite_findings')
-    .select('id, organization_id')
+    .select('id')
     .eq('id', findingId)
     .maybeSingle()
   if (!data) return null
   return {
     id: String(data.id),
-    organization_id: data.organization_id ? String(data.organization_id) : null,
+    organization_id: null,
   }
 }
 

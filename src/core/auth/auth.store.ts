@@ -16,6 +16,7 @@ export interface AuthSessionState {
   clearSession: () => void
 }
 
+/** Session token/context come from Supabase + /api/auth/me — never from localStorage. */
 export const useAuthStore = create<AuthSessionState>()(
   persist(
     (set, get) => ({
@@ -41,9 +42,17 @@ export const useAuthStore = create<AuthSessionState>()(
           organizations: [],
         }),
     }),
-    { name: 'terramind-auth-v1' },
+    {
+      name: 'terramind-auth-v2',
+      partialize: (state) => ({ pendingSyncWarning: state.pendingSyncWarning }),
+    },
   ),
 )
+
+export function purgeLegacyAuthStorage(): void {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem('terramind-auth-v1')
+}
 
 export function getFieldLocalIdentityKey(auth: RequestAuthContext | null): string | null {
   if (!auth) return null

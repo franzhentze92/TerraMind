@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
 
+import { authFetch } from '@/core/auth/auth-fetch'
 import {
   evaluateRealSyncPilotAccess,
   type RealSyncPilotPolicy,
 } from '@/core/field-sync/real-sync-pilot-policy'
-import { FIELD_REAL_SYNC_ENABLED } from '@/modules/field-operations/field-mobile/config/fire-field-mobile.config'
 import { useAuth } from '@/core/auth/AuthProvider'
+import { useAuthQueryReady } from '@/core/auth/use-auth-query-ready'
+import { FIELD_REAL_SYNC_ENABLED } from '@/modules/field-operations/field-mobile/config/fire-field-mobile.config'
 
 const EMPTY: RealSyncPilotPolicy = {
   enabled: false,
@@ -15,21 +17,24 @@ const EMPTY: RealSyncPilotPolicy = {
 }
 
 export function useRealSyncPilot(missionId?: string | null) {
-  const { session } = useAuth()
+  const { authContext } = useAuth()
+  const authReady = useAuthQueryReady()
   const [policy, setPolicy] = useState<RealSyncPilotPolicy>(EMPTY)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    if (!authReady) {
+      setPolicy(EMPTY)
+      setLoading(false)
+      return
+    }
     let cancelled = false
     void (async () => {
       setLoading(true)
       try {
         const headers: Record<string, string> = { Accept: 'application/json' }
         if (missionId) headers['x-terramind-mission-id'] = missionId
-        const res = await fetch('/api/operations/field-sync/pilot-policy', {
-          credentials: 'include',
-          headers,
-        })
+        const res = await authFetch('/api/operations/field-sync/pilot-policy', { headers })
         if (!res.ok) throw new Error('pilot_policy_unavailable')
         const body = (await res.json()) as {
           enabled: boolean
@@ -52,22 +57,21 @@ export function useRealSyncPilot(missionId?: string | null) {
     return () => {
       cancelled = true
     }
-  }, [missionId])
+  }, [authReady, missionId])
 
   const isRealSyncAllowed = useCallback(
     (targetMissionId: string) => {
       if (FIELD_REAL_SYNC_ENABLED) return true
-      const ctx = session?.context
-      if (!ctx) return false
+      if (!authContext) return false
       return evaluateRealSyncPilotAccess(policy, {
-        authUserId: ctx.authUserId,
-        userProfileId: ctx.userId,
-        organizationId: ctx.activeOrganizationId,
+        authUserId: authContext.authUserId,
+        userProfileId: authContext.userId,
+        organizationId: authContext.activeOrganizationId,
         missionId: targetMissionId,
-        permissions: ctx.permissions,
+        permissions: authContext.permissions,
       }).allowed
     },
-    [policy, session?.context],
+    [authContext, policy],
   )
 
   const pilotActiveForMission = missionId ? isRealSyncAllowed(missionId) : false

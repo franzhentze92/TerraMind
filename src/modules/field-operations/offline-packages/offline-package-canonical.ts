@@ -2,7 +2,7 @@ import { createHash, createHmac } from 'node:crypto'
 
 import type { OfflinePackageManifest, OfflinePackageManifestFile } from '@/modules/field-operations/offline-packages/offline-package.types'
 
-export function sha256Hex(content: string | Buffer): string {
+export function sha256Hex(content: string | Uint8Array): string {
   return createHash('sha256').update(content).digest('hex')
 }
 
@@ -28,7 +28,7 @@ export function buildManifestFiles(
     .map((file) => ({
       path: file.path,
       mime_type: file.mime_type,
-      size_bytes: Buffer.byteLength(file.content, 'utf8'),
+      size_bytes: new TextEncoder().encode(file.content).length,
       sha256: sha256Hex(file.content),
     }))
     .sort((a, b) => a.path.localeCompare(b.path))

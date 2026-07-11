@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useAuthQueryReady } from '@/core/auth/use-auth-query-ready'
 import {
   approveDecision,
   fetchResponseBriefing,
@@ -10,33 +11,38 @@ import {
 } from '../api/response-orchestration-api'
 
 export function useResponsesList(filter?: string) {
+  const authReady = useAuthQueryReady()
   return useQuery({
     queryKey: ['responses', filter ?? 'all'],
     queryFn: () => fetchResponses(filter),
+    enabled: authReady,
   })
 }
 
 export function useResponseDetail(incidentId?: string) {
+  const authReady = useAuthQueryReady()
   return useQuery({
     queryKey: ['response-detail', incidentId],
     queryFn: () => fetchResponseDetail(incidentId!),
-    enabled: Boolean(incidentId),
+    enabled: authReady && Boolean(incidentId),
   })
 }
 
 export function useResponseBriefing(incidentId?: string) {
+  const authReady = useAuthQueryReady()
   return useQuery({
     queryKey: ['response-briefing', incidentId],
     queryFn: () => fetchResponseBriefing(incidentId!),
-    enabled: Boolean(incidentId),
+    enabled: authReady && Boolean(incidentId),
   })
 }
 
 export function useResponseHistory(incidentId?: string) {
+  const authReady = useAuthQueryReady()
   return useQuery({
     queryKey: ['response-history', incidentId],
     queryFn: () => fetchResponseHistory(incidentId!),
-    enabled: Boolean(incidentId),
+    enabled: authReady && Boolean(incidentId),
   })
 }
 

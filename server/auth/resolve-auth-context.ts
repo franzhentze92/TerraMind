@@ -65,13 +65,10 @@ export async function resolveRequestAuth(req: IncomingMessage): Promise<RequestA
     }
   }
 
-  if (isAuthTestMode()) {
-    return null
-  }
-
   const url = process.env.SUPABASE_URL?.trim()
   const anonKey = process.env.SUPABASE_ANON_KEY?.trim()
   if (!url || !anonKey) {
+    if (process.env.NODE_ENV === 'test') return null
     throw new Error('SUPABASE_URL and SUPABASE_ANON_KEY required for auth enforcement')
   }
 

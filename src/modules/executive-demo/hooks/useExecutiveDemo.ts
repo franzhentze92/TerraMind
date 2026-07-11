@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { useAuthQueryReady } from '@/core/auth/use-auth-query-ready'
 import {
   fetchExecutiveDashboard,
   fetchIncidentReport,
@@ -7,32 +8,38 @@ import {
 } from '../api/executive-demo-api'
 
 export function useExecutiveDashboard(includeDemo = false) {
+  const authReady = useAuthQueryReady()
   return useQuery({
     queryKey: ['executive-dashboard', includeDemo],
     queryFn: () => fetchExecutiveDashboard(includeDemo),
     staleTime: 30_000,
+    enabled: authReady,
   })
 }
 
 export function useIncidentStory(incidentId: string | undefined, includeDemo = false) {
+  const authReady = useAuthQueryReady()
   return useQuery({
     queryKey: ['incident-story', incidentId, includeDemo],
     queryFn: () => fetchIncidentStory(incidentId!, includeDemo),
-    enabled: Boolean(incidentId),
+    enabled: authReady && Boolean(incidentId),
   })
 }
 
 export function useNationalReport(period: string, includeDemo = false) {
+  const authReady = useAuthQueryReady()
   return useQuery({
     queryKey: ['national-report', period, includeDemo],
     queryFn: () => fetchNationalReport(period, includeDemo),
+    enabled: authReady,
   })
 }
 
 export function useIncidentReport(incidentId: string | undefined, includeDemo = false) {
+  const authReady = useAuthQueryReady()
   return useQuery({
     queryKey: ['incident-report', incidentId, includeDemo],
     queryFn: () => fetchIncidentReport(incidentId!, includeDemo),
-    enabled: Boolean(incidentId),
+    enabled: authReady && Boolean(incidentId),
   })
 }

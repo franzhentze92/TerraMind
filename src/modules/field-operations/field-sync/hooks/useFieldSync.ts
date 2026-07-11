@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { useAuthQueryReady } from '@/core/auth/use-auth-query-ready'
 import { createHttpSyncTransport } from '@/modules/field-operations/field-sync/api/field-sync-api'
 import { createMockSyncTransport } from '@/modules/field-operations/field-sync/api/field-sync-mock-transport'
 import { FIELD_REAL_SYNC_ENABLED } from '@/modules/field-operations/field-mobile/config/fire-field-mobile.config'
@@ -20,14 +21,11 @@ const syncRepo = FieldSyncRepository.createDefault()
 const packageRepo = OfflinePackageRepository.createDefault()
 const transport = FIELD_REAL_SYNC_ENABLED ? createHttpSyncTransport() : createMockSyncTransport()
 
-function tabId() {
-  return `tab-${Math.random().toString(36).slice(2, 10)}`
-}
-
 export function useFieldSync() {
+  const authReady = useAuthQueryReady()
   const [sessions, setSessions] = useState<SyncSession[]>([])
   const [loading, setLoading] = useState(true)
-  const currentTab = tabId()
+  const tabIdRef = useRef(`tab-${Math.random().toString(36).slice(2, 10)}`)
 
   const refresh = useCallback(async () => {
     setLoading(true)
@@ -36,8 +34,13 @@ export function useFieldSync() {
   }, [])
 
   useEffect(() => {
+    if (!authReady) {
+      setSessions([])
+      setLoading(false)
+      return
+    }
     void refresh()
-  }, [refresh])
+  }, [authReady, refresh])
 
   const syncNow = useCallback(
     async (bundle: LocalEvidenceBundle) => {
@@ -48,12 +51,12 @@ export function useFieldSync() {
         evidenceRepo,
         syncRepo,
         transport,
-        tab_id: currentTab,
+        tab_id: tabIdRef.current,
       })
       await refresh()
       return result
     },
-    [currentTab, refresh],
+    [refresh],
   )
 
   const getProgress = useCallback(async (sessionId: string): Promise<SyncProgressSummary | null> => {
@@ -89,22 +92,31 @@ export function useFieldSync() {
     [refresh],
   )
 
-  return { sessions, loading, refresh, syncNow, getProgress, pause, cancel }
+  return useMemo(
+    () => ({ sessions, loading, refresh, syncNow, getProgress, pause, cancel }),
+    [sessions, loading, refresh, syncNow, getProgress, pause, cancel],
+  )
 }
 
 export function usePendingSyncBundles() {
+  const authReady = useAuthQueryReady()
+  const { refresh: refreshFieldSync, ...fieldSync } = useFieldSync()
   const [bundles, setBundles] = useState<LocalEvidenceBundle[]>([])
   const [loading, setLoading] = useState(true)
-  const fieldSync = useFieldSync()
 
   const refresh = useCallback(async () => {
+    if (!authReady) {
+      setBundles([])
+      setLoading(false)
+      return
+    }
     setLoading(true)
     const pending = await evidenceRepo.listBundles('pending_sync')
     const blocked = await evidenceRepo.listBundles('sync_blocked')
     setBundles([...pending, ...blocked])
     setLoading(false)
-    await fieldSync.refresh()
-  }, [fieldSync])
+    await refreshFieldSync()
+  }, [authReady, refreshFieldSync])
 
   useEffect(() => {
     void refresh()

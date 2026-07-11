@@ -35,6 +35,12 @@ config({ path: resolve(process.cwd(), '.env') })
 
 const PORT = Number(process.env.TERRAMIND_PORT ?? 3001)
 
+if (process.env.AUTH_TEST_MODE === '1' && process.env.AUTH_ENFORCE === 'true') {
+  console.log(
+    '[TerraMind] AUTH_TEST_MODE=1 — test-* tokens habilitados; tokens Supabase reales también aceptados.',
+  )
+}
+
 const server = createServer(async (req: IncomingMessage, res: ServerResponse) => {
   if (handlePreflight(req, res)) return
 

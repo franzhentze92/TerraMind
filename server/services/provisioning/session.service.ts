@@ -40,7 +40,10 @@ export async function buildAuthSessionPayload(
   requestedOrgId?: string | null,
 ): Promise<AuthSessionPayload> {
   if (isProvisioningTestMode()) {
-    return buildTestAuthSessionPayload(authUserId, requestedOrgId)
+    const testProfile = getTestProfileByAuthUserId(authUserId)
+    if (testProfile || process.env.NODE_ENV === 'test') {
+      return buildTestAuthSessionPayload(authUserId, requestedOrgId)
+    }
   }
 
   const { getSupabaseAdmin } = await import('@/pipeline/stores/supabase.client.js')
@@ -73,10 +76,20 @@ export async function buildAuthSessionPayload(
       }
     }) ?? []
 
-  const activeOrgId =
-    requestedOrgId?.trim() ||
-    (profile.active_organization_id ? String(profile.active_organization_id) : undefined) ||
-    organizations.find((o) => o.membership_status === 'active')?.id
+  const requested = requestedOrgId?.trim()
+  const profileOrg = profile.active_organization_id ? String(profile.active_organization_id) : undefined
+  const fallbackOrg =
+    profileOrg || organizations.find((o) => o.membership_status === 'active')?.id
+
+  let activeOrgId = requested || fallbackOrg
+  if (requested) {
+    const hasRequestedMembership = membershipRows?.some(
+      (m) => String(m.organization_id) === requested && m.status !== 'revoked',
+    )
+    if (!hasRequestedMembership) {
+      activeOrgId = fallbackOrg
+    }
+  }
 
   const profileDto = {
     id: String(profile.id),

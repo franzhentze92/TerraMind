@@ -1,4 +1,4 @@
-import { buildAuthHeaders } from '@/core/auth/auth-fetch'
+import { authFetch } from '@/core/auth/auth-fetch'
 
 export class ApiError extends Error {
   status: number
@@ -32,8 +32,7 @@ export class ApiClient {
   }
 
   async get<T>(endpoint: string): Promise<T> {
-    const response = await fetch(`${this.config.baseUrl}${endpoint}`, {
-      headers: buildAuthHeaders(),
+    const response = await authFetch(`${this.config.baseUrl}${endpoint}`, {
       credentials: 'include',
       signal: AbortSignal.timeout(this.config.timeout),
     })
@@ -51,10 +50,9 @@ export class ApiClient {
   }
 
   async post<T>(endpoint: string, body: unknown): Promise<T> {
-    const authHeaders = buildAuthHeaders()
-    const response = await fetch(`${this.config.baseUrl}${endpoint}`, {
+    const response = await authFetch(`${this.config.baseUrl}${endpoint}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...authHeaders },
+      headers: { 'Content-Type': 'application/json' },
       credentials: 'include',
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(this.config.timeout),

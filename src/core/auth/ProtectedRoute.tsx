@@ -3,7 +3,7 @@ import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/core/auth/AuthProvider'
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { loading, isAuthenticated, sessionState } = useAuth()
+  const { loading, status } = useAuth()
   const location = useLocation()
 
   if (loading) {
@@ -14,15 +14,13 @@ export function ProtectedRoute({ children }: { children: React.ReactNode }) {
     )
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: location.pathname }} />
-  }
-
-  if (sessionState === 'awaiting_access') {
-    return <Navigate to="/espera-acceso" replace />
-  }
-
-  if (sessionState === 'revoked' || sessionState === 'suspended') {
+  if (status !== 'authenticated') {
+    if (status === 'unauthenticated') {
+      return <Navigate to="/login" replace state={{ from: location.pathname }} />
+    }
+    if (status === 'awaiting_access') {
+      return <Navigate to="/espera-acceso" replace />
+    }
     return <Navigate to="/403" replace />
   }
 
