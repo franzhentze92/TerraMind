@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useFireEvent } from '@/modules/fires/hooks/useFireEvent'
 import { useFireEvents } from '@/modules/fires/hooks/useFireEvents'
@@ -14,11 +14,13 @@ import { lifecycleStateLabel } from '@/modules/lifecycle/utils/lifecycle-labels'
 import { validationStatusLabel } from '@/modules/fires/utils/fire-interpretation'
 import { riskLevelLabel } from '@/modules/fires/utils/format'
 import { Switch } from '@/shared/components/Switch'
+import { markSituationPerformance } from '@/modules/national-situation/situation-performance'
 import type { ExecutiveDashboardDto } from '../types/executive-demo.types'
 
 interface ExecutiveNationalMapProps {
   includeDemo: boolean
   activeIncidents: ExecutiveDashboardDto['active_incidents']
+  showLegacyLayer?: boolean
 }
 
 function ExecutiveMapSidePanel({
@@ -126,53 +128,87 @@ function ExecutiveMapSidePanel({
   )
 }
 
-export function ExecutiveNationalMap({ includeDemo, activeIncidents }: ExecutiveNationalMapProps) {
+export function ExecutiveNationalMap({
+  includeDemo,
+  activeIncidents,
+  showLegacyLayer: showLegacyLayerProp = false,
+}: ExecutiveNationalMapProps) {
   const filters = useMemo(() => DEFAULT_FIRE_PAGE_FILTERS, [])
   const [selectedEventId, setSelectedEventId] = useState<string | undefined>()
   const [showIncidentsLayer, setShowIncidentsLayer] = useState(true)
-  const showDetections = false
+  const [showLegacyLayer, setShowLegacyLayer] = useState(showLegacyLayerProp)
+  const [showDetectionsLayer, setShowDetectionsLayer] = useState(false)
+  const [centerToken, setCenterToken] = useState(0)
 
   const eventsQuery = useFireEvents(filters)
   const geoJsonQuery = useFireEventsGeoJson(filters)
   const items = eventsQuery.data?.items ?? []
 
+  const operationalIncidents = activeIncidents.filter((i) => !i.is_legacy && (!i.is_internal_demo || includeDemo))
+  const legacyIncidents = activeIncidents.filter((i) => i.is_legacy)
+  const visibleIncidents = [
+    ...operationalIncidents,
+    ...(showLegacyLayer ? legacyIncidents : []),
+  ]
+
+  useEffect(() => {
+    if (geoJsonQuery.data && !geoJsonQuery.isLoading) {
+      markSituationPerformance('map_ready')
+    }
+  }, [geoJsonQuery.data, geoJsonQuery.isLoading])
+
   return (
-    <section className="rounded-xl border border-border-subtle bg-surface-2/40 px-5 py-4">
+    <section
+      className="rounded-xl border border-border-subtle bg-surface-2/40 px-5 py-4"
+      data-testid="executive-national-map"
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-          Mapa operacional
+          Mapa ejecutivo
         </p>
         <div className="flex flex-wrap items-center gap-3 text-xs text-text-secondary">
-          <span className="text-confidence-medium">● Eventos</span>
-          <span className="text-accent">● Prioridad (color)</span>
+          <span className="text-emerald-400">● Detección</span>
+          <span className="text-confidence-medium">● Evento</span>
+          <span className="text-accent">● Prioridad</span>
+          <span className="text-violet-400">◆ Incidente</span>
+          <span className="text-amber-400">◌ Legacy</span>
+          {includeDemo && <span className="text-violet-300">★ Demo</span>}
+          <label className="flex items-center gap-1.5">
+            <Switch checked={showDetectionsLayer} onChange={setShowDetectionsLayer} />
+            Detecciones
+          </label>
           <label className="flex items-center gap-1.5">
             <Switch checked={showIncidentsLayer} onChange={setShowIncidentsLayer} />
-            Incidentes ({activeIncidents.length})
+            Incidentes ({visibleIncidents.length})
           </label>
-          <span
-            className="flex items-center gap-1.5 text-text-tertiary"
-            title="Detecciones puntuales disponibles en /incendios"
+          <label className="flex items-center gap-1.5">
+            <Switch checked={showLegacyLayer} onChange={setShowLegacyLayer} />
+            Legacy
+          </label>
+          <button
+            type="button"
+            onClick={() => setCenterToken((t) => t + 1)}
+            className="rounded border border-border-subtle px-2 py-0.5 text-[10px] hover:border-accent/40"
           >
-            Detecciones (ver /incendios)
-          </span>
-          <span className="text-text-tertiary" title="Ciclo de vida visible al seleccionar un evento">
-            Lifecycle (panel lateral)
-          </span>
+            Centrar Guatemala
+          </button>
         </div>
       </div>
 
-      {!includeDemo && activeIncidents.length === 0 && (
+      {!includeDemo && operationalIncidents.length === 0 && (
         <p className="mt-2 text-xs text-text-secondary">
-          Capa de incidentes vacía sin demostraciones — solo eventos térmicos visibles.
+          Sin incidentes operacionales — eventos térmicos y prioridades visibles. Active legacy o demo si
+          corresponde.
         </p>
       )}
 
-      <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_280px]">
+      <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_260px]">
         <FireEventsMap
-          className="h-[420px] min-h-[280px] rounded-lg border border-border-subtle"
+          key={centerToken}
+          className="h-[360px] min-h-[300px] rounded-lg border border-border-subtle md:h-[400px]"
           eventsGeoJson={geoJsonQuery.data}
           eventListItems={items}
-          showDetections={showDetections}
+          showDetections={showDetectionsLayer}
           selectedEventId={selectedEventId}
           isLoading={geoJsonQuery.isLoading}
           isError={geoJsonQuery.isError}
@@ -185,12 +221,13 @@ export function ExecutiveNationalMap({ includeDemo, activeIncidents }: Executive
           <div className="hidden rounded-lg border border-dashed border-border-subtle bg-surface-1/30 px-4 py-6 text-xs text-text-tertiary lg:block">
             Seleccione un evento en el mapa para ver prioridad, ciclo de vida, verificación e
             incidente correlacionado.
-            {showIncidentsLayer && activeIncidents.length > 0 && (
+            {showIncidentsLayer && visibleIncidents.length > 0 && (
               <ul className="mt-3 space-y-1">
-                {activeIncidents.slice(0, 4).map((inc) => (
+                {visibleIncidents.slice(0, 4).map((inc) => (
                   <li key={inc.id}>
                     <Link to={inc.href} className="text-accent">
-                      {inc.id.slice(0, 8)}… · {inc.status}
+                      {inc.story_coverage || `${inc.id.slice(0, 8)}…`} · {inc.status}
+                      {inc.is_legacy && <span className="text-amber-400"> legacy</span>}
                     </Link>
                   </li>
                 ))}
