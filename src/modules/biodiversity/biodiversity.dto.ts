@@ -5,15 +5,6 @@ import { canExposeExactLocation } from './biodiversity-privacy'
 
 const providerSchema = z.enum(['gbif', 'inaturalist', 'all'])
 
-const qualityFiltersSchema = z
-  .object({
-    excludeCaptiveCultivated: z.boolean().optional(),
-    requireCoordinates: z.boolean().optional(),
-    researchGradeOnly: z.boolean().optional(),
-    excludeGeospatialIssues: z.boolean().optional(),
-  })
-  .optional()
-
 export const biodiversitySearchQuerySchema = z
   .object({
     lat: z.coerce.number().min(-90).max(90).optional(),

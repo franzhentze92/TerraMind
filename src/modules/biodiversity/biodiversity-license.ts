@@ -52,7 +52,7 @@ export function evaluateOccurrenceLicense(input: LicenseEvaluationInput): Licens
     warnings.push('restrictive_license')
   }
 
-  const redistributionAllowed = Boolean(license) && !RESTRICTIVE.has(license)
+  const redistributionAllowed = license !== undefined && !RESTRICTIVE.has(license)
 
   return {
     license,

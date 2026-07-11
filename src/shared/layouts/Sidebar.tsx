@@ -22,6 +22,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Smartphone,
+  X,
 } from 'lucide-react'
 import { cn } from '@/shared/utils/cn'
 import { APP_CONFIG } from '@/core/config'
@@ -34,6 +35,7 @@ import {
   type RouteRegistryEntry,
 } from '@/shared/navigation/navigation-registry'
 import { canSeeNavItem, isFieldTechnicianOnly } from '@/shared/navigation/role-navigation'
+import { useSidebarLayout } from './SidebarLayoutContext'
 
 const SECTION_ORDER: NavSectionKey[] = [
   'monitoreo',
@@ -66,12 +68,23 @@ const ICON_BY_PATH: Record<string, typeof Home> = {
 
 const SIDEBAR_COLLAPSED_KEY = 'terramind-sidebar-collapsed'
 
+function initialCollapsed(): boolean {
+  if (typeof window === 'undefined') return false
+  const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY)
+  if (saved !== null) return saved === '1'
+  const w = window.innerWidth
+  if (w < 1024) return true
+  return false
+}
+
 function NavItemLink({
   item,
   collapsed,
+  onNavigate,
 }: {
   item: RouteRegistryEntry
   collapsed: boolean
+  onNavigate?: () => void
 }) {
   const Icon = ICON_BY_PATH[item.path] ?? Map
   return (
@@ -79,6 +92,7 @@ function NavItemLink({
       <NavLink
         to={item.path}
         title={collapsed ? item.title : undefined}
+        onClick={onNavigate}
         className={({ isActive }) =>
           cn(
             'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors',
@@ -105,18 +119,15 @@ function NavItemLink({
   )
 }
 
-export function Sidebar() {
+function SidebarNav({
+  collapsed,
+  onNavigate,
+}: {
+  collapsed: boolean
+  onNavigate?: () => void
+}) {
   const { authContext } = useAuth()
-  const location = useLocation()
   const canManageOrg = useHasPermission('organization.settings')
-  const [collapsed, setCollapsed] = useState(() => {
-    if (typeof window === 'undefined') return false
-    return localStorage.getItem(SIDEBAR_COLLAPSED_KEY) === '1'
-  })
-
-  useEffect(() => {
-    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0')
-  }, [collapsed])
 
   const visibleSections = useMemo(() => {
     const fieldOnly = isFieldTechnicianOnly(authContext)
@@ -131,16 +142,71 @@ export function Sidebar() {
       .filter((s) => s.items.length > 0)
   }, [authContext])
 
-  const inCampo = location.pathname.startsWith('/campo')
-
   return (
-    <aside
-      className={cn(
-        'flex h-full flex-col border-r border-border-subtle bg-surface-1 transition-[width]',
-        collapsed ? 'w-14' : 'w-56',
-        inCampo && 'hidden md:flex',
+    <nav className="flex-1 overflow-y-auto px-2 py-3">
+      <AnimatePresence initial={false}>
+        {visibleSections.map((section) => (
+          <div key={section.key} className="mb-4 last:mb-0">
+            {!collapsed && (
+              <p className="mb-1 px-2 text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+                {section.title}
+              </p>
+            )}
+            <ul className="space-y-0.5">
+              {section.items.map((item) => (
+                <NavItemLink
+                  key={item.path}
+                  item={item}
+                  collapsed={collapsed}
+                  onNavigate={onNavigate}
+                />
+              ))}
+            </ul>
+          </div>
+        ))}
+      </AnimatePresence>
+
+      {canManageOrg && !collapsed && (
+        <div className="mb-4">
+          {!visibleSections.some((s) => s.key === 'administracion') && (
+            <p className="mb-1 px-2 text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+              {NAV_SECTION_LABELS.administracion}
+            </p>
+          )}
+          <NavLink
+            to="/admin/organizacion"
+            onClick={onNavigate}
+            className={({ isActive }) =>
+              cn(
+                'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm',
+                isActive ? 'bg-surface-3 text-text-primary' : 'text-text-secondary hover:text-text-primary',
+              )
+            }
+          >
+            <Users className="h-4 w-4" />
+            Organización
+          </NavLink>
+        </div>
       )}
-    >
+    </nav>
+  )
+}
+
+function SidebarChrome({
+  collapsed,
+  setCollapsed,
+  showCollapseToggle,
+  onCloseMobile,
+  mobile,
+}: {
+  collapsed: boolean
+  setCollapsed: (v: boolean | ((c: boolean) => boolean)) => void
+  showCollapseToggle: boolean
+  onCloseMobile?: () => void
+  mobile?: boolean
+}) {
+  return (
+    <>
       <div className="flex h-10 items-center gap-2 border-b border-border-subtle px-2">
         <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-accent-subtle">
           <Globe className="h-3.5 w-3.5 text-accent" />
@@ -150,14 +216,26 @@ export function Sidebar() {
             {APP_CONFIG.name}
           </p>
         )}
-        <button
-          type="button"
-          onClick={() => setCollapsed((c) => !c)}
-          className="rounded p-1 text-text-tertiary hover:bg-surface-3 hover:text-text-primary"
-          aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
-        >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
-        </button>
+        {mobile && onCloseMobile && (
+          <button
+            type="button"
+            onClick={onCloseMobile}
+            className="rounded p-1 text-text-tertiary hover:bg-surface-3 hover:text-text-primary"
+            aria-label="Cerrar menú"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        )}
+        {showCollapseToggle && !mobile && (
+          <button
+            type="button"
+            onClick={() => setCollapsed((c) => !c)}
+            className="rounded p-1 text-text-tertiary hover:bg-surface-3 hover:text-text-primary"
+            aria-label={collapsed ? 'Expandir menú' : 'Colapsar menú'}
+          >
+            {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          </button>
+        )}
       </div>
 
       {!collapsed && (
@@ -165,47 +243,59 @@ export function Sidebar() {
           <OrganizationSelector />
         </div>
       )}
+    </>
+  )
+}
 
-      <nav className="flex-1 overflow-y-auto px-2 py-3">
-        <AnimatePresence initial={false}>
-          {visibleSections.map((section) => (
-            <div key={section.key} className="mb-4 last:mb-0">
-              {!collapsed && (
-                <p className="mb-1 px-2 text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-                  {section.title}
-                </p>
-              )}
-              <ul className="space-y-0.5">
-                {section.items.map((item) => (
-                  <NavItemLink key={item.path} item={item} collapsed={collapsed} />
-                ))}
-              </ul>
-            </div>
-          ))}
-        </AnimatePresence>
+export function Sidebar() {
+  const location = useLocation()
+  const { mobileOpen, closeMobile, isMobile } = useSidebarLayout()
+  const [collapsed, setCollapsed] = useState(initialCollapsed)
 
-        {canManageOrg && !collapsed && (
-          <div className="mb-4">
-            {!visibleSections.some((s) => s.key === 'administracion') && (
-              <p className="mb-1 px-2 text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-                {NAV_SECTION_LABELS.administracion}
-              </p>
-            )}
-            <NavLink
-              to="/admin/organizacion"
-              className={({ isActive }) =>
-                cn(
-                  'flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm',
-                  isActive ? 'bg-surface-3 text-text-primary' : 'text-text-secondary hover:text-text-primary',
-                )
-              }
-            >
-              <Users className="h-4 w-4" />
-              Organización
-            </NavLink>
-          </div>
-        )}
-      </nav>
+  useEffect(() => {
+    localStorage.setItem(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0')
+  }, [collapsed])
+
+  const inCampo = location.pathname.startsWith('/campo')
+
+  const desktopAside = (
+    <aside
+      className={cn(
+        'h-full flex-col border-r border-border-subtle bg-surface-1 transition-[width]',
+        inCampo ? 'hidden md:flex' : 'hidden md:flex',
+        collapsed ? 'w-14' : 'w-56',
+      )}
+      aria-label="Navegación principal"
+    >
+      <SidebarChrome collapsed={collapsed} setCollapsed={setCollapsed} showCollapseToggle />
+      <SidebarNav collapsed={collapsed} />
     </aside>
+  )
+
+  return (
+    <>
+      {desktopAside}
+
+      {isMobile && !inCampo && mobileOpen && (
+        <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Menú">
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/50"
+            aria-label="Cerrar menú"
+            onClick={closeMobile}
+          />
+          <aside className="relative flex h-full w-[min(100%,280px)] flex-col bg-surface-1 shadow-xl">
+            <SidebarChrome
+              collapsed={false}
+              setCollapsed={setCollapsed}
+              showCollapseToggle={false}
+              onCloseMobile={closeMobile}
+              mobile
+            />
+            <SidebarNav collapsed={false} onNavigate={closeMobile} />
+          </aside>
+        </div>
+      )}
+    </>
   )
 }

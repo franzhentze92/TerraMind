@@ -9,5 +9,6 @@ export default defineConfig({
   },
   test: {
     include: ['src/**/*.test.ts', 'src/**/*.e2e.test.ts', 'server/**/*.test.ts'],
+    exclude: ['**/population.benchmark.test.ts'],
   },
 })

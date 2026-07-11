@@ -86,7 +86,7 @@ export const SYNTHETIC_ASSIGNEES = {
     max_active_missions: 1,
     is_available: true,
     is_active: true,
-    permissions: ['missions.accept'],
+    permissions: ['missions.accept'] as MissionPermission[],
   },
   overloaded_actor: {
     id: 'fixture-overloaded',

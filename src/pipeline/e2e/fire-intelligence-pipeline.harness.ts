@@ -6,11 +6,11 @@ import type { LifecycleEvaluationSnapshot } from '@/modules/lifecycle/lifecycle.
 import { firePriorityEngine } from '@/modules/priorities/engine/fire-priority.engine'
 import type { PriorityEvaluationResult } from '@/modules/priorities/priorities.types'
 import { genericIncidentCorrelationEngine } from '@/modules/incidents/engine/generic-incident-correlation.engine'
-import type { IncidentCorrelationResult } from '@/modules/incidents/incidents.types'
+import type { CorrelationEvaluationResult } from '@/modules/incidents/incidents.types'
 import { genericVerificationPlanningEngine } from '@/modules/verification/engine/generic-verification-planning.engine'
 import type { VerificationPlanResult } from '@/modules/verification/verification.types'
 import { genericMissionsCoreEngine } from '@/modules/missions/engine/generic-missions.engine'
-import type { MissionCreationResult, MissionPlanSnapshot } from '@/modules/missions/missions.types'
+import type { MissionCreationResult, MissionPlanSnapshot, MissionStatus } from '@/modules/missions/missions.types'
 import { evaluateWorkflowCommand } from '@/modules/missions/assignment/mission-workflow.engine'
 import { SYNTHETIC_ASSIGNEES, ALL_MISSION_PERMISSIONS } from '@/modules/missions/config/fire-assignment.config'
 import { evaluateEvidenceValidation } from '@/modules/evidence/validation/evidence-validation.engine'
@@ -57,7 +57,7 @@ export interface FireE2EPipelineState {
   findings: CompositeFinding[]
   finding_codes: string[]
   priority: PriorityEvaluationResult
-  incident: IncidentCorrelationResult
+  incident: CorrelationEvaluationResult
   verification_plan: VerificationPlanResult
   mission: MissionCreationResult
   mission_status: string
@@ -116,7 +116,6 @@ function lifecycleSnapshot(): LifecycleEvaluationSnapshot {
 }
 
 function buildMissionPlanFromVerification(plan: VerificationPlanResult): MissionPlanSnapshot {
-  const primary = plan.needs[0]
   return {
     id: FIRE_E2E_IDS.plan,
     incident_id: FIRE_E2E_IDS.incident,
@@ -165,7 +164,7 @@ function basePhotoValidationSnapshot(): ValidationSnapshot {
       earliest_start_at: FIRE_E2E_FIRST_DETECTED,
       due_at: '2026-07-10T18:00:00.000Z',
       expires_at: '2026-07-11T12:00:00.000Z',
-      location_geometry: FIRE_E2E_GEOMETRY.mission_polygon,
+      location_geometry: FIRE_E2E_GEOMETRY.mission_polygon as unknown as { type: string; coordinates: number[][][] },
       last_detected_at: FIRE_E2E_DETECTED_AT,
     },
     assets: [
@@ -215,7 +214,7 @@ function baseObservationValidationSnapshot(id: string, device: string, obs: Reco
       earliest_start_at: FIRE_E2E_FIRST_DETECTED,
       due_at: '2026-07-10T18:00:00.000Z',
       expires_at: '2026-07-11T12:00:00.000Z',
-      location_geometry: FIRE_E2E_GEOMETRY.mission_polygon,
+      location_geometry: FIRE_E2E_GEOMETRY.mission_polygon as unknown as { type: string; coordinates: number[][][] },
       last_detected_at: FIRE_E2E_DETECTED_AT,
     },
     assets: [],
@@ -511,7 +510,7 @@ export function runFullFireVerificationPipeline(
       action_score: priority.assessment.action_score,
       action_level: priority.assessment.action_level,
       plan_limitations: [],
-      priority_limitations: priority.assessment.limitations,
+      priority_limitations: priority.assessment.priority_limitations,
       first_observed_at: FIRE_E2E_FIRST_DETECTED,
       last_observed_at: FIRE_E2E_DETECTED_AT,
       primary_event_id: FIRE_E2E_IDS.event,
@@ -556,7 +555,10 @@ export function runFullFireVerificationPipeline(
     permissions: ALL_MISSION_PERMISSIONS,
   }
   const assignmentHistory: string[] = []
-  let missionStatus = mission.status
+  let missionStatus: MissionStatus = (mission.status ?? 'ready') as MissionStatus
+  const missionExpiresAt = mission.expires_at ?? '2026-07-11T12:00:00.000Z'
+  const missionDueAt = mission.due_at ?? '2026-07-11T12:00:00.000Z'
+  const missionType = mission.mission_type ?? 'field_visual_inspection'
 
   const methodCode =
     mission.eligibility.recommended_method_code ?? missionPlan.needs[0]?.recommended_method_id ?? 'field_visual_inspection'
@@ -577,10 +579,10 @@ export function runFullFireVerificationPipeline(
     mission: {
       id: FIRE_E2E_IDS.mission,
       status: missionStatus,
-      mission_type: mission.mission_type,
+      mission_type: missionType,
       recommended_method_code: methodCode,
-      expires_at: mission.expires_at,
-      due_at: mission.due_at,
+      expires_at: missionExpiresAt,
+      due_at: missionDueAt,
       required_tasks_pending: mission.tasks.length,
     },
     assignment: null,
@@ -598,10 +600,10 @@ export function runFullFireVerificationPipeline(
     mission: {
       id: FIRE_E2E_IDS.mission,
       status: missionStatus,
-      mission_type: mission.mission_type,
+      mission_type: missionType,
       recommended_method_code: methodCode,
-      expires_at: mission.expires_at,
-      due_at: mission.due_at,
+      expires_at: missionExpiresAt,
+      due_at: missionDueAt,
       required_tasks_pending: mission.tasks.length,
     },
     assignment: {
@@ -609,6 +611,7 @@ export function runFullFireVerificationPipeline(
       status: 'assigned',
       assignee_id: assignee.id,
       assignee_type: 'user',
+      idempotency_key: null,
     },
     assignee,
     now_iso: evaluatedAt,
@@ -623,10 +626,10 @@ export function runFullFireVerificationPipeline(
     mission: {
       id: FIRE_E2E_IDS.mission,
       status: missionStatus,
-      mission_type: mission.mission_type,
+      mission_type: missionType,
       recommended_method_code: methodCode,
-      expires_at: mission.expires_at,
-      due_at: mission.due_at,
+      expires_at: missionExpiresAt,
+      due_at: missionDueAt,
       required_tasks_pending: mission.tasks.length,
     },
     assignment: {
@@ -634,6 +637,7 @@ export function runFullFireVerificationPipeline(
       status: 'accepted',
       assignee_id: assignee.id,
       assignee_type: 'user',
+      idempotency_key: null,
     },
     assignee,
     now_iso: evaluatedAt,
@@ -645,7 +649,7 @@ export function runFullFireVerificationPipeline(
 
   const evidenceCfg = evidenceVariantsForScenario(scenario, options.evidence)
   if (evidenceCfg.mission_status) {
-    missionStatus = evidenceCfg.mission_status
+    missionStatus = evidenceCfg.mission_status as MissionStatus
   } else if (evidenceCfg.mission_status !== 'inconclusive' && scenario !== 'E2E-003') {
     if (options.evidence?.complete_mission !== false) {
       missionStatus = 'completed'

@@ -4,7 +4,6 @@ import { POPULATION_SPATIAL_DISCLAIMER } from '@/modules/territory/population/po
 import {
   createPopulationService,
   PopulationServiceError,
-  PopulationServiceNotReadyError,
 } from '@/modules/territory/population/population.service'
 import type { PopulationRasterEngine } from '@/modules/territory/population/raster/population-raster-engine'
 

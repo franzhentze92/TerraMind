@@ -59,7 +59,7 @@ export function MissionDetailPage() {
             <p className="text-text-tertiary">
               Estado: {String((mission.active_assignment as Record<string, unknown>).status)}
             </p>
-            {(mission.active_assignment as Record<string, unknown>).block_reason && (
+            {Boolean((mission.active_assignment as Record<string, unknown>).block_reason) && (
               <p className="mt-1 text-confidence-low">
                 Bloqueo: {String((mission.active_assignment as Record<string, unknown>).block_reason)}
               </p>

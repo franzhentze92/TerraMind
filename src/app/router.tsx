@@ -1,48 +1,152 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { lazy } from 'react'
 import { ProtectedRoute } from '@/core/auth/ProtectedRoute'
 import { AppShell } from '@/shared/layouts'
 import { LoginPage } from '@/modules/auth/pages/LoginPage'
 import { PermissionRoute } from '@/core/auth/PermissionRoute'
 import { AwaitingAccessPage } from '@/modules/auth/pages/AwaitingAccessPage'
 import { ForbiddenPage } from '@/modules/auth/pages/ForbiddenPage'
-import { OrganizationAdminPage } from '@/modules/admin/pages/OrganizationAdminPage'
-import { NationalSituationPage } from '@/modules/national-center/pages/NationalSituationPage'
-import { CopilotPage } from '@/modules/copilot/pages/CopilotPage'
-import { FindingsPage } from '@/modules/findings/pages/FindingsPage'
-import { FindingDetailPage } from '@/modules/findings/pages/FindingDetailPage'
-import { PrioritiesPage } from '@/modules/priorities/pages/PrioritiesPage'
-import { PriorityDetailPage } from '@/modules/priorities/pages/PriorityDetailPage'
-import { TerritoryPage } from '@/modules/territory/pages/TerritoryPage'
-import { StrategiesPage } from '@/modules/strategies/pages/StrategiesPage'
-import { KnowledgePage } from '@/modules/knowledge/pages/KnowledgePage'
-import { IntegrationsPage } from '@/modules/integrations/pages/IntegrationsPage'
-import { TrendsPage } from '@/modules/trends/pages/TrendsPage'
-import { ReportsHubPage } from '@/modules/executive-demo/pages/ReportsHubPage'
-import { NationalReportPage } from '@/modules/executive-demo/pages/NationalReportPage'
-import { IncidentReportPage } from '@/modules/executive-demo/pages/IncidentReportPage'
-import { IncidentStoryPage } from '@/modules/executive-demo/pages/IncidentStoryPage'
-import { SettingsPage } from '@/modules/settings/pages/SettingsPage'
-import { FireAnalysisPage } from '@/modules/fires/pages/FireAnalysisPage'
-import { BiodiversityAnalysisPage } from '@/modules/biodiversity/pages/BiodiversityAnalysisPage'
-import { IncidentsPage } from '@/modules/incidents/pages/IncidentsPage'
-import { IncidentDetailPage } from '@/modules/incidents/pages/IncidentDetailPage'
-import { VerificationsPage } from '@/modules/verification/pages/VerificationsPage'
-import { MissionsPage } from '@/modules/missions/pages/MissionsPage'
-import { MissionDetailPage } from '@/modules/missions/pages/MissionDetailPage'
-import { AssignmentsPage } from '@/modules/missions/pages/AssignmentsPage'
-import { FieldCampoLayout } from '@/modules/field-operations/field-mobile/components/FieldCampoLayout'
-import { FieldCampoHomePage } from '@/modules/field-operations/pages/FieldCampoHomePage'
-import { FieldConflictsPage } from '@/modules/field-operations/pages/FieldConflictsPage'
-import { FieldMissionsPage } from '@/modules/field-operations/pages/FieldMissionsPage'
-import { FieldPackagesPage } from '@/modules/field-operations/pages/FieldPackagesPage'
-import { FieldPackageDetailPage } from '@/modules/field-operations/pages/FieldPackageDetailPage'
-import { FieldSyncPage } from '@/modules/field-operations/pages/FieldSyncPage'
-import { FieldTaskFormPage } from '@/modules/field-operations/pages/FieldTaskFormPage'
-import { PendingEvidencePage } from '@/modules/field-operations/pages/PendingEvidencePage'
-import { ResponseOrchestrationListPage } from '@/modules/response-orchestration/pages/ResponseOrchestrationListPage'
-import { ResponseOrchestrationDetailPage } from '@/modules/response-orchestration/pages/ResponseOrchestrationDetailPage'
 import type { TerramindPermission } from '@/core/auth/permissions'
 import type { ReactNode } from 'react'
+
+const NationalSituationPage = lazy(() =>
+  import('@/modules/national-center/pages/NationalSituationPage').then((m) => ({
+    default: m.NationalSituationPage,
+  })),
+)
+const FireAnalysisPage = lazy(() =>
+  import('@/modules/fires/pages/FireAnalysisPage').then((m) => ({ default: m.FireAnalysisPage })),
+)
+const BiodiversityAnalysisPage = lazy(() =>
+  import('@/modules/biodiversity/pages/BiodiversityAnalysisPage').then((m) => ({
+    default: m.BiodiversityAnalysisPage,
+  })),
+)
+const NationalReportPage = lazy(() =>
+  import('@/modules/executive-demo/pages/NationalReportPage').then((m) => ({
+    default: m.NationalReportPage,
+  })),
+)
+const FieldCampoLayout = lazy(() =>
+  import('@/modules/field-operations/field-mobile/components/FieldCampoLayout').then((m) => ({
+    default: m.FieldCampoLayout,
+  })),
+)
+const OrganizationAdminPage = lazy(() =>
+  import('@/modules/admin/pages/OrganizationAdminPage').then((m) => ({
+    default: m.OrganizationAdminPage,
+  })),
+)
+const CopilotPage = lazy(() =>
+  import('@/modules/copilot/pages/CopilotPage').then((m) => ({ default: m.CopilotPage })),
+)
+const FindingsPage = lazy(() =>
+  import('@/modules/findings/pages/FindingsPage').then((m) => ({ default: m.FindingsPage })),
+)
+const FindingDetailPage = lazy(() =>
+  import('@/modules/findings/pages/FindingDetailPage').then((m) => ({ default: m.FindingDetailPage })),
+)
+const PrioritiesPage = lazy(() =>
+  import('@/modules/priorities/pages/PrioritiesPage').then((m) => ({ default: m.PrioritiesPage })),
+)
+const PriorityDetailPage = lazy(() =>
+  import('@/modules/priorities/pages/PriorityDetailPage').then((m) => ({ default: m.PriorityDetailPage })),
+)
+const TerritoryPage = lazy(() =>
+  import('@/modules/territory/pages/TerritoryPage').then((m) => ({ default: m.TerritoryPage })),
+)
+const StrategiesPage = lazy(() =>
+  import('@/modules/strategies/pages/StrategiesPage').then((m) => ({ default: m.StrategiesPage })),
+)
+const KnowledgePage = lazy(() =>
+  import('@/modules/knowledge/pages/KnowledgePage').then((m) => ({ default: m.KnowledgePage })),
+)
+const IntegrationsPage = lazy(() =>
+  import('@/modules/integrations/pages/IntegrationsPage').then((m) => ({ default: m.IntegrationsPage })),
+)
+const TrendsPage = lazy(() =>
+  import('@/modules/trends/pages/TrendsPage').then((m) => ({ default: m.TrendsPage })),
+)
+const ReportsHubPage = lazy(() =>
+  import('@/modules/executive-demo/pages/ReportsHubPage').then((m) => ({ default: m.ReportsHubPage })),
+)
+const IncidentReportPage = lazy(() =>
+  import('@/modules/executive-demo/pages/IncidentReportPage').then((m) => ({
+    default: m.IncidentReportPage,
+  })),
+)
+const IncidentStoryPage = lazy(() =>
+  import('@/modules/executive-demo/pages/IncidentStoryPage').then((m) => ({ default: m.IncidentStoryPage })),
+)
+const SettingsPage = lazy(() =>
+  import('@/modules/settings/pages/SettingsPage').then((m) => ({ default: m.SettingsPage })),
+)
+const IncidentsPage = lazy(() =>
+  import('@/modules/incidents/pages/IncidentsPage').then((m) => ({ default: m.IncidentsPage })),
+)
+const IncidentDetailPage = lazy(() =>
+  import('@/modules/incidents/pages/IncidentDetailPage').then((m) => ({ default: m.IncidentDetailPage })),
+)
+const VerificationsPage = lazy(() =>
+  import('@/modules/verification/pages/VerificationsPage').then((m) => ({ default: m.VerificationsPage })),
+)
+const MissionsPage = lazy(() =>
+  import('@/modules/missions/pages/MissionsPage').then((m) => ({ default: m.MissionsPage })),
+)
+const MissionDetailPage = lazy(() =>
+  import('@/modules/missions/pages/MissionDetailPage').then((m) => ({ default: m.MissionDetailPage })),
+)
+const AssignmentsPage = lazy(() =>
+  import('@/modules/missions/pages/AssignmentsPage').then((m) => ({ default: m.AssignmentsPage })),
+)
+const FieldCampoHomePage = lazy(() =>
+  import('@/modules/field-operations/pages/FieldCampoHomePage').then((m) => ({
+    default: m.FieldCampoHomePage,
+  })),
+)
+const FieldConflictsPage = lazy(() =>
+  import('@/modules/field-operations/pages/FieldConflictsPage').then((m) => ({
+    default: m.FieldConflictsPage,
+  })),
+)
+const FieldMissionsPage = lazy(() =>
+  import('@/modules/field-operations/pages/FieldMissionsPage').then((m) => ({
+    default: m.FieldMissionsPage,
+  })),
+)
+const FieldPackagesPage = lazy(() =>
+  import('@/modules/field-operations/pages/FieldPackagesPage').then((m) => ({
+    default: m.FieldPackagesPage,
+  })),
+)
+const FieldPackageDetailPage = lazy(() =>
+  import('@/modules/field-operations/pages/FieldPackageDetailPage').then((m) => ({
+    default: m.FieldPackageDetailPage,
+  })),
+)
+const FieldSyncPage = lazy(() =>
+  import('@/modules/field-operations/pages/FieldSyncPage').then((m) => ({ default: m.FieldSyncPage })),
+)
+const FieldTaskFormPage = lazy(() =>
+  import('@/modules/field-operations/pages/FieldTaskFormPage').then((m) => ({
+    default: m.FieldTaskFormPage,
+  })),
+)
+const PendingEvidencePage = lazy(() =>
+  import('@/modules/field-operations/pages/PendingEvidencePage').then((m) => ({
+    default: m.PendingEvidencePage,
+  })),
+)
+const ResponseOrchestrationListPage = lazy(() =>
+  import('@/modules/response-orchestration/pages/ResponseOrchestrationListPage').then((m) => ({
+    default: m.ResponseOrchestrationListPage,
+  })),
+)
+const ResponseOrchestrationDetailPage = lazy(() =>
+  import('@/modules/response-orchestration/pages/ResponseOrchestrationDetailPage').then((m) => ({
+    default: m.ResponseOrchestrationDetailPage,
+  })),
+)
 
 function guard(permission: TerramindPermission, element: ReactNode) {
   return <PermissionRoute permission={permission}>{element}</PermissionRoute>

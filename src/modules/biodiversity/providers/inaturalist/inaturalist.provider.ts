@@ -18,7 +18,6 @@ import {
   mapInaturalistTaxon,
 } from './inaturalist.mapper'
 import type {
-  InatObservation,
   InatObservationSearchResponse,
   InatTaxonSearchResponse,
 } from './inaturalist.types'

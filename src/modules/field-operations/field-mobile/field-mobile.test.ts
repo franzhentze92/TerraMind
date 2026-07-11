@@ -117,7 +117,6 @@ describe('field mobile experience — 8B.7E', () => {
           status: 'complete',
           schema_id: 'field_visual_observation',
           response_id: 'r1',
-          updated_at: EVALUATED_AT,
         },
       ],
       pendingSyncBundles: [
@@ -216,7 +215,6 @@ describe('field mobile experience — 8B.7E', () => {
 
   it('simulates conflict scenarios without deleting local evidence', async () => {
     const evidenceRepo = OfflineEvidenceRepository.createInMemory()
-    const syncRepo = FieldSyncRepository.createInMemory()
     const pkg = buildSyntheticFieldPackageRecord()
     await createStructuredEvidenceFromForm({
       repo: evidenceRepo,

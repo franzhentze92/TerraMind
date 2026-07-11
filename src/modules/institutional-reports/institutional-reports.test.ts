@@ -22,8 +22,9 @@ function baseMetrics(): ExecutiveMetric[] {
       label: 'Observaciones recibidas',
       value: 10,
       scope: 'national',
+      classification: 'operational',
       source: 'FIRMS',
-      timeWindow: { label: '48 h', kind: 'rolling' },
+      timeWindow: { key: '48h', label: '48 h' },
       breakdown: [{ label: 'operacional', value: 10, classification: 'operational', included: true }],
       limitations: [],
     },
@@ -32,8 +33,9 @@ function baseMetrics(): ExecutiveMetric[] {
       label: 'Incidentes operacionales',
       value: 0,
       scope: 'national',
+      classification: 'operational',
       source: 'TerraMind',
-      timeWindow: { label: 'periodo', kind: 'period' },
+      timeWindow: { key: '30d', label: 'periodo' },
       breakdown: [{ label: 'operacional', value: 0, classification: 'operational', included: true }],
       limitations: [],
     },
@@ -42,12 +44,13 @@ function baseMetrics(): ExecutiveMetric[] {
       label: 'Decisiones pendientes',
       value: 0,
       scope: 'national',
+      classification: 'operational',
       source: 'TerraMind',
-      timeWindow: { label: 'actual', kind: 'snapshot' },
+      timeWindow: { key: 'current_state', label: 'actual' },
       breakdown: [{ label: 'operacional', value: 0, classification: 'operational', included: true }],
       limitations: [],
     },
-  ] as ExecutiveMetric[]
+  ]
 }
 
 function baseDashboard(overrides: Partial<ExecutiveDashboardDto> = {}): ExecutiveDashboardDto {
@@ -220,6 +223,8 @@ describe('incident institutional report builder', () => {
           label: '3 de 8 etapas',
           present_stages: 3,
           total_stages: 8,
+          stages: { events: true, findings: true, priority: true },
+          present_stage_labels: ['Eventos observados', 'Hallazgos', 'Prioridad'],
           missing_stage_labels: ['Misiones'],
         },
         stages: [
@@ -234,16 +239,21 @@ describe('incident institutional report builder', () => {
             timestamp: '2026-07-10T12:00:00.000Z',
             source: 'FIRMS',
             confidence: 'media',
+            href: null,
+            items: [],
           },
         ],
         timeline: [
           {
+            id: 'tl-1',
             stage: 'events',
             stage_label: 'Eventos',
             summary: 'Detección registrada',
             timestamp: '2026-07-10T12:00:00.000Z',
             epistemic: 'observed',
             source: 'FIRMS',
+            status: 'present',
+            confidence: 'media',
           },
         ],
       },

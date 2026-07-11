@@ -28,7 +28,7 @@ export class FieldFormSchemaRegistry {
         evidence_type: null,
         json_schema: form.json_schema,
         ui_schema: form.ui_schema,
-        conditional_rules: (form.conditional_rules as FieldFormSchemaRecord['conditional_rules']) ?? [],
+        conditional_rules: (form.conditional_rules as unknown as FieldFormSchemaRecord['conditional_rules']) ?? [],
         validation_rules: form.validation_rules,
         localization: form.localization,
         compatibility: { offline_package_model_version: '1.0.0' },

@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from 'react-router-dom'
 import { AuthProvider } from '@/core/auth/AuthProvider'
+import { ErrorBoundary } from '@/shared/components/ErrorBoundary'
 import { router } from './router'
 
 const queryClient = new QueryClient({
@@ -21,7 +22,11 @@ interface ProvidersProps {
 export function Providers({ children }: ProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>{children ?? <RouterProvider router={router} />}</AuthProvider>
+      <AuthProvider>
+        <ErrorBoundary section="TerraMind">
+          {children ?? <RouterProvider router={router} />}
+        </ErrorBoundary>
+      </AuthProvider>
     </QueryClientProvider>
   )
 }

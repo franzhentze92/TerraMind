@@ -10,6 +10,7 @@ export type FieldLocale = 'es' | 'en'
 
 export interface FieldOperationalSummary {
   active_package_id: string | null
+  active_mission_id: string | null
   active_mission_title: string | null
   packages_count: number
   pending_tasks: number

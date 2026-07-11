@@ -3,6 +3,7 @@ import type {
   BiodiversityCombinedSearchResult,
   BiodiversityProviderId,
   BiodiversitySearchQuery,
+  BiodiversitySearchResult,
   BiodiversitySystemHealth,
   BiodiversityTaxon,
   BiodiversityTaxonResolveInput,

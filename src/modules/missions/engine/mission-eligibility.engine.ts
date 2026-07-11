@@ -22,7 +22,6 @@ export function evaluateMissionEligibility(
   blockedMethodIds: Set<string> = new Set(),
 ): MissionEligibilityResult {
   const reasons: string[] = []
-  const limitations: string[] = []
 
   if (plan.status !== 'ready') {
     return {

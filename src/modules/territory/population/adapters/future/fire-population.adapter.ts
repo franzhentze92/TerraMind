@@ -11,7 +11,7 @@
  *     → UI tab "Territorio → Población y asentamientos"
  */
 
-import type { PopulationAnalysis } from '../population.types'
+import type { PopulationAnalysis } from '@/modules/territory/population/population.types'
 
 export interface FirePopulationAdapterInput {
   fireEventId: string

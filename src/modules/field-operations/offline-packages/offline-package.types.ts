@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import type { ConditionalRule } from '@/modules/field-operations/field-forms/field-form.types'
 
 export const OFFLINE_PACKAGE_MODEL_VERSION = '1.0.0'
 
@@ -148,7 +149,7 @@ export interface OfflineFormSchema {
   json_schema: Record<string, unknown>
   ui_schema: Record<string, unknown>
   validation_rules: Record<string, unknown>
-  conditional_rules: Record<string, unknown>[]
+  conditional_rules: ConditionalRule[]
   localization: Record<string, string>
 }
 

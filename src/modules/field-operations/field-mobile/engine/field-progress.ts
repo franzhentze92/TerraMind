@@ -59,6 +59,7 @@ export function computeFieldOperationalSummary(input: {
 
   return {
     active_package_id: active?.package_id ?? null,
+    active_mission_id: active?.mission_id ?? null,
     active_mission_title: active?.mission_title ?? null,
     packages_count: input.packages.length,
     pending_tasks: pendingTasks,

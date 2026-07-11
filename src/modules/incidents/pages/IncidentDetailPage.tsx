@@ -107,9 +107,9 @@ export function IncidentDetailPage() {
           {incidentStatusLabel(String(detail.status))}
         </Badge>
         <Badge variant="default">{evidenceStatusLabel(String(detail.evidence_status))}</Badge>
-        {canViewResponse && responseQuery.data?.badge && (
+        {canViewResponse && Boolean(responseQuery.data?.badge) && (
           <Link to={`/respuesta/${incidentId}`}>
-            <ResponseStatusBadge badge={String(responseQuery.data.badge)} />
+            <ResponseStatusBadge badge={String(responseQuery.data!.badge)} />
           </Link>
         )}
       </div>

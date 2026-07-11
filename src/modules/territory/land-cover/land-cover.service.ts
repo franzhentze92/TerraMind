@@ -7,7 +7,6 @@ import {
 import type {
   AnalyzeBuffersInput,
   AnalyzeGeometryInput,
-  GeoPoint,
   LandCoverAnalysis,
   LandCoverBufferResult,
   LandCoverContextStatus,

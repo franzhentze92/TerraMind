@@ -331,10 +331,10 @@ export function ResponseOrchestrationDetailPage() {
           </ul>
         </Section>
 
-        {briefing.data?.briefing && (
+        {Boolean(briefing.data?.briefing) && (
           <Section title="Briefing determinístico">
             <pre className="max-h-64 overflow-auto text-xs text-text-secondary">
-              {JSON.stringify(briefing.data.briefing, null, 2)}
+              {JSON.stringify(briefing.data!.briefing, null, 2)}
             </pre>
           </Section>
         )}

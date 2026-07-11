@@ -114,6 +114,8 @@ export async function buildNationalReport(
   )
   return report
 }
+
+export async function buildIncidentReport(
   auth: RequestAuthContext,
   incidentId: string,
   includeDemo: boolean,

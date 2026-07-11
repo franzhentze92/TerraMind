@@ -138,7 +138,7 @@ export async function buildResponseOrchestrationInputForIncident(
       version_signature: resolutionSignature,
     },
     evidenceSummary: {
-      validated_count: Number(bundle.validations_used?.length ?? 0),
+      validated_count: Array.isArray(bundle.validations_used) ? bundle.validations_used.length : 0,
       strong_count: 0,
       limited_count: 0,
       weak_count: 0,

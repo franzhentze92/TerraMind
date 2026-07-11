@@ -4,7 +4,6 @@ import { existsSync } from 'node:fs'
 import {
   INE_ADMIN_STATS_PATH,
   INE_MANIFEST_PATH,
-  INE_SETTLEMENTS_PATH,
   loadAdminStatisticsFromDisk,
   loadSettlementsFromDisk,
 } from '@/modules/territory/population/providers/ine/ine-import-builder'

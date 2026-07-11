@@ -1,8 +1,9 @@
-import type { IncidentEventSnapshot, IncidentCandidateSnapshot } from '@/modules/incidents/incidents.types'
+import type { IncidentEventSnapshot, IncidentCandidateSnapshot, MembershipStatus } from '@/modules/incidents/incidents.types'
 import { getSupabaseAdmin } from '@/pipeline/stores/supabase.client'
 import { getActivePriorityAssessment } from '@/pipeline/stores/priority-assessments.store'
 import { mapPriorityRowToAssessment } from '@/pipeline/stores/priority-assessments.store'
 import { FIRE_INCIDENT_CORRELATION_MODEL_VERSION } from '@/modules/incidents/config/fire-incident-correlation.config'
+import { FIRE_PRIORITY_MODEL_VERSION } from '@/modules/priorities/config/fire-priority.config'
 
 export async function loadFireEventIncidentSnapshot(
   eventId: string,
@@ -23,7 +24,7 @@ export async function loadFireEventIncidentSnapshot(
   if (error) throw new Error(error.message)
   if (!event) return null
 
-  const priorityRow = await getActivePriorityAssessment('fire_event', eventId)
+  const priorityRow = await getActivePriorityAssessment('fire_event', eventId, FIRE_PRIORITY_MODEL_VERSION)
   const priority = priorityRow ? mapPriorityRowToAssessment(priorityRow) : null
 
   const { data: membership } = await supabase
@@ -61,7 +62,7 @@ export async function loadFireEventIncidentSnapshot(
     action_level: priority?.action_level ?? null,
     active_incident_id: membership?.incident_id ? String(membership.incident_id) : null,
     membership_status: membership?.membership_status
-      ? String(membership.membership_status)
+      ? (String(membership.membership_status) as MembershipStatus)
       : null,
   }
 }

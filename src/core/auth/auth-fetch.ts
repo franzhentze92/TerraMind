@@ -3,7 +3,6 @@ import { useAuthStore } from '@/core/auth/auth.store'
 import { clearAuthSession, scheduleLoginRedirect } from '@/core/auth/auth-session-events'
 
 let refreshInFlight: Promise<string | null> | null = null
-let lastRefreshAttemptAt = 0
 let refreshBlockedUntil = 0
 
 const REFRESH_COOLDOWN_MS = 30_000
@@ -56,7 +55,7 @@ async function refreshAccessToken(): Promise<string | null> {
     return null
   }
 
-  lastRefreshAttemptAt = now
+
   refreshInFlight = (async () => {
     try {
       const { data, error } = await client.auth.refreshSession()

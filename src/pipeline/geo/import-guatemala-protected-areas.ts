@@ -131,6 +131,10 @@ export async function importGuatemalaProtectedAreas(): Promise<ProtectedAreasImp
     metrics.source_records += 1
     const rowNumber = metrics.source_records
     const feature = result.value
+    if (!feature) {
+      result = await source.read()
+      continue
+    }
 
     try {
       const attrs = parseAttributes(feature.properties as Record<string, unknown>)

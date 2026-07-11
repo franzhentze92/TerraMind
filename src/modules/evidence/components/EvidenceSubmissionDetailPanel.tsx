@@ -117,7 +117,7 @@ export function EvidenceSubmissionDetailPanel({
               <p className="text-text-tertiary">
                 {String(a.mime_type)} · {String(a.size_bytes)} bytes
               </p>
-              {a.checksum_sha256 && (
+              {Boolean(a.checksum_sha256) && (
                 <p className="text-text-tertiary">SHA-256: {String(a.checksum_sha256).slice(0, 16)}…</p>
               )}
               {Boolean(a.mime_extension_mismatch) && (
@@ -144,7 +144,7 @@ export function EvidenceSubmissionDetailPanel({
             <p key={String(l.id)} className="mt-1 text-xs text-text-secondary">
               {String(l.requirement_id).slice(0, 8)}… · {String(l.match_type)} ·{' '}
               {String(l.preliminary_coverage)}
-              {l.valid_coverage_status && ` · ${String(l.valid_coverage_status)}`}
+              {Boolean(l.valid_coverage_status) && ` · ${String(l.valid_coverage_status)}`}
             </p>
           ))}
         </div>

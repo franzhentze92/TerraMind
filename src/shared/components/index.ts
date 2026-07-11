@@ -14,3 +14,7 @@ export {
 } from './OperationalLoadingSkeleton'
 export { StageNavigationLinks } from './StageNavigationLinks'
 export { ObservingIndicator } from './ObservingIndicator'
+export { ErrorBoundary } from './ErrorBoundary'
+export { ResponsiveTable } from './ResponsiveTable'
+export type { ResponsiveTableColumn } from './ResponsiveTable'
+export { ResponsiveMapFrame } from './ResponsiveMapFrame'

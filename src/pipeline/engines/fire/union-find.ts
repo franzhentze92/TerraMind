@@ -28,7 +28,6 @@ export class UnionFind {
     if (ra === rb) return
 
     const rankA = this.rank.get(ra) ?? 0
-    const rankB = this.rank.get(rb) ?? 0
 
     if (ra < rb) {
       this.parent.set(rb, ra)

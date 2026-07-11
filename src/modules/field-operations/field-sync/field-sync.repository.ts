@@ -84,8 +84,6 @@ export class MemoryFieldSyncStorage implements FieldSyncStorageAdapter {
     return [...this.mappings.values()].filter((m) => m.bundle_id === bundleId)
   }
 }
-
-const DB_NAME = 'terramind-field-sync'
 const DB_VERSION = 1
 
 function openDb(): Promise<IDBDatabase> {

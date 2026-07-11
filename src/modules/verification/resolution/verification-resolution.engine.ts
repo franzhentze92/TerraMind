@@ -21,7 +21,6 @@ import type {
 import { hashResolutionContext } from '@/modules/verification/resolution/verification-resolution.types'
 
 const USABLE_VALIDATION = new Set(['accepted', 'accepted_with_limitations', 'inconclusive'])
-const USABLE_COVERAGE = new Set(['valid_coverage', 'valid_partial_coverage', 'inconclusive_coverage'])
 
 const STRENGTH_ORDER = ['very_low', 'low', 'moderate', 'strong', 'very_strong'] as const
 
@@ -45,13 +44,6 @@ function maxStrength(items: ValidatedEvidenceItem[]): string {
     (best, item) => (strengthRank(item.evidence_strength) > strengthRank(best) ? item.evidence_strength : best),
     'very_low',
   )
-}
-
-function isUsableForNeed(item: ValidatedEvidenceItem, needId: string): boolean {
-  if (!USABLE_VALIDATION.has(item.validation_status)) return false
-  if (!item.valid_coverage_status || !USABLE_COVERAGE.has(item.valid_coverage_status)) return false
-  if (item.verification_need_id && item.verification_need_id !== needId) return false
-  return true
 }
 
 function hasCriticalLimitation(limitations: string[]): boolean {
@@ -280,7 +272,7 @@ function missionContribution(
 }
 
 function resolveObtainVisualGroundEvidence(
-  snapshot: NeedResolutionSnapshot,
+  _snapshot: NeedResolutionSnapshot,
   used: ValidatedEvidenceItem[],
   bundle: EvidenceBundle,
   conflict: ReturnType<typeof assessConflicts>,
@@ -344,7 +336,7 @@ function resolveObtainVisualGroundEvidence(
 }
 
 function resolveConfirmRecentActivity(
-  snapshot: NeedResolutionSnapshot,
+  _snapshot: NeedResolutionSnapshot,
   used: ValidatedEvidenceItem[],
   bundle: EvidenceBundle,
   conflict: ReturnType<typeof assessConflicts>,

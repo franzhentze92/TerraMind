@@ -34,7 +34,7 @@ export function buildResponseInputFromE2EState(
     organizationId: 'org-e2e',
     evaluated_at: state.evaluated_at,
     incident: {
-      incident_id: state.incident.incident_id ?? FIRE_E2E_IDS.incident,
+      incident_id: state.incident.target_incident_id ?? FIRE_E2E_IDS.incident,
       incident_version: 1,
       status: 'open',
       last_observed_at: FIRE_E2E_NOW,
@@ -42,7 +42,7 @@ export function buildResponseInputFromE2EState(
     },
     lifecycle: {
       lifecycle_state: state.lifecycle.new_state,
-      validation_status: state.lifecycle.validation_status,
+      validation_status: 'no_validado',
       last_detected_at: FIRE_E2E_NOW,
       inactive_since: null,
       persistence_hours: 0.5,
@@ -50,7 +50,7 @@ export function buildResponseInputFromE2EState(
     },
     findings: state.findings.map((f, i) => ({
       finding_id: f.id ?? `f-${i}`,
-      finding_code: f.finding_code,
+      finding_code: f.triggered_rules[0] ?? f.finding_type,
       finding_type: f.finding_type,
       summary: f.summary,
       version_signature: state.signatures.findings,
@@ -59,21 +59,21 @@ export function buildResponseInputFromE2EState(
       attention_score: state.priority.assessment.attention_score,
       verification_score: state.priority.assessment.verification_score,
       action_score: state.priority.assessment.action_score,
-      priority_band: state.priority.assessment.priority_band,
+      priority_band: state.priority.assessment.attention_level,
       version_signature: state.signatures.priority,
     },
     verificationPlan: {
-      plan_id: state.verification_plan.plan_id,
+      plan_id: FIRE_E2E_IDS.plan,
       status: state.plan_resolution_status,
-      open_needs_count: state.verification_plan.needs.filter((n) => n.resolution_status === 'open').length,
+      open_needs_count: state.verification_plan.needs.length,
       version_signature: state.signatures.verification_plan,
     },
     verificationResolution: {
       resolution_id: 'res-e2e',
-      plan_id: state.verification_plan.plan_id,
+      plan_id: FIRE_E2E_IDS.plan,
       plan_status: state.plan_resolution_status,
-      need_resolutions: state.verification_plan.needs.map((n) => ({
-        need_id: n.id,
+      need_resolutions: state.verification_plan.needs.map((n, i) => ({
+        need_id: `need-${i}`,
         need_type: n.need_type,
         status: nr.resolution_status,
       })),

@@ -208,7 +208,8 @@ export async function runFireIngestion(options: IngestOptions = {}): Promise<Ing
   }
 
   const durationMs = Date.now() - start
-  const status = options.dryRun ? 'dry-run' : resolveStatus(sourceResults, errors)
+  const runStatus = options.dryRun ? 'success' : resolveStatus(sourceResults, errors)
+  const status = options.dryRun ? 'dry-run' : runStatus
 
   const httpStatus = Object.fromEntries(
     sourceResults.map((s) => [s.source, s.httpStatus]),
@@ -216,7 +217,7 @@ export async function runFireIngestion(options: IngestOptions = {}): Promise<Ing
 
   if (!options.dryRun && runId) {
     await completeIngestionRun(runId, {
-      status,
+      status: runStatus,
       completed_at: new Date().toISOString(),
       http_status: httpStatus,
       rows_received: rowsReceived,

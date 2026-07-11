@@ -2,7 +2,7 @@ import type {
   IntelligenceFlowAction,
   IntelligenceFlowDto,
   IntelligenceFlowNode,
-} from '../intelligence-flow.types'
+} from '@/modules/intelligence-flow/intelligence-flow.types'
 import type { TerramindPermission } from '@/core/auth/permissions'
 
 const STAGE_PERMISSION: Partial<Record<IntelligenceFlowNode['stage'], TerramindPermission>> = {

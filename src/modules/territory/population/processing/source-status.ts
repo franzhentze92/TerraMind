@@ -12,10 +12,10 @@ import {
 } from '@/modules/territory/population/processing/paths'
 import { inspectPopulationRaster } from '@/modules/territory/population/processing/raster-stats'
 import { populationWarning } from '@/modules/territory/population/population-warnings'
-import type { PopulationSourceStatus, PopulationWarning } from '@/modules/territory/population/population.types'
+import type { PopulationSourceStatus, PopulationWarning, WorldPopServiceVariant } from '@/modules/territory/population/population.types'
 import { getWorldPopProduct } from '@/modules/territory/population/providers/worldpop/worldpop-products'
 
-export interface LocalPopulationSourceStatus extends PopulationSourceStatus {
+export interface LocalPopulationSourceStatus extends Omit<PopulationSourceStatus, 'primaryVariant'> {
   filesAvailable: boolean
   checksumValid: boolean
   cogValid: boolean
@@ -35,7 +35,7 @@ export interface LocalPopulationSourceStatus extends PopulationSourceStatus {
     laeaVerdict?: string
   }>
   totalPopulation?: number
-  primaryVariant?: 'constrained' | 'unconstrained' | 'dual_use'
+  primaryVariant?: WorldPopServiceVariant | 'dual_use'
   validationRasterHash?: string
   generatedAt?: string
 }
@@ -149,6 +149,7 @@ export async function getLocalPopulationSourceStatus(): Promise<LocalPopulationS
     sourceCode: 'worldpop',
     name: 'WorldPop Guatemala 2020 (constrained + unconstrained)',
     isReady,
+    operationalHealth: isReady ? 'healthy' : 'degraded',
     isOfficial: false,
     referenceYear: product.referenceYear,
     sourceVersion: product.sourceVersion,
@@ -156,13 +157,14 @@ export async function getLocalPopulationSourceStatus(): Promise<LocalPopulationS
     semantics: 'modelled_spatial_population',
     rasterHash: manifestChecksums.constrained,
     storageReference: 'data/population/worldpop/processed/',
+    primaryVariant: primaryVariant === 'dual_use' ? 'constrained' : (primaryVariant ?? 'constrained'),
+    validationVariant: 'unconstrained',
     warnings,
     filesAvailable,
     checksumValid,
     cogValid,
     variants,
     totalPopulation,
-    primaryVariant,
     validationRasterHash: manifestChecksums.unconstrained,
     generatedAt,
   }

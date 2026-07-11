@@ -38,7 +38,7 @@ export function useOfflineEvidenceTask(
   const [bundle, setBundle] = useState<LocalEvidenceBundle | null>(null)
   const [storageWarning, setStorageWarning] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  const [error, _setError] = useState<string | null>(null)
 
   const currentTab = useMemo(() => tabId(), [])
 

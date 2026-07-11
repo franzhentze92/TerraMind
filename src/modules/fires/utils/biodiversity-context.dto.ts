@@ -93,12 +93,19 @@ export function buildBiodiversityContextDto(
     status = 'stale'
   }
 
-  const summary = context.summary ?? {}
+  const summary = (context.summary ?? {}) as {
+    provider_distribution?: { gbif?: number; inaturalist?: number }
+    unique_species_documented?: number
+    observations_documented?: number
+    observations_recent_30d?: number
+    observations_recent_90d?: number
+    taxa_distribution?: Record<string, number>
+  }
   const quality = (context.quality ?? {}) as BiodiversityContextDto['summary']['quality']
   const monitored = context.monitored_zone_context ?? {}
-  const providerStatus = context.provider_status ?? {}
+  const providerStatus = (context.provider_status ?? {}) as Record<string, string>
 
-  const providerDistribution: BiodiversityContextDto['summary']['provider_distribution'] = {}
+  const providerDistribution = {} as NonNullable<BiodiversityContextDto['summary']['provider_distribution']>
   if (providerStatus.gbif === 'ok') {
     providerDistribution.gbif = Number(summary.provider_distribution?.gbif ?? zones.at(-1)?.gbif_count ?? 0)
   }

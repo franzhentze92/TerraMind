@@ -50,8 +50,6 @@ export class MemoryFieldFormStorage implements FieldFormStorageAdapter {
     )
   }
 }
-
-const DB_NAME = 'terramind-field-forms'
 const RESPONSES_STORE = 'responses'
 const REVISIONS_STORE = 'revisions'
 const DB_VERSION = 1

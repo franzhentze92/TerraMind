@@ -254,6 +254,8 @@ export async function analyzeBiodiversityForFireEvent(input: {
         recordKind: 'recent_observation',
         sourceUrl: f.observationUrl,
         qualityWarnings: [],
+        possibleDuplicate: false,
+        fetchedAt: new Date().toISOString(),
       },
     ),
     source: f.source,

@@ -153,6 +153,7 @@ export async function downloadWorldPopRasters(): Promise<DownloadWorldPopResult>
       duration_ms: Date.now() - tileStarted,
     })
     totalBytes += size
+    void skipped
   }
 
   manifest.download_completed_at = new Date().toISOString()

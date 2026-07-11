@@ -67,7 +67,11 @@ export function fetchIncidentHistory(id: string) {
 export function fetchFireEventIncident(eventId: string) {
   return apiFetch<{
     incident: IncidentSummaryDto | null
-    recent_evaluations: unknown[]
+    recent_evaluations: Array<{
+      correlation_decision?: string
+      correlation_reasons?: string[]
+      rejected_reasons?: string[]
+    }>
     generated_at: string
   }>(`/api/environment/fires/events/${eventId}/incident`)
 }

@@ -3,8 +3,9 @@ import { cn } from '@/shared/utils/cn'
 
 interface BadgeProps {
   children: ReactNode
-  variant?: 'default' | 'accent' | 'success' | 'warning' | 'critical'
+  variant?: 'default' | 'accent' | 'success' | 'warning' | 'critical' | 'danger'
   className?: string
+  title?: string
 }
 
 const variantStyles = {
@@ -13,14 +14,17 @@ const variantStyles = {
   success: 'bg-confidence-high/10 text-confidence-high border-confidence-high/20',
   warning: 'bg-confidence-medium/10 text-confidence-medium border-confidence-medium/20',
   critical: 'bg-confidence-low/10 text-confidence-low border-confidence-low/20',
+  danger: 'bg-confidence-low/10 text-confidence-low border-confidence-low/20',
 }
 
-export function Badge({ children, variant = 'default', className }: BadgeProps) {
+export function Badge({ children, variant = 'default', className, title }: BadgeProps) {
+  const resolvedVariant = variant === 'danger' ? 'critical' : variant
   return (
     <span
+      title={title}
       className={cn(
         'inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium',
-        variantStyles[variant],
+        variantStyles[resolvedVariant],
         className,
       )}
     >

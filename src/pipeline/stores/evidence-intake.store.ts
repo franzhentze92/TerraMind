@@ -172,7 +172,7 @@ export async function listExistingAssetFingerprints(missionId: string) {
     .eq('upload_confirmed', true)
   if (error) throw new Error(error.message)
   return (data ?? []).map((row) => {
-    const sub = row.evidence_submissions as Record<string, unknown>
+    const sub = row.evidence_submissions as unknown as Record<string, unknown>
     return {
       submission_id: row.submission_id as string,
       asset_id: row.id as string,

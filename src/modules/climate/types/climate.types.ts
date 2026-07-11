@@ -1,5 +1,3 @@
-import type { ClimateLocationType } from '../types/climate.types'
-
 export type ClimateLocationRepresentation =
   | 'point_reference'
   | 'station'

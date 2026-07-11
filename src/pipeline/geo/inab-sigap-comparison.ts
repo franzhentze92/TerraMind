@@ -80,6 +80,10 @@ async function loadConapFeatures(): Promise<
   const features: Array<{ label_key: string; centroid: [number, number] }> = []
   let result = await source.read()
   while (!result.done) {
+    if (!result.value) {
+      result = await source.read()
+      continue
+    }
     const props = result.value.properties as Record<string, unknown>
     const label = buildConapLabel(String(props.Categor_14 ?? props.Categor_13 ?? ''), String(props.NOMBRE_e_1 ?? props.NOMBRE_G_1 ?? ''))
     const geom = result.value.geometry as GeoJSON.Geometry

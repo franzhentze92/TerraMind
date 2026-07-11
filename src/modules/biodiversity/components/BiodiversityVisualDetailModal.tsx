@@ -23,11 +23,14 @@ export function BiodiversityVisualDetailModal({
   if (!detail && !fallback && !isLoading) return null
 
   const obs = detail?.observation
-  const title = obs?.commonName ?? fallback?.commonName ?? obs?.taxonName ?? fallback?.scientificName
+  const title =
+    obs?.commonName ??
+    fallback?.commonName ??
+    obs?.taxonName ??
+    (fallback && 'scientificName' in fallback ? fallback.scientificName : undefined)
   const scientific =
-    obs?.taxonName ?? ('scientificName' in (fallback ?? {}) ? fallback?.scientificName : undefined)
+    obs?.taxonName ?? (fallback && 'scientificName' in fallback ? fallback.scientificName : undefined)
   const imageUrl = obs?.imageUrl ?? ('imageUrl' in (fallback ?? {}) ? fallback?.imageUrl : undefined)
-  const thumb = obs?.thumbnailUrl ?? ('thumbnailUrl' in (fallback ?? {}) ? fallback?.thumbnailUrl : undefined)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4">

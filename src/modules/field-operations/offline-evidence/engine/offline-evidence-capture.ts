@@ -1,4 +1,3 @@
-import { randomUUID } from 'node:crypto'
 
 import {
   isMimeAllowed,
@@ -96,7 +95,7 @@ async function recordEvent(
 async function linkRecordRequirements(
   repo: OfflineEvidenceRepository,
   record: LocalEvidenceRecord,
-  ctx: CaptureContext,
+  _ctx: CaptureContext,
   pkgPayloads: Array<{ path: string; content: string }>,
 ) {
   const requirements = parseRequirementsFromPackage(pkgPayloads)

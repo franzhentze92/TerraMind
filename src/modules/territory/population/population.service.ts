@@ -23,7 +23,6 @@ import type {
   PopulationComparison,
   PopulationContextStatus,
   PopulationEstimate,
-  PopulationGeometrySummary,
   PopulationPointSample,
   PopulationSourceStatus,
   PopulationWarning,
@@ -158,7 +157,6 @@ function toPublicSourceStatus(local: LocalPopulationSourceStatus): PopulationSou
   }
 
   const constrained = local.variants.find((v) => v.variant === 'constrained')
-  const unconstrained = local.variants.find((v) => v.variant === 'unconstrained')
 
   return {
     sourceCode: local.sourceCode,

@@ -450,7 +450,7 @@ export async function cancelSyncSession(repo: FieldSyncRepository, sessionId: st
   return updateSession(repo, session, { cancelled: true, status: 'cancelled' })
 }
 
-export function computeSyncProgress(session: SyncSession, operations: SyncOperation[]): number {
+export function computeSyncProgress(session: SyncSession, _operations: SyncOperation[]): number {
   if (session.bytes_total <= 0) return session.status === 'synced' ? 100 : 0
   return Math.min(100, Math.round((session.bytes_transferred / session.bytes_total) * 100))
 }

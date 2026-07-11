@@ -4,7 +4,6 @@ import {
 } from '../config/fire-finding.config'
 import type {
   FindingConfidence,
-  FindingEvidence,
   FindingRuleResult,
   FireFindingType,
 } from '../findings.types'
@@ -619,7 +618,7 @@ export function evaluateBiodiversityLimited(
 }
 
 export function evaluateMultiContextAttention(
-  ctx: FireFindingEvaluationContext,
+  _ctx: FireFindingEvaluationContext,
   priorResults: FindingRuleResult[],
 ): FindingRuleResult {
   const type: FireFindingType = 'multi_context_attention'

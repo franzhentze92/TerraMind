@@ -66,7 +66,7 @@ export async function simulateBundleSync(input: SimulateSyncInput): Promise<Simu
     }
     steps.push(step('confirm', 'confirming_integrity', 85))
     steps.push(step('reconcile', 'received_by_server', 100))
-    const mock = resumeTransport as ReturnType<typeof createMockSyncTransport> & { _submissions: Map<string, unknown> }
+    void (resumeTransport as ReturnType<typeof createMockSyncTransport> & { _submissions: Map<string, unknown> })
     return { ok: true, steps, duplicate_submissions: 0, reason: undefined }
   }
 

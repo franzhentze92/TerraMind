@@ -198,7 +198,6 @@ describe('evidence intake', () => {
         {
           ...SYNTHETIC_EVIDENCE_FIXTURES.photo_asset,
           checksum_sha256: 'c'.repeat(64),
-          captured_at: '2026-07-09T10:00:00.000Z',
         },
       ],
       has_observation: false,

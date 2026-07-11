@@ -38,7 +38,7 @@ describe('8C.1 — response orchestration E2E extension (engine)', () => {
         orchestrationInput: input,
         assessment,
         decision: { status: decisionDraft.decision_status },
-        actions,
+        actions: actions as unknown as Array<Record<string, unknown>>,
       })
       expect(briefing.recommendedResponse.epistemic).toBe('recommended')
 

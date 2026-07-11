@@ -13,7 +13,6 @@ import {
   GUATEMALA_ADM1_GEOJSON,
   POPULATION_AUDIT_REPORT,
   POPULATION_CLIP_TEMP_DIR,
-  processedLaeaCog,
   processedWgs84Cog,
 } from '@/modules/territory/population/processing/paths'
 import {
@@ -362,7 +361,10 @@ export async function auditWorldPop2020(): Promise<PopulationAuditReport> {
     recommended_primary_variant: report.recommendedPrimaryVariant,
     adm1_vs_national_delta_pct: adm1VsNationalDeltaPct,
   }
-  manifest.recommended_primary_variant = report.recommendedPrimaryVariant
+  manifest.recommended_primary_variant =
+    report.recommendedPrimaryVariant === 'pending_review'
+      ? undefined
+      : report.recommendedPrimaryVariant
   savePopulationManifest(manifest)
 
   writeAuditMarkdown(report, {

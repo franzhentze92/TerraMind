@@ -8,7 +8,6 @@ import {
 } from '@/modules/territory/population/providers/worldpop/worldpop-products'
 import {
   INE_DEPARTMENT_PROJECTIONS_2020,
-  INE_NATIONAL_PROJECTION_2020,
 } from '@/modules/territory/population/providers/ine/ine-projection-2020-reference'
 
 describe('worldpop products manifest', () => {

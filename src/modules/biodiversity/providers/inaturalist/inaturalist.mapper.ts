@@ -38,8 +38,8 @@ export function mapInaturalistObservation(
 
   const latRaw = obs.latitude ?? obs.location?.[0] ?? obs.geojson?.coordinates?.[1]
   const lngRaw = obs.longitude ?? obs.location?.[1] ?? obs.geojson?.coordinates?.[0]
-  const lat = latRaw != null && latRaw !== '' ? Number(latRaw) : undefined
-  const lng = lngRaw != null && lngRaw !== '' ? Number(lngRaw) : undefined
+  const lat = latRaw != null ? Number(latRaw) : undefined
+  const lng = lngRaw != null ? Number(lngRaw) : undefined
 
   const occurrence: BiodiversityOccurrence = {
     source: 'inaturalist',

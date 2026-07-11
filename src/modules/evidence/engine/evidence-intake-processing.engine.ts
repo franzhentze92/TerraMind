@@ -1,6 +1,7 @@
 import { METADATA_REQUIREMENTS_BY_TYPE } from '@/modules/evidence/config/fire-evidence-intake.config'
 import type { EvidenceSubmissionStatus } from '@/modules/evidence/evidence-intake.types'
 import { evaluateDeduplication, type ExistingAssetFingerprint } from './evidence-deduplication.engine'
+import type { EvidenceDeduplicationResult } from '@/modules/evidence/evidence-intake.types'
 import { evaluateAssetIntegrity } from './evidence-integrity.engine'
 import { evaluateRequirementLinks } from './evidence-requirement-matching.engine'
 
@@ -169,11 +170,11 @@ export function evaluateEvidenceProcessing(input: {
     reasons: [] as string[],
     warnings: [] as string[],
   }
-  let deduplication = {
-    duplicate_class: 'none' as const,
-    duplicate_of_submission_id: null as string | null,
-    duplicate_of_asset_id: null as string | null,
-    reasons: [] as string[],
+  let deduplication: EvidenceDeduplicationResult = {
+    duplicate_class: 'none',
+    duplicate_of_submission_id: null,
+    duplicate_of_asset_id: null,
+    reasons: [],
   }
 
   if (input.assets.length > 0) {

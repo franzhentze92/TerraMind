@@ -1,5 +1,4 @@
 import {
-  loadFirePipelineConfig,
   PIPELINE_HEALTH_THRESHOLDS,
 } from '@/pipeline/config/fire-pipeline.config'
 import {

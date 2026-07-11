@@ -7,7 +7,6 @@ import {
   fetchMissionEvidence,
   fetchMissionEvidenceQualitySummary,
   requestEvidenceUploadUrl,
-  revalidateEvidenceSubmission,
   submitStructuredObservation,
   withdrawEvidenceSubmission,
 } from '../api/evidence-api'

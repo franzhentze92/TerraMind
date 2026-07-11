@@ -3,11 +3,12 @@ import { describe, expect, it } from 'vitest'
 import { evaluateAssigneeCompatibility } from '@/modules/missions/assignment/assignee-compatibility.engine'
 import { assertMissionPermission } from '@/modules/missions/assignment/mission-permissions'
 import { evaluateWorkflowCommand } from '@/modules/missions/assignment/mission-workflow.engine'
+import type { WorkflowMissionState } from '@/modules/missions/assignment/mission-workflow.engine'
 import { SYNTHETIC_ASSIGNEES, ALL_MISSION_PERMISSIONS } from '@/modules/missions/config/fire-assignment.config'
 
 const NOW = '2026-07-10T20:00:00.000Z'
 
-function mission(overrides: Record<string, unknown> = {}) {
+function mission(overrides: Partial<WorkflowMissionState> = {}): WorkflowMissionState {
   return {
     id: 'mission-1',
     status: 'ready',

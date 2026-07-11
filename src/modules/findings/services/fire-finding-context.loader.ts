@@ -1,7 +1,6 @@
 import type {
   BiodiversityContextDto,
   ClimateContextDto,
-  FireEventListItemDto,
   LandCoverContextDto,
   PopulationContextDto,
   ProtectedAreaContextDto,

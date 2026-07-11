@@ -1,8 +1,6 @@
 import type {
-  CorrelationEvaluationResult,
   IncidentPriorityResult,
   IncidentStatus,
-  MembershipRole,
   PrimaryEventSelection,
 } from '@/modules/incidents/incidents.types'
 import {
@@ -15,6 +13,11 @@ import { getSupabaseAdmin } from '@/pipeline/stores/supabase.client'
 
 export interface IncidentRow {
   id: string
+  organization_id?: string | null
+  version?: number | null
+  lifecycle_state?: string | null
+  validation_status?: string | null
+  lifecycle_model_version?: string | null
   incident_type: string
   domain: string
   status: IncidentStatus

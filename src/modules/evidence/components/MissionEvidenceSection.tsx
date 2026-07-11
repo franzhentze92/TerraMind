@@ -28,7 +28,7 @@ export function MissionEvidenceSection({ missionId }: MissionEvidenceSectionProp
 
   const data = query.data
   const requirements = (data?.requirements ?? []) as Array<Record<string, unknown>>
-  const submissions = (data?.submissions ?? []) as Array<Record<string, unknown>>
+  const submissions = (data?.submissions ?? []) as unknown as Array<Record<string, unknown>>
   const coverage = data?.coverage
 
   async function createPhotoSubmission() {

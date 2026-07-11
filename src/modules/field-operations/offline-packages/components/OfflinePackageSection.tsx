@@ -101,17 +101,17 @@ export function OfflinePackageSection({
             Vigencia: {formatGuatemalaDateTime(String(active.valid_from))} →{' '}
             {formatGuatemalaDateTime(String(active.valid_until))}
           </p>
-          {active.generated_at && (
+          {Boolean(active.generated_at) && (
             <p className="mt-1 text-text-tertiary">
               Generado: {formatGuatemalaDateTime(String(active.generated_at))}
             </p>
           )}
-          {active.supersedes_package_id && (
+          {Boolean(active.supersedes_package_id) && (
             <p className="mt-1 text-text-tertiary">
               Reemplaza: {String(active.supersedes_package_id).slice(0, 8)}…
             </p>
           )}
-          {active.revocation_reason && (
+          {Boolean(active.revocation_reason) && (
             <p className="mt-1 text-confidence-low">
               Revocación: {String(active.revocation_reason)}
             </p>

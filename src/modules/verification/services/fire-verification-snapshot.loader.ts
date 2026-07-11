@@ -49,7 +49,7 @@ export async function loadIncidentVerificationSnapshot(
       activeFindings.push({
         finding_type: String(f.finding_type),
         limitations: (f.limitations as string[] | null) ?? [],
-        confidence_level: String(f.confidence_level ?? 'moderate'),
+        confidence_level: String((f.confidence as { level?: string })?.level ?? 'moderate'),
       })
     }
 

@@ -189,7 +189,7 @@ export function mapFindingRowToDto(row: CompositeFindingRow): CompositeFinding {
     summary: row.summary,
     status: row.status as CompositeFinding['status'],
     severity_label: row.severity_label as CompositeFinding['severity_label'],
-    confidence: row.confidence as CompositeFinding['confidence'],
+    confidence: row.confidence as unknown as CompositeFinding['confidence'],
     evidence: row.evidence as CompositeFinding['evidence'],
     triggered_rules: row.triggered_rules,
     source_domains: row.source_domains as CompositeFinding['source_domains'],

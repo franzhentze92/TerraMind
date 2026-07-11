@@ -94,7 +94,7 @@ export function FindingDetailPage() {
           Confianza y limitaciones
         </h2>
         <p className="mt-2 text-sm text-text-secondary">
-          Confianza: {findingConfidenceLabel(finding.confidence.level)} ({finding.confidence.score})
+          Confianza: {findingConfidenceLabel(finding.confidence.level)} ({finding.confidence.reasons.length} factores)
         </p>
         <ul className="mt-2 list-disc pl-4 text-sm text-text-secondary">
           {finding.limitations.map((l) => (

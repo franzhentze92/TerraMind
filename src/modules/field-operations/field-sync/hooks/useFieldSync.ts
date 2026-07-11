@@ -45,6 +45,7 @@ export function useFieldSync() {
   const syncNow = useCallback(
     async (bundle: LocalEvidenceBundle) => {
       const pkg = await packageRepo.read(bundle.package_id)
+      if (!pkg) throw new Error('package_not_found')
       const result = await syncBundle({
         bundle,
         pkg,
@@ -122,5 +123,5 @@ export function usePendingSyncBundles() {
     void refresh()
   }, [refresh])
 
-  return { bundles, loading, refresh, ...fieldSync }
+  return { bundles, loading, refresh, syncNow: fieldSync.syncNow, getProgress: fieldSync.getProgress, pause: fieldSync.pause, cancel: fieldSync.cancel, sessions: fieldSync.sessions }
 }

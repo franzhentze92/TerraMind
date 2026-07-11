@@ -66,7 +66,7 @@ export function createMockSyncTransport(options: MockSyncTransportOptions = {}):
       return { submission_id: id, idempotent_replay: false, status: 'received' }
     },
 
-    async startUploadSession(submissionId, input) {
+    async startUploadSession(_submissionId, input) {
       uploadSessions.set(input.idempotency_key, {
         bytes: new Uint8Array(input.expected_size_bytes),
         expected_checksum: input.expected_checksum_sha256,
@@ -95,7 +95,7 @@ export function createMockSyncTransport(options: MockSyncTransportOptions = {}):
       return { status: 'uploading', bytes_transferred: 0 }
     },
 
-    async putUploadBytes(uploadUrl, chunk, offset, total) {
+    async putUploadBytes(uploadUrl, chunk, offset, _total) {
       const key = uploadUrl.replace('mock://upload/renewed/', '').replace('mock://upload/', '')
       const sessionKey = [...uploadSessions.keys()].find((k) => key.includes(k) || k.includes(key.split('/').pop()!))
       const session = sessionKey ? uploadSessions.get(sessionKey) : undefined

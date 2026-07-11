@@ -223,7 +223,7 @@ describe('field sync engine — 8B.7D', () => {
       session,
       bytes,
       now_iso: new Date().toISOString(),
-      put: async (_url, chunk, offset) => {
+      put: async (_url, chunk, _offset) => {
         calls++
         if (calls === 1) throw new Error('network_interrupted')
         return { bytes_written: chunk.byteLength }

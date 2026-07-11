@@ -171,7 +171,7 @@ export function VerificationPlanSection({ incidentId }: Props) {
                   </div>
                 )}
 
-                {need.selection_reason && (
+                {Boolean(need.selection_reason) && (
                   <p className="mt-2 text-[11px] text-text-tertiary">
                     {String(need.selection_reason)}
                   </p>
@@ -200,7 +200,7 @@ export function VerificationPlanSection({ incidentId }: Props) {
         </div>
       )}
 
-      {plan.mission_candidate_pending && (
+      {Boolean(plan.mission_candidate_pending) && (
         <p className="mt-3 text-[11px] text-text-tertiary">
           Plan listo para evaluación de misión futura (sin asignación todavía).
         </p>

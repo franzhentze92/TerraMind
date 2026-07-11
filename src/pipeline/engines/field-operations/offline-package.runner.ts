@@ -34,6 +34,10 @@ import {
 } from '@/pipeline/stores/missions.store'
 import { listVerificationNeedsForPlan } from '@/pipeline/stores/verification-plans.store'
 
+function asBuildRecord<T extends object>(value: T): Record<string, unknown> {
+  return value as unknown as Record<string, unknown>
+}
+
 const TERMINAL_MISSION_STATUSES = ['cancelled', 'completed', 'failed']
 
 async function loadMissionBuildContext(missionId: string) {
@@ -60,12 +64,12 @@ export async function requestOfflinePackageGeneration(input: {
   const preview = buildOfflinePackage({
     package_id: 'preview',
     package_version: 1,
-    mission: ctx.mission,
-    tasks: ctx.tasks,
-    evidence_requirements: ctx.evidence,
-    assignment: ctx.assignment,
-    plan_needs: ctx.planNeeds,
-    incident: ctx.incident,
+    mission: asBuildRecord(ctx.mission),
+    tasks: ctx.tasks.map(asBuildRecord),
+    evidence_requirements: ctx.evidence.map(asBuildRecord),
+    assignment: ctx.assignment ? asBuildRecord(ctx.assignment) : null,
+    plan_needs: ctx.planNeeds.map(asBuildRecord),
+    incident: ctx.incident ? asBuildRecord(ctx.incident) : null,
     permissions: ALL_OFFLINE_PACKAGE_PERMISSIONS,
     actor_id: input.actorId ?? null,
     evaluated_at: evaluatedAt,
@@ -78,7 +82,7 @@ export async function requestOfflinePackageGeneration(input: {
     idempotencyKey: input.idempotencyKey,
     decision: preview.decision,
     warnings: preview.warnings,
-    redactionSummary: preview.redaction,
+    redactionSummary: asBuildRecord(preview.redaction),
     evaluatedAt,
   })
 
@@ -104,7 +108,7 @@ export async function requestOfflinePackageGeneration(input: {
   const packageId = randomUUID()
 
   const previousReady = versions.length
-    ? (
+    ? await (
         await import('@/pipeline/stores/offline-mission-packages.store')
       ).listOfflinePackagesForMission(input.missionId)
     : []
@@ -190,12 +194,12 @@ export async function runOfflinePackageGeneration(input: {
       package_id: input.packageId,
       package_version: pkg.package_version,
       supersedes_package_id: pkg.supersedes_package_id,
-      mission: ctx.mission,
-      tasks: ctx.tasks,
-      evidence_requirements: ctx.evidence,
-      assignment: ctx.assignment,
-      plan_needs: ctx.planNeeds,
-      incident: ctx.incident,
+      mission: asBuildRecord(ctx.mission),
+      tasks: ctx.tasks.map(asBuildRecord),
+      evidence_requirements: ctx.evidence.map(asBuildRecord),
+      assignment: ctx.assignment ? asBuildRecord(ctx.assignment) : null,
+      plan_needs: ctx.planNeeds.map(asBuildRecord),
+      incident: ctx.incident ? asBuildRecord(ctx.incident) : null,
       permissions: ALL_OFFLINE_PACKAGE_PERMISSIONS,
       actor_id: input.actorId ?? null,
       evaluated_at: evaluatedAt,
@@ -295,12 +299,12 @@ export async function previewOfflinePackageContextSignature(missionId: string): 
   const ctx = await loadMissionBuildContext(missionId)
   if (!ctx) return null
   return buildOfflinePackageContextSignature({
-    mission: ctx.mission,
-    tasks: ctx.tasks,
-    evidence_requirements: ctx.evidence,
-    assignment: ctx.assignment,
-    plan_needs: ctx.planNeeds,
-    incident: ctx.incident,
+    mission: asBuildRecord(ctx.mission),
+    tasks: ctx.tasks.map(asBuildRecord),
+    evidence_requirements: ctx.evidence.map(asBuildRecord),
+    assignment: ctx.assignment ? asBuildRecord(ctx.assignment) : null,
+    plan_needs: ctx.planNeeds.map(asBuildRecord),
+    incident: ctx.incident ? asBuildRecord(ctx.incident) : null,
     permissions: ALL_OFFLINE_PACKAGE_PERMISSIONS,
     actor_id: null,
     evaluated_at: new Date().toISOString(),

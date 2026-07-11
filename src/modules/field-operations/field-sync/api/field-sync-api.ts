@@ -63,7 +63,7 @@ export function createHttpSyncTransport(): SyncTransport {
     async putUploadBytes(uploadUrl, chunk, offset, total) {
       const res = await fetch(uploadUrl, {
         method: 'PUT',
-        body: chunk,
+        body: new Blob([chunk as BlobPart]),
         headers: {
           'Content-Type': 'application/octet-stream',
           'Content-Range': `bytes ${offset}-${offset + chunk.byteLength - 1}/${total}`,

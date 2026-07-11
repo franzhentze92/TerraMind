@@ -169,7 +169,13 @@ export async function runNeedResolution(
   const incident = await getIncidentById(plan.incident_id)
   const evidence = await loadValidatedEvidenceForPlan(plan.id)
   const conflicts = await loadConflictsForPlan(plan.id, evidence)
-  const snapshot = await buildNeedSnapshot(needRow, plan, incident, evidence, conflicts)
+  const snapshot = await buildNeedSnapshot(
+    needRow as unknown as Record<string, unknown>,
+    plan as unknown as Record<string, unknown>,
+    incident ? (incident as unknown as Record<string, unknown>) : null,
+    evidence,
+    conflicts,
+  )
   const result = evaluateNeedResolution(snapshot)
 
   if (!options.force) {

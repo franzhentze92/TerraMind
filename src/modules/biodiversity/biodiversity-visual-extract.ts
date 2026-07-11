@@ -101,7 +101,7 @@ export function occurrenceToVisual(
     imageUrl: occurrence.visualMedia.imageUrl,
     thumbnailUrl: occurrence.visualMedia.thumbnailUrl,
     imageLicense: occurrence.visualMedia.imageLicense,
-    imageAttribution: occurrence.attribution,
+    imageAttribution: occurrence.attribution ?? '',
     observationUrl: occurrence.sourceUrl,
     taxonName: occurrence.scientificName,
     commonName: occurrence.commonName,

@@ -60,7 +60,7 @@ export function mapGbifOccurrence(record: GbifOccurrenceRecord, fetchedAt: strin
   const licenseEval = evaluateOccurrenceLicense({
     license: record.license,
     source: 'gbif',
-    hasMedia: Boolean(record.media?.length),
+    hasMedia: Array.isArray(record.media) ? record.media.length > 0 : Boolean(record.media),
   })
 
   const occurrence: BiodiversityOccurrence = {

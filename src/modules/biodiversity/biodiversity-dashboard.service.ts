@@ -552,7 +552,13 @@ export class BiodiversityDashboardService {
       taxonomic_distribution: taxonomicDistribution,
       activity,
       quality,
-      sources: buildSources(filtered, health, result.providerErrors),
+      sources: buildSources(
+        filtered,
+        health,
+        Object.fromEntries(result.providerErrors.map((p: BiodiversityProviderId) => [p, 'unavailable'])) as Partial<
+          Record<BiodiversityProviderId, string>
+        >,
+      ),
       disclaimer: BIODIVERSITY_CONFIG.disclaimer,
       filters_applied: filters,
     }
