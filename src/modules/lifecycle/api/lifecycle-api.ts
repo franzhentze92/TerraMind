@@ -34,8 +34,10 @@ export interface LifecycleTransitionDto {
   evaluated_at: string
 }
 
+import { authFetch } from '@/core/auth/auth-fetch'
+
 async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(path, { credentials: 'include' })
+  const res = await authFetch(path)
   if (!res.ok) throw new Error(`API error ${res.status}`)
   return res.json() as Promise<T>
 }

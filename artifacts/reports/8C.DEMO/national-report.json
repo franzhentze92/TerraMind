@@ -1,0 +1,676 @@
+{
+  "title": "TerraMind National Environmental Intelligence Report",
+  "classification": "internal_demo",
+  "period": {
+    "preset": "7d",
+    "from": "2026-07-04T01:47:06.438Z",
+    "to": "2026-07-11T01:47:06.439Z"
+  },
+  "generated_at": "2026-07-11T01:47:27.383Z",
+  "dashboard": {
+    "generated_at": "2026-07-11T01:47:17.856Z",
+    "system_status": "operational",
+    "last_sync_at": "2026-07-10T07:57:03.185Z",
+    "sources_active": 1,
+    "include_demo": true,
+    "metrics": [
+      {
+        "key": "observations",
+        "label": "Observaciones FIRMS",
+        "value": 97
+      },
+      {
+        "key": "events",
+        "label": "Eventos térmicos",
+        "value": 14,
+        "href": "/incendios"
+      },
+      {
+        "key": "findings",
+        "label": "Hallazgos",
+        "value": 50,
+        "href": "/hallazgos"
+      },
+      {
+        "key": "incidents",
+        "label": "Incidentes",
+        "value": 4,
+        "href": "/incidentes"
+      },
+      {
+        "key": "missions",
+        "label": "Misiones",
+        "value": 2,
+        "href": "/misiones"
+      },
+      {
+        "key": "evidence",
+        "label": "Evidencia",
+        "value": 1
+      },
+      {
+        "key": "responses",
+        "label": "Respuestas",
+        "value": 0,
+        "href": "/respuesta",
+        "empty": {
+          "section": "response_assessments",
+          "title": "Respuestas recomendadas",
+          "meaning": "Evaluaciones de respuesta operacional generadas tras resolución de verificación.",
+          "why_empty": "No existen response assessments todavía. Se generarán cuando una resolución de verificación tenga todas sus reevaluaciones downstream completas.",
+          "fed_by": "Motor 8C.1 — Response Orchestration (post-resolución)",
+          "last_known": null,
+          "action": "Ver resoluciones y misiones en curso"
+        }
+      }
+    ],
+    "summary": {
+      "what_is_happening": "TerraMind monitorea 14 evento(s) térmico(s) agrupados y 50 hallazgo(s) compuestos en el territorio nacional.",
+      "what_changed": "50 hallazgos compuestos disponibles para revisión; 4 incidente(s) correlacionados en base.",
+      "requires_attention": "Revisar hallazgos con mayor severidad y eventos con prioridad elevada en el mapa nacional.",
+      "in_verification": "2 misión(es) registrada(s); 1 envío(s) de evidencia en flujo.",
+      "terramind_recommends": "No existen response assessments todavía. Se generarán cuando una resolución de verificación tenga todas sus reevaluaciones downstream completas.",
+      "pending_decision": "No hay decisiones registradas porque aún no existen assessments activos."
+    },
+    "priority_findings": [
+      {
+        "id": "25e1f4a7-8c0a-474a-8256-e67aad8010cd",
+        "title": "Actividad térmica en cobertura natural mixta",
+        "severity_label": "informational",
+        "department_name": "Jutiapa",
+        "href": "/hallazgos/25e1f4a7-8c0a-474a-8256-e67aad8010cd"
+      },
+      {
+        "id": "7d810d6c-df62-4dc8-84d1-9a0d812b84c4",
+        "title": "Población modelada en el entorno inmediato",
+        "severity_label": "attention",
+        "department_name": "Jutiapa",
+        "href": "/hallazgos/7d810d6c-df62-4dc8-84d1-9a0d812b84c4"
+      },
+      {
+        "id": "8a2241f8-1067-425e-b30c-c42291ab3daa",
+        "title": "Contexto de biodiversidad con limitaciones",
+        "severity_label": "informational",
+        "department_name": "Jutiapa",
+        "href": "/hallazgos/8a2241f8-1067-425e-b30c-c42291ab3daa"
+      },
+      {
+        "id": "80fe8e01-6b14-4a67-8ada-97346c79e07f",
+        "title": "Biodiversidad documentada en el entorno",
+        "severity_label": "informational",
+        "department_name": "Jutiapa",
+        "href": "/hallazgos/80fe8e01-6b14-4a67-8ada-97346c79e07f"
+      },
+      {
+        "id": "43d23374-7245-4115-8ccb-dd1d13f18f1a",
+        "title": "Actividad térmica cerca de área protegida",
+        "severity_label": "attention",
+        "department_name": "Jutiapa",
+        "href": "/hallazgos/43d23374-7245-4115-8ccb-dd1d13f18f1a"
+      }
+    ],
+    "active_incidents": [
+      {
+        "id": "1797fc30-044f-44a9-b0fb-8c8481131eef",
+        "status": "open",
+        "attention_level": "routine",
+        "event_count": 1,
+        "is_legacy": true,
+        "is_internal_demo": false,
+        "story_coverage": "Cobertura de historia: 5 de 9 etapas",
+        "href": "/incidentes/1797fc30-044f-44a9-b0fb-8c8481131eef",
+        "story_href": "/incidentes/1797fc30-044f-44a9-b0fb-8c8481131eef/historia"
+      },
+      {
+        "id": "8cd9487a-6823-43d6-b186-3166165db05a",
+        "status": "open",
+        "attention_level": "routine",
+        "event_count": 1,
+        "is_legacy": true,
+        "is_internal_demo": true,
+        "story_coverage": "Cobertura de historia: 7 de 9 etapas",
+        "href": "/incidentes/8cd9487a-6823-43d6-b186-3166165db05a",
+        "story_href": "/incidentes/8cd9487a-6823-43d6-b186-3166165db05a/historia"
+      },
+      {
+        "id": "f3392ad8-da51-428d-a560-0d88a1553c69",
+        "status": "open",
+        "attention_level": "routine",
+        "event_count": 1,
+        "is_legacy": true,
+        "is_internal_demo": false,
+        "story_coverage": "Cobertura de historia: 5 de 9 etapas",
+        "href": "/incidentes/f3392ad8-da51-428d-a560-0d88a1553c69",
+        "story_href": "/incidentes/f3392ad8-da51-428d-a560-0d88a1553c69/historia"
+      },
+      {
+        "id": "9fe42481-76d6-4323-9b87-f35a099afbf4",
+        "status": "open",
+        "attention_level": "routine",
+        "event_count": 1,
+        "is_legacy": true,
+        "is_internal_demo": false,
+        "story_coverage": "Cobertura de historia: 4 de 9 etapas",
+        "href": "/incidentes/9fe42481-76d6-4323-9b87-f35a099afbf4",
+        "story_href": "/incidentes/9fe42481-76d6-4323-9b87-f35a099afbf4/historia"
+      }
+    ],
+    "recent_changes": [
+      {
+        "id": "7151e1bd-de43-494b-ac5f-6088e7c31d7d",
+        "timestamp": "2026-07-10T23:55:56.786+00:00",
+        "stage": "mission",
+        "stage_label": "Misión",
+        "status": "assigned",
+        "source": "Operaciones de campo",
+        "confidence": "observado",
+        "summary": "Field Sync Pilot — Internal Verification",
+        "epistemic": "observed",
+        "href": "/misiones/7151e1bd-de43-494b-ac5f-6088e7c31d7d",
+        "is_internal_demo": true
+      },
+      {
+        "id": "52122623-3420-4a35-b31f-3c89c5314de8",
+        "timestamp": "2026-07-10T23:55:33.188+00:00",
+        "stage": "mission",
+        "stage_label": "Misión",
+        "status": "assigned",
+        "source": "Operaciones de campo",
+        "confidence": "observado",
+        "summary": "Field Sync Pilot — Internal Verification",
+        "epistemic": "observed",
+        "href": "/misiones/52122623-3420-4a35-b31f-3c89c5314de8",
+        "is_internal_demo": true
+      },
+      {
+        "id": "8a2241f8-1067-425e-b30c-c42291ab3daa",
+        "timestamp": "2026-07-10T20:22:22.596+00:00",
+        "stage": "finding",
+        "stage_label": "Hallazgo",
+        "status": "active",
+        "source": "biodiversity",
+        "confidence": "low",
+        "summary": "Contexto de biodiversidad con limitaciones",
+        "epistemic": "inferred",
+        "href": "/hallazgos/8a2241f8-1067-425e-b30c-c42291ab3daa"
+      },
+      {
+        "id": "80fe8e01-6b14-4a67-8ada-97346c79e07f",
+        "timestamp": "2026-07-10T20:22:22.596+00:00",
+        "stage": "finding",
+        "stage_label": "Hallazgo",
+        "status": "active",
+        "source": "fire_events, biodiversity",
+        "confidence": "low",
+        "summary": "Biodiversidad documentada en el entorno",
+        "epistemic": "inferred",
+        "href": "/hallazgos/80fe8e01-6b14-4a67-8ada-97346c79e07f"
+      },
+      {
+        "id": "25e1f4a7-8c0a-474a-8256-e67aad8010cd",
+        "timestamp": "2026-07-10T20:22:22.596+00:00",
+        "stage": "finding",
+        "stage_label": "Hallazgo",
+        "status": "active",
+        "source": "fire_events, land_cover",
+        "confidence": "moderate",
+        "summary": "Actividad térmica en cobertura natural mixta",
+        "epistemic": "inferred",
+        "href": "/hallazgos/25e1f4a7-8c0a-474a-8256-e67aad8010cd"
+      },
+      {
+        "id": "7d810d6c-df62-4dc8-84d1-9a0d812b84c4",
+        "timestamp": "2026-07-10T20:22:22.596+00:00",
+        "stage": "finding",
+        "stage_label": "Hallazgo",
+        "status": "active",
+        "source": "fire_events, population",
+        "confidence": "low",
+        "summary": "Población modelada en el entorno inmediato",
+        "epistemic": "inferred",
+        "href": "/hallazgos/7d810d6c-df62-4dc8-84d1-9a0d812b84c4"
+      },
+      {
+        "id": "43d23374-7245-4115-8ccb-dd1d13f18f1a",
+        "timestamp": "2026-07-10T20:22:22.595+00:00",
+        "stage": "finding",
+        "stage_label": "Hallazgo",
+        "status": "active",
+        "source": "fire_events, protected_areas",
+        "confidence": "moderate",
+        "summary": "Actividad térmica cerca de área protegida",
+        "epistemic": "inferred",
+        "href": "/hallazgos/43d23374-7245-4115-8ccb-dd1d13f18f1a"
+      },
+      {
+        "id": "280933df-7406-44e4-88d3-fd8b6c207bfc",
+        "timestamp": "2026-07-10T19:53:00+00:00",
+        "stage": "event",
+        "stage_label": "Evento",
+        "status": "no_validado",
+        "source": "Motor de clustering FIRMS",
+        "confidence": "inferido",
+        "summary": "Evento térmico agrupado",
+        "epistemic": "inferred",
+        "href": "/incendios/280933df-7406-44e4-88d3-fd8b6c207bfc",
+        "entity_id": "280933df-7406-44e4-88d3-fd8b6c207bfc"
+      },
+      {
+        "id": "b68eb9e2-0d7f-4e0c-88cb-50e228234fc6",
+        "timestamp": "2026-07-10T19:53:00+00:00",
+        "stage": "event",
+        "stage_label": "Evento",
+        "status": "no_validado",
+        "source": "Motor de clustering FIRMS",
+        "confidence": "inferido",
+        "summary": "Evento térmico agrupado",
+        "epistemic": "inferred",
+        "href": "/incendios/b68eb9e2-0d7f-4e0c-88cb-50e228234fc6",
+        "entity_id": "b68eb9e2-0d7f-4e0c-88cb-50e228234fc6"
+      },
+      {
+        "id": "91cd7033-060f-4991-95bd-e85a3a93c88d",
+        "timestamp": "2026-07-10T18:59:00+00:00",
+        "stage": "event",
+        "stage_label": "Evento",
+        "status": "probable",
+        "source": "Motor de clustering FIRMS",
+        "confidence": "inferido",
+        "summary": "Evento térmico agrupado",
+        "epistemic": "inferred",
+        "href": "/incendios/91cd7033-060f-4991-95bd-e85a3a93c88d",
+        "entity_id": "91cd7033-060f-4991-95bd-e85a3a93c88d"
+      },
+      {
+        "id": "8cd9487a-6823-43d6-b186-3166165db05a",
+        "timestamp": "2026-07-10T18:59:00+00:00",
+        "stage": "incident",
+        "stage_label": "Incidente",
+        "status": "open",
+        "source": "Correlación de incidentes",
+        "confidence": "inferido",
+        "summary": "Incidente possible_vegetation_fire_incident · 1 evento(s)",
+        "epistemic": "inferred",
+        "href": "/incidentes/8cd9487a-6823-43d6-b186-3166165db05a",
+        "is_internal_demo": true
+      },
+      {
+        "id": "bb4edb3a-ab3e-4f84-bb90-450a242b68d1",
+        "timestamp": "2026-07-10T18:58:00+00:00",
+        "stage": "event",
+        "stage_label": "Evento",
+        "status": "probable",
+        "source": "Motor de clustering FIRMS",
+        "confidence": "inferido",
+        "summary": "Evento térmico agrupado",
+        "epistemic": "inferred",
+        "href": "/incendios/bb4edb3a-ab3e-4f84-bb90-450a242b68d1",
+        "entity_id": "bb4edb3a-ab3e-4f84-bb90-450a242b68d1"
+      },
+      {
+        "id": "ec52cb95-f7b2-4c5c-bb4a-d763f32a459b",
+        "timestamp": "2026-07-10T18:58:00+00:00",
+        "stage": "event",
+        "stage_label": "Evento",
+        "status": "no_validado",
+        "source": "Motor de clustering FIRMS",
+        "confidence": "inferido",
+        "summary": "Evento térmico agrupado",
+        "epistemic": "inferred",
+        "href": "/incendios/ec52cb95-f7b2-4c5c-bb4a-d763f32a459b",
+        "entity_id": "ec52cb95-f7b2-4c5c-bb4a-d763f32a459b"
+      },
+      {
+        "id": "f3392ad8-da51-428d-a560-0d88a1553c69",
+        "timestamp": "2026-07-10T18:58:00+00:00",
+        "stage": "incident",
+        "stage_label": "Incidente",
+        "status": "open",
+        "source": "Correlación de incidentes",
+        "confidence": "inferido",
+        "summary": "Incidente possible_vegetation_fire_incident · 1 evento(s)",
+        "epistemic": "inferred",
+        "href": "/incidentes/f3392ad8-da51-428d-a560-0d88a1553c69",
+        "is_internal_demo": false
+      },
+      {
+        "id": "9fe42481-76d6-4323-9b87-f35a099afbf4",
+        "timestamp": "2026-07-10T18:58:00+00:00",
+        "stage": "incident",
+        "stage_label": "Incidente",
+        "status": "open",
+        "source": "Correlación de incidentes",
+        "confidence": "inferido",
+        "summary": "Incidente possible_vegetation_fire_incident · 1 evento(s)",
+        "epistemic": "inferred",
+        "href": "/incidentes/9fe42481-76d6-4323-9b87-f35a099afbf4",
+        "is_internal_demo": false
+      },
+      {
+        "id": "1797fc30-044f-44a9-b0fb-8c8481131eef",
+        "timestamp": "2026-07-10T09:49:00+00:00",
+        "stage": "incident",
+        "stage_label": "Incidente",
+        "status": "open",
+        "source": "Correlación de incidentes",
+        "confidence": "inferido",
+        "summary": "Incidente possible_vegetation_fire_incident · 1 evento(s)",
+        "epistemic": "inferred",
+        "href": "/incidentes/1797fc30-044f-44a9-b0fb-8c8481131eef",
+        "is_internal_demo": false
+      }
+    ],
+    "pending_verifications": [
+      {
+        "id": "45302d5f-4046-4ba8-b78f-e4fcc3911d86",
+        "incident_id": "8cd9487a-6823-43d6-b186-3166165db05a",
+        "status": "not_required",
+        "href": "/verificaciones?incident=8cd9487a-6823-43d6-b186-3166165db05a"
+      },
+      {
+        "id": "ab4cfda4-da98-4b7c-810f-9c07903df161",
+        "incident_id": "f3392ad8-da51-428d-a560-0d88a1553c69",
+        "status": "not_required",
+        "href": "/verificaciones?incident=f3392ad8-da51-428d-a560-0d88a1553c69"
+      },
+      {
+        "id": "5e5784ba-c233-484f-b559-10223123d65f",
+        "incident_id": "9fe42481-76d6-4323-9b87-f35a099afbf4",
+        "status": "not_required",
+        "href": "/verificaciones?incident=9fe42481-76d6-4323-9b87-f35a099afbf4"
+      },
+      {
+        "id": "09c8e1a2-f3a5-4572-a164-f6b13ffbf708",
+        "incident_id": "1797fc30-044f-44a9-b0fb-8c8481131eef",
+        "status": "not_required",
+        "href": "/verificaciones?incident=1797fc30-044f-44a9-b0fb-8c8481131eef"
+      }
+    ],
+    "missions_in_progress": [
+      {
+        "id": "52122623-3420-4a35-b31f-3c89c5314de8",
+        "title": "Field Sync Pilot — Internal Verification",
+        "status": "assigned",
+        "is_internal_demo": true,
+        "href": "/misiones/52122623-3420-4a35-b31f-3c89c5314de8"
+      },
+      {
+        "id": "7151e1bd-de43-494b-ac5f-6088e7c31d7d",
+        "title": "Field Sync Pilot — Internal Verification",
+        "status": "assigned",
+        "is_internal_demo": true,
+        "href": "/misiones/7151e1bd-de43-494b-ac5f-6088e7c31d7d"
+      }
+    ],
+    "recent_evidence": [
+      {
+        "id": "7a4b4fef-621c-4744-bf09-a506a9faacd0",
+        "status": "ready_for_validation",
+        "mission_id": "7151e1bd-de43-494b-ac5f-6088e7c31d7d",
+        "href": "/misiones/7151e1bd-de43-494b-ac5f-6088e7c31d7d"
+      }
+    ],
+    "recent_resolutions": [],
+    "response_recommendations": [],
+    "pending_decisions": [],
+    "empty_sections": [
+      {
+        "section": "resolutions",
+        "title": "Resoluciones de verificación",
+        "meaning": "Conclusiones formales sobre necesidades de verificación.",
+        "why_empty": "No hay resoluciones activas. Requieren evidencia validada y evaluación del motor de resolución.",
+        "fed_by": "Motor de resolución de verificación (8B.6)",
+        "last_known": null,
+        "action": null
+      },
+      {
+        "section": "validations",
+        "title": "Validaciones de evidencia",
+        "meaning": "Revisión de calidad y coherencia de evidencia de campo.",
+        "why_empty": "No hay validaciones completadas. La evidencia recibida aún está pendiente de validación.",
+        "fed_by": "Motor de validación de evidencia (8B.5)",
+        "last_known": null,
+        "action": null
+      },
+      {
+        "section": "response_assessments",
+        "title": "Respuestas recomendadas",
+        "meaning": "Evaluaciones de respuesta operacional generadas tras resolución de verificación.",
+        "why_empty": "No existen response assessments todavía. Se generarán cuando una resolución de verificación tenga todas sus reevaluaciones downstream completas.",
+        "fed_by": "Motor 8C.1 — Response Orchestration (post-resolución)",
+        "last_known": null,
+        "action": "Ver resoluciones y misiones en curso"
+      },
+      {
+        "section": "decisions",
+        "title": "Decisiones pendientes",
+        "meaning": "Decisiones humanas sobre recomendaciones de respuesta.",
+        "why_empty": "No hay decisiones registradas porque aún no existen assessments activos.",
+        "fed_by": "Flujo de aprobación de respuesta (8C.1)",
+        "last_known": null,
+        "action": null
+      },
+      {
+        "section": "response_assessments",
+        "title": "Respuestas recomendadas",
+        "meaning": "Evaluaciones de respuesta operacional generadas tras resolución de verificación.",
+        "why_empty": "No existen response assessments todavía. Se generarán cuando una resolución de verificación tenga todas sus reevaluaciones downstream completas.",
+        "fed_by": "Motor 8C.1 — Response Orchestration (post-resolución)",
+        "last_known": null,
+        "action": "Ver resoluciones y misiones en curso"
+      },
+      {
+        "section": "decisions",
+        "title": "Decisiones pendientes",
+        "meaning": "Decisiones humanas sobre recomendaciones de respuesta.",
+        "why_empty": "No hay decisiones registradas porque aún no existen assessments activos.",
+        "fed_by": "Flujo de aprobación de respuesta (8C.1)",
+        "last_known": null,
+        "action": null
+      },
+      {
+        "section": "resolutions",
+        "title": "Resoluciones de verificación",
+        "meaning": "Conclusiones formales sobre necesidades de verificación.",
+        "why_empty": "No hay resoluciones activas. Requieren evidencia validada y evaluación del motor de resolución.",
+        "fed_by": "Motor de resolución de verificación (8B.6)",
+        "last_known": null,
+        "action": null
+      },
+      {
+        "section": "tenant_incidents",
+        "title": "Incidentes de organización",
+        "meaning": "Incidentes con ownership de tenant asignado.",
+        "why_empty": "Los incidentes actuales en base son legacy (sin organization_id). Los incidentes tenant-owned aparecerán tras correlación con organización activa.",
+        "fed_by": "Correlación de incidentes + provisioning de tenant (8B.7)",
+        "last_known": null,
+        "action": null
+      }
+    ],
+    "data_audit": [
+      {
+        "stage": "fire_detections",
+        "count": 97,
+        "status": "has_real_data",
+        "note": "Observaciones FIRMS"
+      },
+      {
+        "stage": "fire_events",
+        "count": 14,
+        "status": "has_real_data",
+        "note": "Eventos térmicos agrupados"
+      },
+      {
+        "stage": "findings",
+        "count": 50,
+        "status": "has_real_data",
+        "note": "Hallazgos compuestos"
+      },
+      {
+        "stage": "priorities",
+        "count": 11,
+        "status": "has_real_data",
+        "note": "Prioridades"
+      },
+      {
+        "stage": "incidents",
+        "count": 4,
+        "status": "legacy_only",
+        "note": "Solo incidentes legacy sin organization_id"
+      },
+      {
+        "stage": "lifecycle",
+        "count": 12,
+        "status": "has_real_data",
+        "note": "Transiciones lifecycle"
+      },
+      {
+        "stage": "verification_plans",
+        "count": 4,
+        "status": "has_real_data",
+        "note": "Planes de verificación"
+      },
+      {
+        "stage": "verification_needs",
+        "count": 0,
+        "status": "empty",
+        "note": "Necesidades de verificación"
+      },
+      {
+        "stage": "missions",
+        "count": 2,
+        "status": "pilot_only",
+        "note": "Misiones (incluye piloto Field Sync)"
+      },
+      {
+        "stage": "evidence",
+        "count": 1,
+        "status": "pilot_only",
+        "note": "Evidencia de campo"
+      },
+      {
+        "stage": "validations",
+        "count": 0,
+        "status": "empty",
+        "note": "No hay validaciones completadas. La evidencia recibida aún está pendiente de validación."
+      },
+      {
+        "stage": "resolutions",
+        "count": 0,
+        "status": "empty",
+        "note": "No hay resoluciones activas. Requieren evidencia validada y evaluación del motor de resolución."
+      },
+      {
+        "stage": "response_assessments",
+        "count": 0,
+        "status": "empty",
+        "note": "No existen response assessments todavía. Se generarán cuando una resolución de verificación tenga todas sus reevaluaciones downstream completas."
+      },
+      {
+        "stage": "decisions",
+        "count": 0,
+        "status": "empty",
+        "note": "No hay decisiones registradas porque aún no existen assessments activos."
+      },
+      {
+        "stage": "actions",
+        "count": 0,
+        "status": "empty",
+        "note": "Acciones de respuesta"
+      }
+    ],
+    "recommended_demo_incident_id": "8cd9487a-6823-43d6-b186-3166165db05a"
+  },
+  "sections": [
+    {
+      "id": "cover",
+      "title": "Portada",
+      "content": "TerraMind · Guatemala · Demostración interna"
+    },
+    {
+      "id": "executive",
+      "title": "Resumen ejecutivo",
+      "content": "TerraMind monitorea 14 evento(s) térmico(s) agrupados y 50 hallazgo(s) compuestos en el territorio nacional.\n\nRevisar hallazgos con mayor severidad y eventos con prioridad elevada en el mapa nacional.\n\nNo existen response assessments todavía. Se generarán cuando una resolución de verificación tenga todas sus reevaluaciones downstream completas."
+    },
+    {
+      "id": "sources",
+      "title": "Estado de fuentes y pipelines",
+      "content": "Estado: operational · Fuentes activas: 1 · Última sync: 2026-07-10T07:57:03.185Z"
+    },
+    {
+      "id": "situation",
+      "title": "Situación nacional",
+      "content": "50 hallazgos compuestos disponibles para revisión; 4 incidente(s) correlacionados en base."
+    },
+    {
+      "id": "findings",
+      "title": "Hallazgos prioritarios",
+      "content": "5 hallazgo(s) destacados"
+    },
+    {
+      "id": "incidents",
+      "title": "Incidentes",
+      "content": "4 incidente(s) en vista"
+    },
+    {
+      "id": "changes",
+      "title": "Cambios en el período",
+      "content": "16 evento(s) recientes"
+    },
+    {
+      "id": "verification",
+      "title": "Verificaciones",
+      "content": "4 plan(es)"
+    },
+    {
+      "id": "missions",
+      "title": "Misiones",
+      "content": "2 misión(es)"
+    },
+    {
+      "id": "evidence",
+      "title": "Evidencia y validación",
+      "content": "1 envío(s) recientes"
+    },
+    {
+      "id": "resolutions",
+      "title": "Resoluciones",
+      "content": "Sin resoluciones completadas"
+    },
+    {
+      "id": "responses",
+      "title": "Respuestas recomendadas",
+      "content": "Sin assessments — ver empty state"
+    },
+    {
+      "id": "decisions",
+      "title": "Decisiones pendientes",
+      "content": "Sin decisiones"
+    },
+    {
+      "id": "uncertainties",
+      "title": "Incertidumbres",
+      "content": "Los niveles de confianza se reportan por etapa; no se confirman causas ni daños."
+    },
+    {
+      "id": "next",
+      "title": "Próximas acciones",
+      "content": "No hay decisiones registradas porque aún no existen assessments activos."
+    },
+    {
+      "id": "sources_list",
+      "title": "Fuentes",
+      "content": "NASA FIRMS, motores TerraMind, evidencia de campo"
+    },
+    {
+      "id": "methodology",
+      "title": "Metodología",
+      "content": "Agregación determinística de motores 8A–8C.1 sin LLM generativo."
+    },
+    {
+      "id": "limitations",
+      "title": "Limitaciones",
+      "content": "Demostración interna — no representa un evento ambiental confirmado"
+    }
+  ]
+}

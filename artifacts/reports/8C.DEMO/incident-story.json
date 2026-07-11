@@ -1,0 +1,642 @@
+{
+  "incident_id": "8cd9487a-6823-43d6-b186-3166165db05a",
+  "generated_at": "2026-07-11T01:47:31.705Z",
+  "is_internal_demo": true,
+  "is_legacy": true,
+  "classification": "internal_demo",
+  "coverage": {
+    "total_stages": 9,
+    "present_stages": 7,
+    "label": "Cobertura de historia: 7 de 9 etapas",
+    "stages": {
+      "event": true,
+      "finding": true,
+      "priority": true,
+      "lifecycle": true,
+      "plan": true,
+      "mission": true,
+      "evidence": true,
+      "resolution": false,
+      "response": false
+    },
+    "present_stage_labels": [
+      "Evento térmico",
+      "Hallazgo compuesto",
+      "Prioridad",
+      "Ciclo de vida",
+      "Plan de verificación",
+      "Misión de campo",
+      "Evidencia"
+    ],
+    "missing_stage_labels": [
+      "Resolución",
+      "Assessment de respuesta"
+    ]
+  },
+  "stages": [
+    {
+      "key": "detection",
+      "title": "Detección inicial",
+      "order": 1,
+      "epistemic": "observed",
+      "status": "present",
+      "timestamp": "2026-07-10T18:58:00+00:00",
+      "source": "Correlación TerraMind",
+      "confidence": "observado",
+      "summary": "Primera observación registrada · 1 evento(s) vinculado(s)",
+      "detail": "{\"reasons\":[\"lifecycle_expanding\",\"Evento elegible sin correlación suficiente para fusionar con otro incidente\"],\"decision\":\"create_new_incident\"}",
+      "href": null,
+      "items": []
+    },
+    {
+      "key": "observations",
+      "title": "Observaciones de fuente",
+      "order": 2,
+      "epistemic": "observed",
+      "status": "present",
+      "timestamp": "2026-07-10T18:59:00+00:00",
+      "source": "NASA FIRMS",
+      "confidence": "observado",
+      "summary": "1 membresía(s) de evento en el incidente",
+      "detail": null,
+      "href": "/incendios/91cd7033-060f-4991-95bd-e85a3a93c88d",
+      "items": [
+        {
+          "membership_id": "c8bf8ea7-a284-4049-bd6c-1f4e7d2d2864",
+          "event_type": "fire_event",
+          "event_id": "91cd7033-060f-4991-95bd-e85a3a93c88d",
+          "membership_status": "active",
+          "membership_role": "primary",
+          "correlation_score": 0,
+          "correlation_reasons": [
+            "lifecycle_expanding",
+            "Evento elegible sin correlación suficiente para fusionar con otro incidente"
+          ],
+          "joined_at": "2026-07-10T21:07:14.64+00:00",
+          "left_at": null,
+          "lifecycle_state": "expanding",
+          "attention_score": null,
+          "department_name": "Petén",
+          "last_detected_at": "2026-07-10T18:59:00+00:00"
+        }
+      ]
+    },
+    {
+      "key": "event",
+      "title": "Evento",
+      "order": 3,
+      "epistemic": "inferred",
+      "status": "present",
+      "timestamp": "2026-07-10T18:59:00+00:00",
+      "source": "Motor de eventos térmicos",
+      "confidence": "inferido",
+      "summary": "Evento térmico primario identificado",
+      "detail": null,
+      "href": "/incendios/91cd7033-060f-4991-95bd-e85a3a93c88d",
+      "items": []
+    },
+    {
+      "key": "findings",
+      "title": "Hallazgos",
+      "order": 4,
+      "epistemic": "inferred",
+      "status": "present",
+      "timestamp": "2026-07-10T20:20:48.664+00:00",
+      "source": "Motor de hallazgos compuestos",
+      "confidence": "low",
+      "summary": "3 hallazgo(s) vinculado(s)",
+      "detail": null,
+      "href": "/hallazgos/d5e731b7-0537-4f67-b0fa-bbf039580bbb",
+      "items": [
+        {
+          "id": "d5e731b7-0537-4f67-b0fa-bbf039580bbb",
+          "title": "Alta incertidumbre en estimación poblacional local",
+          "severity": "informational"
+        },
+        {
+          "id": "16ca2961-1aa6-4962-9b70-95a5cb594c58",
+          "title": "Contexto de biodiversidad con limitaciones",
+          "severity": "informational"
+        },
+        {
+          "id": "620fcd03-ff42-45e6-9800-659723ce8e5b",
+          "title": "Actividad térmica dentro de área protegida",
+          "severity": "elevated_attention"
+        }
+      ]
+    },
+    {
+      "key": "priority",
+      "title": "Prioridad",
+      "order": 5,
+      "epistemic": "inferred",
+      "status": "missing",
+      "timestamp": null,
+      "source": "Motor de priorización",
+      "confidence": "inferido",
+      "summary": "Agregado en incidente: atención routine",
+      "detail": null,
+      "href": null,
+      "items": []
+    },
+    {
+      "key": "lifecycle",
+      "title": "Lifecycle",
+      "order": 6,
+      "epistemic": "inferred",
+      "status": "missing",
+      "timestamp": null,
+      "source": "Motor lifecycle",
+      "confidence": "inferido",
+      "summary": "Sin transiciones lifecycle registradas",
+      "detail": null,
+      "href": null,
+      "items": []
+    },
+    {
+      "key": "incident",
+      "title": "Correlación del incidente",
+      "order": 7,
+      "epistemic": "inferred",
+      "status": "present",
+      "timestamp": "2026-07-10T18:59:00+00:00",
+      "source": "Motor de correlación",
+      "confidence": "inferido",
+      "summary": "possible_vegetation_fire_incident · open · 1 evento(s)",
+      "detail": "Incidente legacy sin organization_id asignado",
+      "href": "/incidentes/8cd9487a-6823-43d6-b186-3166165db05a",
+      "items": []
+    },
+    {
+      "key": "verification_questions",
+      "title": "Preguntas de verificación",
+      "order": 8,
+      "epistemic": "recommended",
+      "status": "missing",
+      "timestamp": null,
+      "source": "Plan de verificación",
+      "confidence": "recomendado",
+      "summary": "Sin necesidades explícitas — revisar plan",
+      "detail": null,
+      "href": "/verificaciones",
+      "items": []
+    },
+    {
+      "key": "verification_plan",
+      "title": "Verification plan",
+      "order": 9,
+      "epistemic": "recommended",
+      "status": "present",
+      "timestamp": "2026-07-10T21:17:43.905+00:00",
+      "source": "Motor de verificación",
+      "confidence": "recomendado",
+      "summary": "Plan not_required",
+      "detail": null,
+      "href": "/verificaciones",
+      "items": [
+        {
+          "id": "45302d5f-4046-4ba8-b78f-e4fcc3911d86",
+          "incident_id": "8cd9487a-6823-43d6-b186-3166165db05a",
+          "status": "not_required",
+          "verification_model_version": "1.0.0",
+          "incident_snapshot": {
+            "domain": "fire",
+            "members": [
+              {
+                "event_id": "91cd7033-060f-4991-95bd-e85a3a93c88d",
+                "attention_score": null,
+                "lifecycle_state": "expanding",
+                "source_products": [
+                  "VIIRS_NOAA21_NRT"
+                ],
+                "last_detected_at": "2026-07-10T18:59:00+00:00",
+                "verification_score": null,
+                "finding_limitations": [],
+                "context_availability": {
+                  "climate": "complete",
+                  "land_cover": "missing",
+                  "population": "complete",
+                  "biodiversity": "partial",
+                  "protected_area": "complete"
+                }
+              }
+            ],
+            "event_count": 1,
+            "incident_id": "8cd9487a-6823-43d6-b186-3166165db05a",
+            "action_level": "none",
+            "action_score": 0,
+            "incident_type": "possible_vegetation_fire_incident",
+            "active_findings": [
+              {
+                "limitations": [
+                  "Los registros de biodiversidad no confirman presencia durante el evento."
+                ],
+                "finding_type": "biodiversity_context_limited",
+                "confidence_level": "moderate"
+              },
+              {
+                "limitations": [
+                  "La detección térmica no confirma un incendio.",
+                  "La población es una estimación espacial modelada.",
+                  "La incertidumbre no constituye medida de exposición."
+                ],
+                "finding_type": "nearby_population_with_high_uncertainty",
+                "confidence_level": "moderate"
+              },
+              {
+                "limitations": [
+                  "La detección térmica no confirma un incendio."
+                ],
+                "finding_type": "thermal_activity_in_protected_area",
+                "confidence_level": "moderate"
+              }
+            ],
+            "attention_score": 0,
+            "evidence_status": "single_source",
+            "incident_status": "open",
+            "last_observed_at": "2026-07-10T18:59:00+00:00",
+            "plan_limitations": [],
+            "primary_event_id": "91cd7033-060f-4991-95bd-e85a3a93c88d",
+            "first_observed_at": "2026-07-10T18:58:00+00:00",
+            "active_event_count": 1,
+            "verification_level": "not_required",
+            "verification_score": 0,
+            "priority_limitations": [],
+            "component_evidence_states": [
+              {
+                "note": "Área protegida: contexto disponible",
+                "state": "supporting_evidence",
+                "component": "protected_area"
+              },
+              {
+                "note": "Cobertura del suelo: contexto no disponible; no se interpreta como condición favorable",
+                "state": "missing_context",
+                "component": "land_cover"
+              },
+              {
+                "note": "Población: contexto disponible",
+                "state": "supporting_evidence",
+                "component": "population"
+              },
+              {
+                "note": "Clima: contexto disponible",
+                "state": "supporting_evidence",
+                "component": "climate"
+              },
+              {
+                "note": "Biodiversidad: contexto parcial o limitado",
+                "state": "uncertain_context",
+                "component": "biodiversity"
+              }
+            ]
+          },
+          "plan_priority": 10,
+          "plan_reasons": [
+            "Verificación no requerida según puntuación y nivel actuales"
+          ],
+          "plan_limitations": [
+            "Sin necesidades de verificación activas en este momento"
+          ],
+          "recommended_window": {
+            "label": "No aplica",
+            "end_hours": 0,
+            "start_hours": 0
+          },
+          "evidence_requirements": [],
+          "context_signature": "3af66b86c15182c6",
+          "previous_plan_id": null,
+          "mission_candidate_pending": false,
+          "created_at": "2026-07-10T21:17:43.905+00:00",
+          "updated_at": "2026-07-10T21:17:43.905+00:00",
+          "superseded_at": null,
+          "linked_mission_id": null,
+          "organization_id": null
+        }
+      ]
+    },
+    {
+      "key": "missions",
+      "title": "Misiones",
+      "order": 10,
+      "epistemic": "decided",
+      "status": "present",
+      "timestamp": "2026-07-10T23:55:33.188+00:00",
+      "source": "Operaciones de campo",
+      "confidence": "observado",
+      "summary": "2 misión(es) · incluye piloto interno",
+      "detail": "Demostración interna — no representa un evento ambiental confirmado",
+      "href": "/misiones/52122623-3420-4a35-b31f-3c89c5314de8",
+      "items": [
+        {
+          "id": "52122623-3420-4a35-b31f-3c89c5314de8",
+          "title": "Field Sync Pilot — Internal Verification",
+          "status": "assigned",
+          "is_internal_demo": true
+        },
+        {
+          "id": "7151e1bd-de43-494b-ac5f-6088e7c31d7d",
+          "title": "Field Sync Pilot — Internal Verification",
+          "status": "assigned",
+          "is_internal_demo": true
+        }
+      ]
+    },
+    {
+      "key": "evidence",
+      "title": "Evidencia",
+      "order": 11,
+      "epistemic": "observed",
+      "status": "present",
+      "timestamp": "2026-07-10T23:56:45.859+00:00",
+      "source": "Captura de campo",
+      "confidence": "observado",
+      "summary": "1 envío(s) · estado ready_for_validation",
+      "detail": null,
+      "href": "/misiones/7151e1bd-de43-494b-ac5f-6088e7c31d7d",
+      "items": [
+        {
+          "id": "7a4b4fef-621c-4744-bf09-a506a9faacd0",
+          "mission_id": "7151e1bd-de43-494b-ac5f-6088e7c31d7d",
+          "mission_task_id": null,
+          "incident_id": "8cd9487a-6823-43d6-b186-3166165db05a",
+          "verification_plan_id": "45302d5f-4046-4ba8-b78f-e4fcc3911d86",
+          "verification_need_id": null,
+          "submitted_by_type": "user",
+          "submitted_by_id": "33f2bff4-16bb-4c4a-b291-182fced0d1d2",
+          "source_type": "mission_user",
+          "evidence_type": "georeferenced_photo",
+          "status": "ready_for_validation",
+          "captured_at": "2026-07-10T23:56:45.606+00:00",
+          "device_timestamp": null,
+          "submitted_at": "2026-07-10T23:56:45.859+00:00",
+          "received_at": "2026-07-10T23:56:45.859+00:00",
+          "processed_at": "2026-07-11T00:00:43.294+00:00",
+          "location_geometry": {
+            "type": "Point",
+            "coordinates": [
+              -90.5133,
+              14.6349
+            ]
+          },
+          "device_location_geometry": null,
+          "location_accuracy_m": 25,
+          "location_method": "device_gps",
+          "location_discrepancy_m": null,
+          "location_outside_mission_area": false,
+          "source_device": null,
+          "source_application": "terramind-field-sync-pilot",
+          "description": "",
+          "metadata": {},
+          "sensitivity_classification": "internal",
+          "intake_profile_version": "1.0.0",
+          "context_signature": "pilot-12112f53-df70-4917-9f55-2c6da7803ee3",
+          "supersedes_submission_id": null,
+          "superseded_by_submission_id": null,
+          "supersede_reason": null,
+          "idempotency_key": "pilot-7151e1bd-de43-494b-ac5f-6088e7c31d7d-submission",
+          "upload_expires_at": "2026-07-11T23:56:45.859+00:00",
+          "created_at": "2026-07-10T23:56:46.549938+00:00",
+          "updated_at": "2026-07-11T00:00:43.294+00:00",
+          "organization_id": null
+        }
+      ]
+    },
+    {
+      "key": "validation",
+      "title": "Validación",
+      "order": 12,
+      "epistemic": "verified",
+      "status": "missing",
+      "timestamp": null,
+      "source": "Motor de validación",
+      "confidence": null,
+      "summary": "No hay validaciones completadas. La evidencia recibida aún está pendiente de validación.",
+      "detail": "Motor de validación de evidencia (8B.5)",
+      "href": null,
+      "items": [],
+      "empty_state": {
+        "section": "validations",
+        "title": "Validaciones de evidencia",
+        "meaning": "Revisión de calidad y coherencia de evidencia de campo.",
+        "why_empty": "No hay validaciones completadas. La evidencia recibida aún está pendiente de validación.",
+        "fed_by": "Motor de validación de evidencia (8B.5)",
+        "last_known": null,
+        "action": null
+      }
+    },
+    {
+      "key": "resolution",
+      "title": "Resolución",
+      "order": 13,
+      "epistemic": "verified",
+      "status": "missing",
+      "timestamp": null,
+      "source": "Motor de resolución",
+      "confidence": null,
+      "summary": "No hay resoluciones activas. Requieren evidencia validada y evaluación del motor de resolución.",
+      "detail": "Motor de resolución de verificación (8B.6)",
+      "href": null,
+      "items": [],
+      "empty_state": {
+        "section": "resolutions",
+        "title": "Resoluciones de verificación",
+        "meaning": "Conclusiones formales sobre necesidades de verificación.",
+        "why_empty": "No hay resoluciones activas. Requieren evidencia validada y evaluación del motor de resolución.",
+        "fed_by": "Motor de resolución de verificación (8B.6)",
+        "last_known": null,
+        "action": null
+      }
+    },
+    {
+      "key": "reevaluations",
+      "title": "Reevaluaciones",
+      "order": 14,
+      "epistemic": "inferred",
+      "status": "missing",
+      "timestamp": null,
+      "source": "Pipeline downstream",
+      "confidence": null,
+      "summary": "Pendiente de resolución completada",
+      "detail": null,
+      "href": null,
+      "items": []
+    },
+    {
+      "key": "response",
+      "title": "Respuesta recomendada",
+      "order": 15,
+      "epistemic": "recommended",
+      "status": "blocked",
+      "timestamp": null,
+      "source": "Response Orchestration 8C.1",
+      "confidence": null,
+      "summary": "Ownership sin resolver — no se genera assessment sobre incidente legacy",
+      "detail": null,
+      "href": "/respuesta/8cd9487a-6823-43d6-b186-3166165db05a",
+      "items": [],
+      "empty_state": {
+        "section": "response_assessments",
+        "title": "Respuestas recomendadas",
+        "meaning": "Evaluaciones de respuesta operacional generadas tras resolución de verificación.",
+        "why_empty": "No existen response assessments todavía. Se generarán cuando una resolución de verificación tenga todas sus reevaluaciones downstream completas.",
+        "fed_by": "Motor 8C.1 — Response Orchestration (post-resolución)",
+        "last_known": null,
+        "action": "Ver resoluciones y misiones en curso"
+      }
+    },
+    {
+      "key": "decision",
+      "title": "Decisión",
+      "order": 16,
+      "epistemic": "decided",
+      "status": "missing",
+      "timestamp": null,
+      "source": "Flujo humano",
+      "confidence": null,
+      "summary": "No hay decisiones registradas porque aún no existen assessments activos.",
+      "detail": null,
+      "href": "/respuesta/8cd9487a-6823-43d6-b186-3166165db05a",
+      "items": [],
+      "empty_state": {
+        "section": "decisions",
+        "title": "Decisiones pendientes",
+        "meaning": "Decisiones humanas sobre recomendaciones de respuesta.",
+        "why_empty": "No hay decisiones registradas porque aún no existen assessments activos.",
+        "fed_by": "Flujo de aprobación de respuesta (8C.1)",
+        "last_known": null,
+        "action": null
+      }
+    },
+    {
+      "key": "actions",
+      "title": "Acciones y próximos pasos",
+      "order": 17,
+      "epistemic": "executed",
+      "status": "present",
+      "timestamp": null,
+      "source": "Operaciones",
+      "confidence": "recomendado",
+      "summary": "Continuar verificación de campo y validación de evidencia recibida",
+      "detail": "Demostración interna — no representa un evento ambiental confirmado",
+      "href": "/incidentes/8cd9487a-6823-43d6-b186-3166165db05a",
+      "items": []
+    }
+  ],
+  "timeline": [
+    {
+      "id": "8cd9487a-6823-43d6-b186-3166165db05a-detection",
+      "timestamp": "2026-07-10T18:58:00+00:00",
+      "stage": "detection",
+      "stage_label": "Detección inicial",
+      "status": "present",
+      "source": "Correlación TerraMind",
+      "confidence": "observado",
+      "summary": "Primera observación registrada · 1 evento(s) vinculado(s)",
+      "epistemic": "observed",
+      "is_internal_demo": true
+    },
+    {
+      "id": "91cd7033-060f-4991-95bd-e85a3a93c88d",
+      "timestamp": "2026-07-10T18:59:00+00:00",
+      "stage": "event",
+      "stage_label": "Evento",
+      "status": "open",
+      "source": "FIRMS clustering",
+      "confidence": "inferido",
+      "summary": "Evento primario 91cd7033…",
+      "epistemic": "inferred",
+      "href": "/incendios/91cd7033-060f-4991-95bd-e85a3a93c88d"
+    },
+    {
+      "id": "8cd9487a-6823-43d6-b186-3166165db05a-observations",
+      "timestamp": "2026-07-10T18:59:00+00:00",
+      "stage": "observations",
+      "stage_label": "Observaciones de fuente",
+      "status": "present",
+      "source": "NASA FIRMS",
+      "confidence": "observado",
+      "summary": "1 membresía(s) de evento en el incidente",
+      "epistemic": "observed",
+      "href": "/incendios/91cd7033-060f-4991-95bd-e85a3a93c88d",
+      "is_internal_demo": true
+    },
+    {
+      "id": "8cd9487a-6823-43d6-b186-3166165db05a-event",
+      "timestamp": "2026-07-10T18:59:00+00:00",
+      "stage": "event",
+      "stage_label": "Evento",
+      "status": "present",
+      "source": "Motor de eventos térmicos",
+      "confidence": "inferido",
+      "summary": "Evento térmico primario identificado",
+      "epistemic": "inferred",
+      "href": "/incendios/91cd7033-060f-4991-95bd-e85a3a93c88d",
+      "is_internal_demo": true
+    },
+    {
+      "id": "8cd9487a-6823-43d6-b186-3166165db05a-incident",
+      "timestamp": "2026-07-10T18:59:00+00:00",
+      "stage": "incident",
+      "stage_label": "Correlación del incidente",
+      "status": "present",
+      "source": "Motor de correlación",
+      "confidence": "inferido",
+      "summary": "possible_vegetation_fire_incident · open · 1 evento(s)",
+      "epistemic": "inferred",
+      "href": "/incidentes/8cd9487a-6823-43d6-b186-3166165db05a",
+      "is_internal_demo": true
+    },
+    {
+      "id": "8cd9487a-6823-43d6-b186-3166165db05a-findings",
+      "timestamp": "2026-07-10T20:20:48.664+00:00",
+      "stage": "findings",
+      "stage_label": "Hallazgos",
+      "status": "present",
+      "source": "Motor de hallazgos compuestos",
+      "confidence": "low",
+      "summary": "3 hallazgo(s) vinculado(s)",
+      "epistemic": "inferred",
+      "href": "/hallazgos/d5e731b7-0537-4f67-b0fa-bbf039580bbb",
+      "is_internal_demo": true
+    },
+    {
+      "id": "8cd9487a-6823-43d6-b186-3166165db05a-verification_plan",
+      "timestamp": "2026-07-10T21:17:43.905+00:00",
+      "stage": "verification_plan",
+      "stage_label": "Verification plan",
+      "status": "present",
+      "source": "Motor de verificación",
+      "confidence": "recomendado",
+      "summary": "Plan not_required",
+      "epistemic": "recommended",
+      "href": "/verificaciones",
+      "is_internal_demo": true
+    },
+    {
+      "id": "8cd9487a-6823-43d6-b186-3166165db05a-missions",
+      "timestamp": "2026-07-10T23:55:33.188+00:00",
+      "stage": "missions",
+      "stage_label": "Misiones",
+      "status": "present",
+      "source": "Operaciones de campo",
+      "confidence": "observado",
+      "summary": "2 misión(es) · incluye piloto interno",
+      "epistemic": "decided",
+      "href": "/misiones/52122623-3420-4a35-b31f-3c89c5314de8",
+      "is_internal_demo": true
+    },
+    {
+      "id": "8cd9487a-6823-43d6-b186-3166165db05a-evidence",
+      "timestamp": "2026-07-10T23:56:45.859+00:00",
+      "stage": "evidence",
+      "stage_label": "Evidencia",
+      "status": "present",
+      "source": "Captura de campo",
+      "confidence": "observado",
+      "summary": "1 envío(s) · estado ready_for_validation",
+      "epistemic": "observed",
+      "href": "/misiones/7151e1bd-de43-494b-ac5f-6088e7c31d7d",
+      "is_internal_demo": true
+    }
+  ]
+}

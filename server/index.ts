@@ -27,6 +27,9 @@ import { handleVerificationResolutionRoutes } from './routes/verification-resolu
 import { handleOfflinePackageRoutes } from './routes/offline-packages.js'
 import { handleFieldSyncRoutes } from './routes/field-sync.js'
 import { handleResponseOrchestrationRoutes } from './routes/response-orchestration.js'
+import { handleExecutiveDashboardRoutes } from './routes/executive-dashboard.js'
+import { handleIncidentStoryRoutes } from './routes/incident-story.js'
+import { handleReportsRoutes } from './routes/reports.js'
 
 config({ path: resolve(process.cwd(), '.env') })
 
@@ -57,6 +60,9 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
   if (await handleOfflinePackageRoutes(req, res, pathname)) return
   if (await handleFieldSyncRoutes(req, res, pathname)) return
   if (await handleResponseOrchestrationRoutes(req, res, pathname, url.searchParams)) return
+  if (await handleExecutiveDashboardRoutes(req, res, pathname, url.searchParams)) return
+  if (await handleIncidentStoryRoutes(req, res, pathname, url.searchParams)) return
+  if (await handleReportsRoutes(req, res, pathname, url.searchParams)) return
 
   if (pathname === '/api/health' && req.method === 'GET') {
     jsonResponse(req, res, { status: 'ok', service: 'terramind-pipeline' })

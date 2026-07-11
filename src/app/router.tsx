@@ -17,7 +17,10 @@ import { StrategiesPage } from '@/modules/strategies/pages/StrategiesPage'
 import { KnowledgePage } from '@/modules/knowledge/pages/KnowledgePage'
 import { IntegrationsPage } from '@/modules/integrations/pages/IntegrationsPage'
 import { TrendsPage } from '@/modules/trends/pages/TrendsPage'
-import { ReportsPage } from '@/modules/reports/pages/ReportsPage'
+import { ReportsHubPage } from '@/modules/executive-demo/pages/ReportsHubPage'
+import { NationalReportPage } from '@/modules/executive-demo/pages/NationalReportPage'
+import { IncidentReportPage } from '@/modules/executive-demo/pages/IncidentReportPage'
+import { IncidentStoryPage } from '@/modules/executive-demo/pages/IncidentStoryPage'
 import { SettingsPage } from '@/modules/settings/pages/SettingsPage'
 import { FireAnalysisPage } from '@/modules/fires/pages/FireAnalysisPage'
 import { BiodiversityAnalysisPage } from '@/modules/biodiversity/pages/BiodiversityAnalysisPage'
@@ -53,6 +56,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Navigate to="/situacion" replace /> },
       { path: 'situacion', element: <NationalSituationPage /> },
+      { path: 'situacion-nacional', element: <NationalSituationPage /> },
       { path: 'incendios', element: <FireAnalysisPage /> },
       { path: 'incendios/:eventId', element: <FireAnalysisPage /> },
       { path: 'biodiversidad', element: <BiodiversityAnalysisPage /> },
@@ -63,6 +67,7 @@ export const router = createBrowserRouter([
       { path: 'prioridades/:priorityId', element: <PriorityDetailPage /> },
       { path: 'incidentes', element: <IncidentsPage /> },
       { path: 'incidentes/:incidentId', element: <IncidentDetailPage /> },
+      { path: 'incidentes/:incidentId/historia', element: <IncidentStoryPage /> },
       { path: 'verificaciones', element: <VerificationsPage /> },
       {
         path: 'respuesta',
@@ -100,7 +105,9 @@ export const router = createBrowserRouter([
       { path: 'estrategias', element: <StrategiesPage /> },
       { path: 'territorio', element: <TerritoryPage /> },
       { path: 'tendencias', element: <TrendsPage /> },
-      { path: 'informes', element: <ReportsPage /> },
+      { path: 'informes', element: <ReportsHubPage /> },
+      { path: 'informes/nacional', element: <NationalReportPage /> },
+      { path: 'informes/incidentes/:incidentId', element: <IncidentReportPage /> },
       { path: 'fuentes', element: <IntegrationsPage /> },
       { path: 'conocimiento', element: <KnowledgePage /> },
       { path: 'administracion', element: <SettingsPage /> },

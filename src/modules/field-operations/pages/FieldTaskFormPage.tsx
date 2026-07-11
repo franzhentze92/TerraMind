@@ -1,7 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 
-import { FieldTaskFormView } from '@/modules/field-operations/field-forms/hooks/useFieldForm'
+import { FieldTaskFormView } from '@/modules/field-operations/field-forms/components/FieldTaskFormView'
 import { parsePackageTasks } from '@/modules/field-operations/field-forms/engine/package-compatibility'
 import { OfflinePackageRepository } from '@/modules/field-operations/offline-packages/offline-package.repository'
 

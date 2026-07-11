@@ -4,7 +4,6 @@ import { useAuthStore } from '@/core/auth/auth.store'
 import type { RequestAuthContext } from '@/core/auth/permissions'
 import type { AuthMeResponse, AuthSessionState } from '@/core/auth/auth-session.types'
 import { getSupabaseBrowserClient } from '@/core/auth/supabase-client'
-import { buildAuthHeaders } from '@/core/auth/auth-fetch'
 
 interface AuthContextValue {
   loading: boolean
@@ -20,12 +19,28 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null)
 
 async function fetchAuthMe(token: string, organizationId?: string): Promise<AuthMeResponse | null> {
-  const res = await fetch('/api/auth/me', {
-    headers: buildAuthHeaders({ Authorization: `Bearer ${token}` }),
-    credentials: 'include',
-  })
+  const headers: Record<string, string> = { Authorization: `Bearer ${token}` }
+  if (organizationId) headers['X-Terramind-Organization-Id'] = organizationId
+  const res = await fetch('/api/auth/me', { headers, credentials: 'include' })
   if (!res.ok) return null
   return (await res.json()) as AuthMeResponse
+}
+
+function isTestBearer(token: string | null | undefined): token is string {
+  return Boolean(token?.startsWith('test-'))
+}
+
+function readPersistedAccessToken(): string | null {
+  const fromStore = useAuthStore.getState().accessToken
+  if (fromStore) return fromStore
+  try {
+    const raw = localStorage.getItem('terramind-auth-v1')
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as { state?: { accessToken?: string | null } }
+    return parsed.state?.accessToken ?? null
+  } catch {
+    return null
+  }
 }
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -54,15 +69,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   )
 
   const refreshMe = useCallback(async () => {
+    const persistedToken = readPersistedAccessToken()
+    if (isTestBearer(persistedToken)) {
+      const session = await fetchAuthMe(persistedToken, store.authContext?.activeOrganizationId)
+      if (session?.context) {
+        applySession(persistedToken, session)
+        setLoading(false)
+        return
+      }
+    }
+
     const client = getSupabaseBrowserClient()
     if (!client) {
+      if (!isTestBearer(persistedToken)) applySession(null, null)
       setLoading(false)
       return
     }
     const { data } = await client.auth.getSession()
     const token = data.session?.access_token
     if (!token) {
-      applySession(null, null)
+      if (!isTestBearer(persistedToken)) applySession(null, null)
       setLoading(false)
       return
     }

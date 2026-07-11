@@ -23,6 +23,7 @@ import {
   buildFireTimeline,
 } from '@/modules/fires/utils/fire-dashboard'
 import { ResponseOrchestrationExecutivePanel } from '@/modules/response-orchestration/components/ResponseOrchestrationExecutivePanel'
+import { ExecutiveNationalCommandCenter } from '@/modules/executive-demo/components/ExecutiveNationalCommandCenter'
 
 function HeaderSkeleton() {
   return (
@@ -131,6 +132,7 @@ export function NationalSituationPage() {
                 isLoading={fireSummary.isLoading}
                 isError={fireSummary.isError}
               />
+              <ExecutiveNationalCommandCenter />
               <ResponseOrchestrationExecutivePanel />
               <BiodiversityNationalSummaryCard
                 data={biodiversitySummary.data}

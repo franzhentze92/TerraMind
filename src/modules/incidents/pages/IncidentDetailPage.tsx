@@ -49,6 +49,27 @@ export function IncidentDetailPage() {
       />
 
       <div className="mb-4 flex flex-wrap gap-2">
+        <Link
+          to={`/incidentes/${incidentId}/historia`}
+          className="rounded border border-border-subtle px-3 py-1.5 text-xs hover:border-accent/40"
+        >
+          Ver historia
+        </Link>
+        <Link
+          to={`/informes/incidentes/${incidentId}`}
+          className="rounded border border-border-subtle px-3 py-1.5 text-xs hover:border-accent/40"
+        >
+          Generar informe
+        </Link>
+        <a
+          href={`/api/reports/incidents/${incidentId}?format=pdf&include_demo=true`}
+          className="rounded bg-accent/20 px-3 py-1.5 text-xs text-accent hover:bg-accent/30"
+        >
+          Descargar PDF
+        </a>
+      </div>
+
+      <div className="mb-4 flex flex-wrap gap-2">
         <Badge variant={incidentStatusVariant(String(detail.status))}>
           {incidentStatusLabel(String(detail.status))}
         </Badge>
