@@ -2,7 +2,8 @@ import { Link } from 'react-router-dom'
 
 import { useFieldCampo } from '@/modules/field-operations/field-mobile/hooks/useFieldCampo'
 import { t } from '@/modules/field-operations/field-mobile/i18n/field-mobile-i18n'
-import { FIELD_REAL_SYNC_ENABLED } from '@/modules/field-operations/field-mobile/config/fire-field-mobile.config'
+import { FieldPilotBanner } from '@/modules/field-operations/field-mobile/components/FieldPilotBanner'
+import { useRealSyncPilot } from '@/modules/field-operations/field-sync/hooks/useRealSyncPilot'
 
 function formatBytes(n: number) {
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(0)} KB`
@@ -12,15 +13,18 @@ function formatBytes(n: number) {
 export function FieldCampoHomePage() {
   const campo = useFieldCampo('es')
   const s = campo.summary
+  const pilot = useRealSyncPilot(s?.active_mission_id ?? null)
 
   return (
     <div className="mx-auto max-w-lg p-4">
       <h1 className="text-xl font-medium text-text-primary">{t('do_now', 'es')}</h1>
-      {!FIELD_REAL_SYNC_ENABLED && (
-        <p className="mt-1 text-xs text-confidence-medium">
-          Sync simulado — producción bloqueada hasta 8B.7F y staging confirmado.
-        </p>
-      )}
+      <div className="mt-1">
+        <FieldPilotBanner
+          pilotActive={pilot.pilotActive}
+          missionId={s?.active_mission_id}
+          missionAllowlisted={pilot.pilotActiveForMission}
+        />
+      </div>
 
       {campo.loading && <p className="mt-4 text-sm text-text-tertiary">Cargando…</p>}
 

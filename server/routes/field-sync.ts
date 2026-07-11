@@ -19,12 +19,39 @@ import {
   reportUploadProgress,
   startEvidenceUploadSession,
 } from '../services/field-sync.service.js'
+import { loadRealSyncPilotPolicy } from '../auth/real-sync-pilot-policy.js'
+import { sanitizePilotPolicyForClient } from '@/core/field-sync/real-sync-pilot-policy.js'
+import { rejectIfUnauthenticated } from '../middleware/auth.js'
+import { requireRequestAuth } from '../middleware/auth.js'
 
 export async function handleFieldSyncRoutes(
   req: IncomingMessage,
   res: ServerResponse,
   pathname: string,
 ): Promise<boolean> {
+  if (pathname === '/api/operations/field-sync/pilot-policy' && req.method === 'GET') {
+    if (await rejectIfUnauthenticated(req, res)) return true
+    const auth = requireRequestAuth(req)
+    const policy = loadRealSyncPilotPolicy()
+    const clientPolicy = sanitizePilotPolicyForClient(policy)
+    const missionAllowed = clientPolicy.allowedMissionIds.includes(
+      String(req.headers['x-terramind-mission-id'] ?? ''),
+    )
+    jsonResponse(req, res, {
+      ...clientPolicy,
+      globalRealSyncEnabled: false,
+      currentUserAllowlisted:
+        policy.enabled &&
+        (policy.allowedUserIds.includes(auth.authUserId) ||
+          policy.allowedUserIds.includes(auth.userId)),
+      currentMissionAllowlisted: missionAllowed,
+      message: clientPolicy.pilotActive
+        ? 'Piloto interno — sync real habilitado solo para misiones allowlisted'
+        : 'Sync real bloqueado — piloto no activo',
+    })
+    return true
+  }
+
   const bundleRegisterMatch = pathname.match(/^\/api\/operations\/field-sync\/bundles\/register$/)
   const submissionMatch = pathname.match(/^\/api\/operations\/evidence-submissions\/([^/]+)(?:\/(.+))?$/)
   if (!bundleRegisterMatch && !submissionMatch) return false

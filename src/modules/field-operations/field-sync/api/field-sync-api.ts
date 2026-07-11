@@ -1,11 +1,11 @@
 import type { SyncTransport } from '@/modules/field-operations/field-sync/api/field-sync-transport'
+import { authFetch } from '@/core/auth/auth-fetch'
 
 const API = '/api/operations'
 
 async function apiPost<T>(path: string, body: unknown): Promise<T> {
-  const res = await fetch(path, {
+  const res = await authFetch(path, {
     method: 'POST',
-    credentials: 'include',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   })
@@ -17,7 +17,7 @@ async function apiPost<T>(path: string, body: unknown): Promise<T> {
 }
 
 async function apiGet<T>(path: string): Promise<T> {
-  const res = await fetch(path, { credentials: 'include' })
+  const res = await authFetch(path)
   if (!res.ok) throw new Error(`API error ${res.status}`)
   return res.json() as Promise<T>
 }

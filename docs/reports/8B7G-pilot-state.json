@@ -1,0 +1,12 @@
+{
+  "organization_id": "3d641b07…fa69",
+  "auth_user_id": "c39903cd…71ffb",
+  "user_profile_id": "33f2bff4…d1d2",
+  "mission_id": "7151e1bd…31d7d",
+  "bundle_id": "pilot-bundle-7151…",
+  "submission_id": "7a4b4fef…acd0",
+  "bundle_checksum": "f89e32b9…80eb6",
+  "updated_at": "2026-07-11T00:00:45.350Z",
+  "sanitized": true,
+  "note": "Full UUIDs retained only in remote Supabase; not stored in Git."
+}

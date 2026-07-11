@@ -13,6 +13,7 @@ import {
   loadVerificationPlanSnapshot,
 } from './resource-resolver.js'
 import { permissionForWorkflowAction } from './workflow-access.js'
+import { assertRealSyncPilotAllowed } from '../../auth/real-sync-pilot-policy.js'
 
 export { authorizeMissionAccess, authorizeAssignmentAction } from './mission-access.js'
 export { permissionForWorkflowAction } from './workflow-access.js'
@@ -45,8 +46,16 @@ export async function authorizeFieldSyncAccess(
     if (pkg.mission_id && pkg.mission_id !== input.mission_id) {
       throw new AuthorizationError('Paquete no pertenece a la misión', 403)
     }
+    if (
+      pkg.organization_id &&
+      pkg.organization_id !== auth.activeOrganizationId &&
+      !auth.isPlatformAdmin
+    ) {
+      throw new AuthorizationError('Acceso cross-tenant denegado', 403)
+    }
     authorizeWithPermission(auth, 'offline_packages.download', pkg, 'offline_mission_package')
   }
+  await assertRealSyncPilotAllowed(auth, input.mission_id)
   return missionCtx
 }
 

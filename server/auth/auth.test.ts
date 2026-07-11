@@ -11,6 +11,7 @@ import {
   TEST_ORG_A,
 } from './test-fixtures.js'
 import { AuthorizationError } from '@/core/auth/permissions.js'
+import { resetRealSyncPilotPolicyCache } from './real-sync-pilot-policy.js'
 
 process.env.AUTH_TEST_MODE = '1'
 process.env.AUTH_ENFORCE = 'true'
@@ -26,6 +27,11 @@ describe('auth middleware — 8B.7F', () => {
   beforeEach(() => {
     process.env.AUTH_TEST_MODE = '1'
     process.env.AUTH_ENFORCE = 'true'
+    delete process.env.FIELD_REAL_SYNC_PILOT_ENABLED
+    delete process.env.FIELD_SYNC_PILOT_ORG_IDS
+    delete process.env.FIELD_SYNC_PILOT_USER_IDS
+    delete process.env.FIELD_SYNC_PILOT_MISSION_IDS
+    resetRealSyncPilotPolicyCache()
   })
 
   it('returns null without token (401 path)', async () => {
@@ -52,6 +58,14 @@ describe('auth middleware — 8B.7F', () => {
 })
 
 describe('tenant isolation — 8B.7F', () => {
+  beforeEach(() => {
+    delete process.env.FIELD_REAL_SYNC_PILOT_ENABLED
+    delete process.env.FIELD_SYNC_PILOT_ORG_IDS
+    delete process.env.FIELD_SYNC_PILOT_USER_IDS
+    delete process.env.FIELD_SYNC_PILOT_MISSION_IDS
+    resetRealSyncPilotPolicyCache()
+  })
+
   it('denies cross-tenant mission access', async () => {
     const techB = (await resolveRequestAuth(mockReq('Bearer test-tech-org-b')))!
     await expect(authorizeMissionAccess(techB, TEST_MISSION_ORG_A)).rejects.toBeInstanceOf(

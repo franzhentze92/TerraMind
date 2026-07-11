@@ -3,7 +3,9 @@ import { useCallback, useState } from 'react'
 import { FIELD_REAL_SYNC_ENABLED } from '@/modules/field-operations/field-mobile/config/fire-field-mobile.config'
 import { simulateBundleSync } from '@/modules/field-operations/field-mobile/engine/field-sync-simulator'
 import type { SimulatedSyncResult } from '@/modules/field-operations/field-mobile/field-mobile.types'
+import { createHttpSyncTransport } from '@/modules/field-operations/field-sync/api/field-sync-api'
 import { createMockSyncTransport } from '@/modules/field-operations/field-sync/api/field-sync-mock-transport'
+import { useRealSyncPilot } from '@/modules/field-operations/field-sync/hooks/useRealSyncPilot'
 import {
   cancelSyncSession,
   pauseSyncSession,
@@ -17,9 +19,10 @@ import type { LocalOfflinePackageRecord } from '@/modules/field-operations/offli
 const evidenceRepo = OfflineEvidenceRepository.createDefault()
 const syncRepo = FieldSyncRepository.createDefault()
 
-export function useFieldMobileSync() {
+export function useFieldMobileSync(missionId?: string | null) {
   const [lastResult, setLastResult] = useState<SimulatedSyncResult | null>(null)
   const [running, setRunning] = useState(false)
+  const pilot = useRealSyncPilot(missionId ?? undefined)
 
   const syncBundleSimulated = useCallback(
     async (
@@ -55,19 +58,45 @@ export function useFieldMobileSync() {
         conflictScenario?: Parameters<typeof simulateBundleSync>[0]['conflictScenario']
       },
     ) => {
-      if (FIELD_REAL_SYNC_ENABLED) {
-        throw new Error('real_sync_blocked_until_8b7f')
+      const realAllowed = pilot.isRealSyncAllowed(bundle.mission_id)
+      if (realAllowed) {
+        setRunning(true)
+        try {
+          const result = await syncBundle({
+            bundle,
+            pkg,
+            evidenceRepo,
+            syncRepo,
+            transport: createHttpSyncTransport(),
+            tab_id: `campo-${Date.now()}`,
+            permissions: ['evidence.submit', 'field_sync.execute'],
+          })
+          const simulated: SimulatedSyncResult = {
+            ok: result.ok,
+            steps: result.ok
+              ? [{ phase: 'real_sync', message_key: 'complete', progress_pct: 100, at: new Date().toISOString() }]
+              : [{ phase: 'real_sync', message_key: result.reason ?? 'failed', progress_pct: 0, at: new Date().toISOString() }],
+            duplicate_submissions: 0,
+            reason: result.reason,
+          }
+          setLastResult(simulated)
+          return simulated
+        } finally {
+          setRunning(false)
+        }
       }
       return syncBundleSimulated(bundle, pkg, options)
     },
-    [syncBundleSimulated],
+    [pilot, syncBundleSimulated],
   )
 
   const pause = useCallback(async (sessionId: string) => pauseSyncSession(syncRepo, sessionId), [])
   const cancel = useCallback(async (sessionId: string) => cancelSyncSession(syncRepo, sessionId), [])
 
   return {
-    realSyncEnabled: FIELD_REAL_SYNC_ENABLED,
+    realSyncEnabled: FIELD_REAL_SYNC_ENABLED || pilot.pilotActiveForMission,
+    pilotActive: pilot.pilotActive,
+    pilotActiveForMission: pilot.pilotActiveForMission,
     running,
     lastResult,
     syncBundleSimulated,
