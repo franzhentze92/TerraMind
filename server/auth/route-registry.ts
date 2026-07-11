@@ -286,6 +286,19 @@ export const OPERATIONAL_ROUTE_REGISTRY: OperationalRouteSpec[] = [
     status: 'protected',
     routeFile: 'fires.ts',
   },
+  // Environmental Event Framework — generic reads (authenticated)
+  {
+    method: 'GET',
+    path: '/api/environmental-events/*',
+    resource: 'environmental_event',
+    permission: 'incidents.view',
+    authorizer: 'sessionOnly',
+    tenantPath: 'national_scope',
+    usesServiceRole: true,
+    rateLimit: 'default_read',
+    status: 'protected',
+    routeFile: 'environmental-events.ts',
+  },
   {
     method: 'GET',
     path: '/api/environment/fires/events/:id/incident',

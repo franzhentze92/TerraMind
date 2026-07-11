@@ -1,0 +1,35 @@
+# Declarative spec for the thermal activity event (already implemented).
+# Kept as the reference example for `npm run event:new`.
+event:
+  type: thermal_activity
+  label: Actividad térmica
+  pluralLabel: Eventos térmicos
+  icon: flame
+  featureFlag: thermal_activity
+  geometryKinds:
+    - point
+    - multipoint
+
+sources:
+  - nasa_firms
+
+contextLayers:
+  - protected_areas
+  - land_cover
+  - population
+  - climate
+  - biodiversity
+
+findingRules:
+  - EVENT_NEAR_POPULATION
+  - EVENT_NEAR_PROTECTED_AREA
+  - EVENT_PERSISTENT
+  - MULTIPLE_SOURCES_AGREE
+
+priorityDimensions:
+  severity:
+    - max_frp
+    - detection_count
+  exposure:
+    - population
+    - protected_areas

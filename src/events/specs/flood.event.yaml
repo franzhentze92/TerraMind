@@ -1,0 +1,36 @@
+# Declarative spec EXAMPLE for a future flood event.
+# NOT implemented: no Sentinel-1, no detector, no runtime activation.
+# This only documents the exact input `npm run event:new` would consume.
+event:
+  type: flood
+  label: Inundación
+  pluralLabel: Inundaciones
+  icon: waves
+  featureFlag: flood
+  geometryKinds:
+    - polygon
+    - multipolygon
+
+sources:
+  - sentinel_1
+  - chirps
+
+contextLayers:
+  - population
+  - roads
+  - rivers
+  - cropland
+  - protected_areas
+
+findingRules:
+  - EVENT_NEAR_POPULATION
+  - EVENT_NEAR_ROAD
+  - EVENT_INSIDE_CROPLAND
+
+priorityDimensions:
+  severity:
+    - flooded_area
+    - expansion_rate
+  exposure:
+    - population
+    - roads
