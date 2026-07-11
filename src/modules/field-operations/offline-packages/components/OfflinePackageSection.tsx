@@ -34,12 +34,15 @@ export function OfflinePackageSection({
   missionId,
   missionTitle,
   missionStatus,
+  classification,
 }: {
   missionId: string
   missionTitle: string
   missionStatus: string
+  classification?: string
 }) {
-  const packagesQuery = useMissionOfflinePackages(missionId)
+  const isDemo = classification === 'demo'
+  const packagesQuery = useMissionOfflinePackages(missionId, { enabled: !isDemo })
   const generateMutation = useGenerateOfflinePackage(missionId)
   const downloadMutation = useDownloadOfflinePackage(missionId, missionTitle)
   const revokeMutation = useRevokeOfflinePackage(missionId)
@@ -48,6 +51,18 @@ export function OfflinePackageSection({
 
   const items = packagesQuery.data?.items ?? []
   const active = items[0]
+
+  // Demo missions never generate operational offline packages.
+  if (isDemo) {
+    return (
+      <section className="mb-6 rounded-lg border border-border-subtle bg-surface-2/30 p-4">
+        <h2 className="text-sm font-medium text-text-primary">Paquete offline</h2>
+        <p className="mt-1 text-xs text-text-secondary" data-testid="offline-package-demo-unavailable">
+          Paquete offline no disponible para misiones de demostración.
+        </p>
+      </section>
+    )
+  }
 
   const canGenerate = ['ready', 'approved', 'assigned', 'in_progress'].includes(missionStatus)
 

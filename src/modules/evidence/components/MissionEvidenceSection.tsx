@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { Badge } from '@/shared/components/Badge'
 import { OperationalEmptyState } from '@/shared/components'
 import { useMissionEvidence, useEvidenceIntake, useMissionEvidenceQuality } from '../hooks/useMissionEvidence'
@@ -18,9 +19,11 @@ const STATUS_LABELS: Record<string, string> = {
 
 interface MissionEvidenceSectionProps {
   missionId: string
+  classification?: string
 }
 
-export function MissionEvidenceSection({ missionId }: MissionEvidenceSectionProps) {
+export function MissionEvidenceSection({ missionId, classification }: MissionEvidenceSectionProps) {
+  const isDemo = classification === 'demo'
   const query = useMissionEvidence(missionId)
   const qualityQuery = useMissionEvidenceQuality(missionId)
   const intake = useEvidenceIntake(missionId)
@@ -72,20 +75,30 @@ export function MissionEvidenceSection({ missionId }: MissionEvidenceSectionProp
       <div className="mb-3 flex items-center justify-between gap-2">
         <h2 className="text-sm font-semibold text-text-primary">Evidencia</h2>
         <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={createPhotoSubmission}
-            className="rounded border border-accent/40 px-2 py-1 text-xs text-accent"
+          <Link
+            to="/campo/misiones"
+            className="rounded border border-border-subtle px-2 py-1 text-xs text-text-secondary hover:border-accent/40"
           >
-            Nueva foto
-          </button>
-          <button
-            type="button"
-            onClick={createObservationSubmission}
-            className="rounded border border-accent/40 px-2 py-1 text-xs text-accent"
-          >
-            Observación
-          </button>
+            Abrir en Campo
+          </Link>
+          {!isDemo && (
+            <>
+              <button
+                type="button"
+                onClick={createPhotoSubmission}
+                className="rounded border border-accent/40 px-2 py-1 text-xs text-accent"
+              >
+                Nueva foto
+              </button>
+              <button
+                type="button"
+                onClick={createObservationSubmission}
+                className="rounded border border-accent/40 px-2 py-1 text-xs text-accent"
+              >
+                Observación
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -179,9 +192,12 @@ export function MissionEvidenceSection({ missionId }: MissionEvidenceSectionProp
           {submissions.length === 0 && !query.isLoading && (
             <OperationalEmptyState
               compact
-              title="No se ha recibido evidencia operacional"
-              explanation="La evidencia se genera cuando una misión de campo o una revisión estructurada entrega observaciones verificables."
-              sourceProcess="Misión → captura → envío"
+              title={
+                isDemo
+                  ? 'Esta misión de demostración todavía no contiene evidencia.'
+                  : 'Todavía no se ha recibido evidencia'
+              }
+              explanation="La evidencia aparecerá aquí cuando se completen y envíen las tareas de campo."
               status="pending"
             />
           )}

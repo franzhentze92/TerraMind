@@ -1,11 +1,14 @@
 import { useState } from 'react'
 import { useMissionWorkflow } from '../hooks/useMissionWorkflow'
 import type { MissionWorkflowAction } from '../api/missions-api'
+import { missionWorkflowActionLabel } from '../utils/mission-labels'
+import { MISSION_DEMO_ACTIONS_DISABLED } from '../utils/mission-presentation'
 
 interface MissionWorkflowActionsProps {
   missionId: string
   status: string
   assignmentStatus?: string | null
+  classification?: string
 }
 
 const ACTIONS_BY_STATUS: Record<string, MissionWorkflowAction[]> = {
@@ -20,20 +23,28 @@ export function MissionWorkflowActions({
   missionId,
   status,
   assignmentStatus,
+  classification,
 }: MissionWorkflowActionsProps) {
   const workflow = useMissionWorkflow(missionId)
   const [assigneeId, setAssigneeId] = useState('')
   const [reason, setReason] = useState('')
   const [error, setError] = useState<string | null>(null)
 
-  const actions = ACTIONS_BY_STATUS[status] ?? []
-  if (status === 'assigned' && assignmentStatus === 'assigned') {
-    // start only after accept
-    const filtered = actions.filter((a) => a !== 'start')
-    return renderPanel(filtered)
+  // Demo missions must never trigger real operational mutations.
+  if (classification === 'demo') {
+    return (
+      <section className="mb-6 rounded-lg border border-border-subtle bg-surface-2/30 p-4">
+        <h2 className="text-sm font-semibold text-text-primary">Acciones</h2>
+        <p className="mt-1 text-xs text-text-secondary" data-testid="mission-demo-actions-disabled">
+          {MISSION_DEMO_ACTIONS_DISABLED}
+        </p>
+      </section>
+    )
   }
-  if (status === 'assigned' && assignmentStatus === 'accepted') {
-    return renderPanel(actions)
+
+  let actions = ACTIONS_BY_STATUS[status] ?? []
+  if (status === 'assigned' && assignmentStatus === 'assigned') {
+    actions = actions.filter((a) => a !== 'start')
   }
   return renderPanel(actions)
 
@@ -60,26 +71,19 @@ export function MissionWorkflowActions({
       }
     }
 
+    const needsAssignee = available.some((a) => ['assign', 'reassign'].includes(a))
+    const needsReason = available.some((a) =>
+      ['decline', 'block', 'reassign', 'cancel', 'complete'].includes(a),
+    )
+
     return (
       <section className="mb-6 rounded-lg border border-border-subtle bg-surface-2/30 p-4">
-        <h2 className="text-sm font-semibold text-text-primary">Acciones operacionales</h2>
+        <h2 className="text-sm font-semibold text-text-primary">Acciones administrativas</h2>
         <p className="mt-1 text-xs text-text-tertiary">
-          Requiere ejecutor registrado en el sistema operacional.
+          Cambian el estado operativo de la misión y quedan registradas.
         </p>
 
-        {available.some((a) => ['assign', 'reassign'].includes(a)) && (
-          <label className="mt-3 block text-xs text-text-secondary">
-            ID ejecutor
-            <input
-              className="mt-1 w-full rounded border border-border-subtle bg-surface-1 px-2 py-1 text-xs"
-              value={assigneeId}
-              onChange={(e) => setAssigneeId(e.target.value)}
-              placeholder="user-id o team-id"
-            />
-          </label>
-        )}
-
-        {available.some((a) => ['decline', 'block', 'reassign', 'cancel', 'complete'].includes(a)) && (
+        {needsReason && (
           <label className="mt-3 block text-xs text-text-secondary">
             Motivo (si aplica)
             <input
@@ -95,14 +99,32 @@ export function MissionWorkflowActions({
             <button
               key={action}
               type="button"
-              disabled={workflow.isPending}
+              disabled={workflow.isPending || (['assign', 'reassign'].includes(action) && !assigneeId.trim())}
               onClick={() => run(action)}
               className="rounded border border-accent/40 px-2 py-1 text-xs text-accent hover:bg-accent/10 disabled:opacity-50"
             >
-              {action}
+              {missionWorkflowActionLabel(action)}
             </button>
           ))}
         </div>
+
+        {needsAssignee && (
+          <details className="mt-3 text-xs text-text-tertiary">
+            <summary className="cursor-pointer select-none">
+              Asignar responsable (uso técnico)
+            </summary>
+            <p className="mt-1">
+              Aún no existe un selector de usuarios/equipos. Para asignar o reasignar, introduce el
+              identificador del responsable en el sistema operacional.
+            </p>
+            <input
+              className="mt-1 w-full rounded border border-border-subtle bg-surface-1 px-2 py-1 text-xs"
+              value={assigneeId}
+              onChange={(e) => setAssigneeId(e.target.value)}
+              placeholder="Identificador de responsable"
+            />
+          </details>
+        )}
 
         {error && <p className="mt-2 text-xs text-confidence-low">{error}</p>}
         {workflow.isSuccess && (

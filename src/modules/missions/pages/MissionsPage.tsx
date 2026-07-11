@@ -10,7 +10,16 @@ import { Badge } from '@/shared/components/Badge'
 import { useHasPermission } from '@/core/auth/AuthProvider'
 import { useMissionsList } from '../hooks/useMissions'
 import { missionStatusLabel, missionTypeLabel } from '../utils/mission-labels'
+import {
+  MISSION_DEMO_BANNER,
+  filterMissionsByMode,
+  missionDisplayTitle,
+  missionPriorityLabel,
+  missionShortRef,
+  shouldShowExpiry,
+} from '../utils/mission-presentation'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
+import { pluralizeCount } from '@/shared/format/plural'
 import { cn } from '@/shared/utils/cn'
 import { MissionsAssignmentsPanel } from '../components/MissionsAssignmentsPanel'
 import { useCanonicalOperationalCounts } from '@/shared/hooks/useCanonicalOperationalCounts'
@@ -39,7 +48,8 @@ export function MissionsPage() {
   })
 
   const visibleTabs = TABS.filter((t) => t.key !== 'assignments' || canAssign)
-  const items = query.data?.items ?? []
+  const rawItems = query.data?.items ?? []
+  const items = filterMissionsByMode(rawItems, showDemo)
   const demoExcluded = query.data?.demo_excluded ?? counts.missionsDemo
   const listEmpty = items.length === 0 && !query.isLoading && !query.isError
 
@@ -52,7 +62,7 @@ export function MissionsPage() {
 
   const demoNote =
     listEmpty && !showDemo && demoExcluded > 0
-      ? `Existen ${demoExcluded} misión(es) de demostración interna.`
+      ? `Existen ${pluralizeCount(demoExcluded, 'misión de demostración interna', 'misiones de demostración interna')}.`
       : undefined
 
   return (
@@ -99,8 +109,8 @@ export function MissionsPage() {
       ) : (
         <>
           {showDemo && (
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-confidence-medium/30 bg-confidence-medium/10 px-4 py-2 text-xs text-confidence-medium">
-              <span>Mostrando misiones de demostración interna — no representan operaciones reales.</span>
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-confidence-medium/40 bg-confidence-medium/10 px-4 py-2 text-xs text-confidence-medium">
+              <span className="font-semibold tracking-wide">{MISSION_DEMO_BANNER}</span>
               <button
                 type="button"
                 onClick={() => setShowDemo(false)}
@@ -121,39 +131,53 @@ export function MissionsPage() {
           )}
 
           <div className="space-y-3">
-            {items.map((item) => (
-              <Link
-                key={item.id}
-                to={`/misiones/${item.id}`}
-                className="block rounded-lg border border-border-subtle bg-surface-2/30 p-4 hover:border-accent/40"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-2">
-                  <div>
-                    <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-                      {missionTypeLabel(item.mission_type)}
-                    </p>
-                    <h3 className="text-sm font-semibold text-text-primary">{item.title}</h3>
-                    <p className="mt-1 text-xs text-text-tertiary">
-                      Incidente relacionado · {item.task_count} tarea(s) ·{' '}
-                      {item.required_evidence_count} evidencia(s) requerida(s)
-                    </p>
+            {items.map((item) => {
+              const isDemo = item.classification === 'demo'
+              const dueText = formatGuatemalaDateTime(item.due_at)
+              const expiresText = formatGuatemalaDateTime(item.expires_at)
+              const showExpires = shouldShowExpiry(item.due_at, item.expires_at)
+              return (
+                <Link
+                  key={item.id}
+                  to={`/misiones/${item.id}`}
+                  className="block rounded-lg border border-border-subtle bg-surface-2/30 p-4 hover:border-accent/40"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div>
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
+                        {missionTypeLabel(item.mission_type)} · Ref. {missionShortRef(item.id)}
+                      </p>
+                      <h3 className="text-sm font-semibold text-text-primary">
+                        {missionDisplayTitle(item, item.classification)}
+                      </h3>
+                      <p className="mt-1 text-xs text-text-secondary">
+                        {item.incident_display_name ?? 'Incidente relacionado'}
+                      </p>
+                      <p className="mt-1 text-xs text-text-tertiary">
+                        {pluralizeCount(item.task_count, 'tarea', 'tareas')} ·{' '}
+                        {pluralizeCount(
+                          item.required_evidence_count,
+                          'evidencia requerida',
+                          'evidencias requeridas',
+                        )}{' '}
+                        · Creada {formatGuatemalaDateTime(item.created_at)}
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {isDemo && <Badge variant="warning">Demostración</Badge>}
+                      <Badge variant="default">{missionStatusLabel(item.status)}</Badge>
+                      <Badge variant="default" title={missionPriorityLabel(item.priority)}>
+                        P{item.priority}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {item.classification === 'demo' && (
-                      <Badge variant="warning">Demostración</Badge>
-                    )}
-                    <Badge variant="default">{missionStatusLabel(item.status)}</Badge>
-                    <Badge variant="default" title={`Prioridad ${item.priority} de 100`}>
-                      Prioridad {item.priority}
-                    </Badge>
-                  </div>
-                </div>
-                <p className="mt-2 text-xs text-text-secondary">
-                  Límite {formatGuatemalaDateTime(item.due_at)} · expira{' '}
-                  {formatGuatemalaDateTime(item.expires_at)}
-                </p>
-              </Link>
-            ))}
+                  <p className="mt-2 text-xs text-text-secondary">
+                    Fecha límite: {dueText}
+                    {showExpires ? ` · Expira: ${expiresText}` : ''}
+                  </p>
+                </Link>
+              )
+            })}
 
             {listEmpty && tab === 'unassigned' && (
               <OperationalEmptyState

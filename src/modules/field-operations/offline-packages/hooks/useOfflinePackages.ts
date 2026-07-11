@@ -10,11 +10,15 @@ import {
 } from '@/modules/field-operations/offline-packages/api/offline-packages-api'
 import { OfflinePackageRepository } from '@/modules/field-operations/offline-packages/offline-package.repository'
 
-export function useMissionOfflinePackages(missionId: string | undefined) {
+export function useMissionOfflinePackages(
+  missionId: string | undefined,
+  options: { enabled?: boolean } = {},
+) {
+  const enabled = options.enabled ?? true
   return useQuery({
     queryKey: ['offline-packages', 'mission', missionId],
     queryFn: () => listMissionOfflinePackages(missionId!),
-    enabled: Boolean(missionId),
+    enabled: Boolean(missionId) && enabled,
   })
 }
 

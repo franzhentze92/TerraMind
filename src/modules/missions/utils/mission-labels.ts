@@ -71,3 +71,19 @@ export function missionAssigneeTypeLabel(type: string): string {
   }
   return map[type] ?? humanizeToken(type)
 }
+
+/** Visible Spanish label for a workflow action button (never the raw verb). */
+export function missionWorkflowActionLabel(action: string): string {
+  const map: Record<string, string> = {
+    assign: 'Asignar',
+    accept: 'Aceptar',
+    decline: 'Rechazar',
+    start: 'Iniciar',
+    block: 'Bloquear',
+    resume: 'Reanudar',
+    reassign: 'Reasignar',
+    complete: 'Completar',
+    cancel: 'Cancelar misión',
+  }
+  return map[action] ?? humanizeToken(action)
+}

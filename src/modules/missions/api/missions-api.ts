@@ -8,6 +8,7 @@ export interface MissionSummaryDto {
   classification?: 'operational' | 'demo'
   incident_id: string
   incident_status: string | null
+  incident_display_name?: string | null
   verification_plan_id: string
   priority: number
   recommended_method_code: string

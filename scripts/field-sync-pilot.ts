@@ -142,9 +142,26 @@ async function runSetup(projectRef: string): Promise<PilotState> {
   if (!profile) throw new Error('platform admin profile not found — run 8B.7F.4 bootstrap first')
 
   let missionId = process.env.FIELD_SYNC_PILOT_MISSION_IDS?.split(',')[0]?.trim()
-  const { data: existingMission } = missionId
+  let { data: existingMission } = missionId
     ? await admin.from('missions').select('id, title').eq('id', missionId).maybeSingle()
     : { data: null }
+
+  // Idempotency guard: reuse any existing pilot mission with the canonical title
+  // instead of inserting a duplicate. Re-running the pilot previously created a
+  // new identical mission each time because the plan was never linked back.
+  if (!existingMission) {
+    const { data: existingPilot } = await admin
+      .from('missions')
+      .select('id, title')
+      .eq('title', PILOT_TITLE)
+      .order('created_at', { ascending: true })
+      .limit(1)
+      .maybeSingle()
+    if (existingPilot) {
+      existingMission = existingPilot
+      missionId = String(existingPilot.id)
+    }
+  }
 
   if (!existingMission) {
     const { data: ctx } = await admin
@@ -186,6 +203,12 @@ async function runSetup(projectRef: string): Promise<PilotState> {
       .single()
     if (error) throw new Error(error.message)
     missionId = String(mission.id)
+
+    // Link the plan to this mission so subsequent runs don't pick it again.
+    await admin
+      .from('verification_plans')
+      .update({ linked_mission_id: missionId, mission_candidate_pending: false })
+      .eq('id', ctx.id)
 
     await admin.from('mission_tasks').insert({
       mission_id: missionId,

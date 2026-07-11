@@ -9,8 +9,20 @@ import {
   missionTaskStatusLabel,
   missionTypeLabel,
 } from '../utils/mission-labels'
+import {
+  MISSION_DEMO_READONLY_BANNER,
+  MISSION_DEMO_RESPONSIBLE,
+  missionDisplayLocation,
+  missionDisplayObjective,
+  missionDisplayTitle,
+  missionPriorityLabel,
+  missionShortRef,
+  sanitizeMissionReason,
+  shouldShowExpiry,
+} from '../utils/mission-presentation'
 import { evidenceTypeLabel } from '@/shared/product-language'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
+import { pluralizeCount } from '@/shared/format/plural'
 import { MissionWorkflowActions } from '../components/MissionWorkflowActions'
 import { MissionEvidenceSection } from '@/modules/evidence/components/MissionEvidenceSection'
 import { MissionResolutionContributionsSection } from '@/modules/verification/components/MissionResolutionContributionsSection'
@@ -29,106 +41,116 @@ export function MissionDetailPage() {
     return <p className="p-6 text-sm text-confidence-low">Misión no encontrada.</p>
   }
 
+  const classification = String(mission.classification ?? 'operational')
+  const isDemo = classification === 'demo'
   const tasks = (mission.tasks as Array<Record<string, unknown>> | undefined) ?? []
   const evidence =
     (mission.evidence_requirements as Array<Record<string, unknown>> | undefined) ?? []
   const transitions = (mission.transitions as Array<Record<string, unknown>> | undefined) ?? []
+  const assignmentHistory =
+    (mission.assignment_history as Array<Record<string, unknown>> | undefined) ?? []
+
+  const displayTitle = missionDisplayTitle(
+    { title: mission.title as string, mission_type: mission.mission_type as string, id: String(mission.id) },
+    classification,
+  )
+  const activeAssignment = mission.active_assignment as Record<string, unknown> | null
+
+  const responsibleName = isDemo
+    ? MISSION_DEMO_RESPONSIBLE
+    : activeAssignment
+      ? (activeAssignment.assignee_display_name
+          ? String(activeAssignment.assignee_display_name)
+          : activeAssignment.assignee_type
+            ? missionAssigneeTypeLabel(String(activeAssignment.assignee_type))
+            : 'Asignado')
+      : 'Sin responsable asignado'
+
+  const dueText = formatGuatemalaDateTime(String(mission.due_at))
+  const expiresText = formatGuatemalaDateTime(String(mission.expires_at))
+  const showExpires = shouldShowExpiry(mission.due_at as string, mission.expires_at as string)
 
   return (
     <div className="flex h-full flex-col overflow-y-auto p-6" data-testid="mission-detail-page">
       <PageHeader
-        title={String(mission.title)}
-        subtitle={missionTypeLabel(String(mission.mission_type))}
+        title={displayTitle}
+        subtitle={`${missionTypeLabel(String(mission.mission_type))} · Ref. ${missionShortRef(String(mission.id))}`}
         breadcrumbs={[
           { label: 'Situación Nacional', to: '/situacion' },
           { label: 'Misiones', to: '/misiones' },
-          { label: String(mission.title).slice(0, 48) },
+          { label: displayTitle.slice(0, 48) },
         ]}
       />
 
       <div className="mb-4 flex flex-wrap gap-2">
+        {isDemo && <Badge variant="warning">Demostración</Badge>}
         <Badge variant="default">{missionStatusLabel(String(mission.status))}</Badge>
-        <Badge variant="default">Prioridad {String(mission.priority)}</Badge>
+        <Badge variant="default" title={missionPriorityLabel(mission.priority as number)}>
+          P{String(mission.priority)}
+        </Badge>
       </div>
 
+      {isDemo && (
+        <div
+          data-testid="mission-demo-banner"
+          className="mb-4 rounded-lg border border-confidence-medium/40 bg-confidence-medium/10 px-4 py-2 text-xs font-semibold tracking-wide text-confidence-medium"
+        >
+          {MISSION_DEMO_READONLY_BANNER}
+        </div>
+      )}
+
+      {/* 1. Objetivo */}
       <section className="mb-6 rounded-lg border border-border-subtle bg-surface-2/30 p-4 text-sm">
         <p className="text-[10px] uppercase tracking-wider text-text-tertiary">Objetivo</p>
-        <p className="mt-1 text-text-secondary">{String(mission.objective)}</p>
+        <p className="mt-1 text-text-secondary">
+          {missionDisplayObjective(mission.objective as string, classification)}
+        </p>
+      </section>
 
-        {mission.active_assignment ? (
-          (() => {
-            const assignment = mission.active_assignment as Record<string, unknown>
-            return (
-              <div className="mt-4 rounded border border-border-subtle/60 bg-surface-1/40 p-3 text-xs">
-                <p className="font-medium text-text-primary">Asignación operacional</p>
-                <p className="mt-1 text-text-secondary">
-                  Responsable:{' '}
-                  {assignment.assignee_type
-                    ? missionAssigneeTypeLabel(String(assignment.assignee_type))
-                    : 'Asignado'}
-                </p>
-                <p className="text-text-tertiary">
-                  Estado: {missionAssignmentStatusLabel(String(assignment.status))}
-                </p>
-                {Boolean(assignment.block_reason) && (
-                  <p className="mt-1 text-confidence-low">
-                    Bloqueo: {String(assignment.block_reason)}
-                  </p>
-                )}
-                {Boolean(assignment.assignee_id) && (
-                  <details className="mt-2 text-text-tertiary">
-                    <summary className="cursor-pointer select-none">Detalle técnico</summary>
-                    <p className="mt-1">Identificador: {String(assignment.assignee_id)}</p>
-                  </details>
-                )}
-              </div>
-            )
-          })()
-        ) : (
-          <p className="mt-3 text-xs text-text-tertiary">Sin responsable asignado.</p>
-        )}
-        <div className="mt-3 grid gap-2 md:grid-cols-2">
-          <p className="text-xs text-text-tertiary">
-            Incidente:{' '}
-            <Link to={`/incidentes/${mission.incident_id}`} className="text-accent hover:underline">
-              Ver incidente
-            </Link>
+      {/* 2. Incidente relacionado + responsable + fechas */}
+      <section className="mb-6 grid gap-3 rounded-lg border border-border-subtle bg-surface-2/30 p-4 text-sm md:grid-cols-2">
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-text-tertiary">
+            Incidente relacionado
           </p>
-          <p className="text-xs text-text-tertiary">
-            Inicio más temprano: {formatGuatemalaDateTime(String(mission.earliest_start_at))}
-          </p>
-          <p className="text-xs text-text-tertiary">
-            Límite: {formatGuatemalaDateTime(String(mission.due_at))}
-          </p>
-          <p className="text-xs text-text-tertiary">
-            Expira: {formatGuatemalaDateTime(String(mission.expires_at))}
-          </p>
-          <p className="text-xs text-text-tertiary">
-            Ubicación: {String(mission.location_description)}
+          <Link
+            to={`/incidentes/${mission.incident_id}`}
+            className="text-accent hover:underline"
+          >
+            {mission.incident_display_name
+              ? String(mission.incident_display_name)
+              : 'Ver incidente'}
+          </Link>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-text-tertiary">Responsable</p>
+          <p className="text-text-secondary">{responsibleName}</p>
+          {activeAssignment && !isDemo && (
+            <p className="text-text-tertiary">
+              {missionAssignmentStatusLabel(String(activeAssignment.status))}
+            </p>
+          )}
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-text-tertiary">Fecha límite</p>
+          <p className="text-text-secondary">{dueText}</p>
+          {showExpires && <p className="text-text-tertiary">Expira: {expiresText}</p>}
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-wider text-text-tertiary">Ubicación</p>
+          <p className="text-text-secondary">
+            {missionDisplayLocation(mission.location_description as string, classification)}
           </p>
         </div>
+        {activeAssignment && !isDemo && Boolean(activeAssignment.assignee_id) && (
+          <details className="text-text-tertiary md:col-span-2">
+            <summary className="cursor-pointer select-none text-xs">Detalle técnico</summary>
+            <p className="mt-1 text-xs">Identificador: {String(activeAssignment.assignee_id)}</p>
+          </details>
+        )}
       </section>
 
-      <MissionWorkflowActions
-        missionId={String(mission.id)}
-        status={String(mission.status)}
-        assignmentStatus={
-          mission.active_assignment
-            ? String((mission.active_assignment as Record<string, unknown>).status)
-            : null
-        }
-      />
-
-      <section id="evidencia" className="scroll-mt-6">
-        <MissionEvidenceSection missionId={String(mission.id)} />
-      </section>
-      <OfflinePackageSection
-        missionId={String(mission.id)}
-        missionTitle={String(mission.title)}
-        missionStatus={String(mission.status)}
-      />
-      <MissionResolutionContributionsSection missionId={String(mission.id)} />
-
+      {/* 3. Tareas */}
       <section className="mb-6">
         <h2 className="text-sm font-semibold text-text-primary">Tareas</h2>
         <div className="mt-3 space-y-2">
@@ -143,9 +165,11 @@ export function MissionDetailPage() {
               <p className="mt-1 text-text-secondary">{String(t.instructions)}</p>
             </div>
           ))}
+          {tasks.length === 0 && <p className="text-xs text-text-tertiary">Sin tareas registradas.</p>}
         </div>
       </section>
 
+      {/* 4. Evidencia requerida */}
       <section className="mb-6">
         <h2 className="text-sm font-semibold text-text-primary">Evidencia requerida</h2>
         <div className="mt-3 space-y-2">
@@ -153,51 +177,89 @@ export function MissionDetailPage() {
             <div key={String(e.id)} className="rounded border border-border-subtle px-3 py-2 text-xs">
               <p className="font-medium text-text-primary">{evidenceTypeLabel(String(e.evidence_type))}</p>
               <p className="text-text-tertiary">
-                Mínimo {String(e.minimum_count)} · {e.required ? 'obligatorio' : 'opcional'}
+                Mínimo{' '}
+                {pluralizeCount(Number(e.minimum_count), 'elemento', 'elementos')} ·{' '}
+                {e.required ? 'obligatorio' : 'opcional'}
               </p>
             </div>
           ))}
+          {evidence.length === 0 && (
+            <p className="text-xs text-text-tertiary">Sin requisitos de evidencia.</p>
+          )}
         </div>
       </section>
 
-      <section>
-        <h2 className="text-sm font-semibold text-text-primary">Historial de responsables</h2>
+      {/* 5. Evidencia recibida + progreso */}
+      <section id="evidencia" className="scroll-mt-6">
+        <MissionEvidenceSection missionId={String(mission.id)} classification={classification} />
+      </section>
+      <MissionResolutionContributionsSection missionId={String(mission.id)} />
+
+      {/* 6. Paquete offline */}
+      <OfflinePackageSection
+        missionId={String(mission.id)}
+        missionTitle={displayTitle}
+        missionStatus={String(mission.status)}
+        classification={classification}
+      />
+
+      {/* 7. Acciones administrativas */}
+      <MissionWorkflowActions
+        missionId={String(mission.id)}
+        status={String(mission.status)}
+        classification={classification}
+        assignmentStatus={activeAssignment ? String(activeAssignment.status) : null}
+      />
+
+      {/* 8. Historial */}
+      <section className="mb-6">
+        <h2 className="text-sm font-semibold text-text-primary">
+          {isDemo ? 'Historial de demostración' : 'Historial de responsables'}
+        </h2>
         <div className="mt-3 space-y-2">
-          {((mission.assignment_history as Array<Record<string, unknown>> | undefined) ?? []).map(
-            (h) => (
-              <div
-                key={String(h.id)}
-                className="rounded border border-border-subtle px-3 py-2 text-xs"
-              >
+          {assignmentHistory.map((h) => {
+            const reason = sanitizeMissionReason(h.reason as string, classification)
+            return (
+              <div key={String(h.id)} className="rounded border border-border-subtle px-3 py-2 text-xs">
                 <p className="font-medium text-text-primary">
                   {missionAssignmentStatusLabel(String(h.to_status))}
-                  {h.from_status ? ` (desde ${missionAssignmentStatusLabel(String(h.from_status))})` : ''}
+                  {h.from_status
+                    ? ` (desde ${missionAssignmentStatusLabel(String(h.from_status))})`
+                    : ''}
                 </p>
-                <p className="text-text-secondary">{String(h.reason)}</p>
+                {reason && <p className="text-text-secondary">{reason}</p>}
+                {Boolean(h.created_at) && (
+                  <p className="text-text-tertiary">
+                    {formatGuatemalaDateTime(String(h.created_at))}
+                  </p>
+                )}
               </div>
-            ),
-          )}
-          {((mission.assignment_history as Array<Record<string, unknown>> | undefined) ?? [])
-            .length === 0 && (
+            )
+          })}
+          {assignmentHistory.length === 0 && (
             <p className="text-xs text-text-tertiary">Sin historial de asignación.</p>
           )}
         </div>
       </section>
 
-      <section className="mt-6">
-        <h2 className="text-sm font-semibold text-text-primary">Timeline de misión</h2>
+      {/* 9. Timeline */}
+      <section className="mb-6">
+        <h2 className="text-sm font-semibold text-text-primary">Línea de tiempo</h2>
         <div className="mt-3 space-y-2">
-          {transitions.map((tr) => (
-            <div key={String(tr.id)} className="rounded border border-border-subtle px-3 py-2 text-xs">
-              <p className="font-medium text-text-primary">
-                {missionStatusLabel(String(tr.from_status))} → {missionStatusLabel(String(tr.to_status))}
-              </p>
-              <p className="text-text-secondary">{String(tr.reason)}</p>
-              <p className="text-text-tertiary">
-                {formatGuatemalaDateTime(String(tr.transitioned_at))}
-              </p>
-            </div>
-          ))}
+          {transitions.map((tr) => {
+            const reason = sanitizeMissionReason(tr.reason as string, classification)
+            return (
+              <div key={String(tr.id)} className="rounded border border-border-subtle px-3 py-2 text-xs">
+                <p className="font-medium text-text-primary">
+                  {missionStatusLabel(String(tr.from_status))} → {missionStatusLabel(String(tr.to_status))}
+                </p>
+                {reason && <p className="text-text-secondary">{reason}</p>}
+                <p className="text-text-tertiary">
+                  {formatGuatemalaDateTime(String(tr.transitioned_at))}
+                </p>
+              </div>
+            )
+          })}
         </div>
       </section>
 

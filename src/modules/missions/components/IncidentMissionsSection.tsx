@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { useIncidentMissions } from '../hooks/useMissions'
 import { missionStatusLabel, missionTypeLabel } from '../utils/mission-labels'
+import { missionPriorityLabel, missionShortRef } from '../utils/mission-presentation'
 import { formatGuatemalaDateTime } from '@/modules/fires/utils/format'
 
 interface Props {
@@ -26,13 +27,15 @@ export function IncidentMissionsSection({ incidentId }: Props) {
               to={`/misiones/${m.id}`}
               className="block rounded border border-border-subtle/60 px-3 py-2 text-xs hover:border-accent/40"
             >
-              <p className="font-medium text-text-primary">{missionTypeLabel(m.mission_type)}</p>
-              <p className="text-text-secondary">
+              <p className="font-medium text-text-primary">
+                {missionTypeLabel(m.mission_type)} · Ref. {missionShortRef(m.id)}
+              </p>
+              <p className="text-text-secondary" title={missionPriorityLabel(m.priority)}>
                 {isDemo ? 'Demostración interna · ' : ''}
-                {missionStatusLabel(m.status)} · Prioridad {m.priority}
+                {missionStatusLabel(m.status)} · P{m.priority}
               </p>
               <p className="mt-0.5 text-text-tertiary">
-                Creada {formatGuatemalaDateTime(m.created_at)} · Ref. {m.id.slice(0, 8)}
+                Creada {formatGuatemalaDateTime(m.created_at)}
               </p>
             </Link>
           )
