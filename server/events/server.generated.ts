@@ -6,5 +6,6 @@
  * server registry at startup. Importing this module has the side effect of
  * registration.
  */
+import './rainfall-deficit.server.js'
 import './synthetic-framework-test.server.js'
 import './thermal-activity.server.js'

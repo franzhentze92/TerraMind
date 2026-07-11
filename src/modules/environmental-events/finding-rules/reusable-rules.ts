@@ -31,7 +31,7 @@ export const REUSABLE_RULE_IDS = {
   multipleSources: 'MULTIPLE_SOURCES_AGREE',
 } as const
 
-const ALL_TYPES: EnvironmentalEventType[] = ['thermal_activity', 'flood']
+const ALL_TYPES: EnvironmentalEventType[] = ['thermal_activity', 'flood', 'rainfall_deficit']
 
 function rule(
   id: string,

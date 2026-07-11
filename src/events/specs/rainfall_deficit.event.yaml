@@ -1,0 +1,57 @@
+# Déficit de precipitación persistente — declarative spec (CHIRPS v3 pentadal MVP).
+event:
+  type: rainfall_deficit
+  label: Déficit de precipitación
+  pluralLabel: Déficits de precipitación
+  icon: cloud-rain
+  featureFlag: rainfall_deficit
+  geometryKinds:
+    - polygon
+    - multipolygon
+    - administrative_area
+
+sources:
+  - chirps_v3_preliminary_pentad
+  - chirps_v3_final_pentad
+
+contextLayers:
+  - municipalities
+  - departments
+  - watersheds
+  - cropland
+  - rural_population
+  - protected_areas
+  - dry_corridor
+
+findingRules:
+  - EVENT_PERSISTENT
+  - EVENT_EXPANDING
+  - RAINFALL_DEFICIT_LOW_PERCENTILE
+  - RAINFALL_DEFICIT_SEVERE
+  - RAINFALL_DEFICIT_AGRICULTURAL_AREA
+  - RAINFALL_DEFICIT_RECOVERING
+
+priorityDimensions:
+  severity:
+    - relative_deficit
+    - historical_percentile
+    - standardized_anomaly
+    - affected_area
+  exposure:
+    - cropland_area
+    - rural_population
+    - municipalities
+  persistence:
+    - consecutive_pentads
+    - duration_days
+  sensitivity:
+    - dry_corridor_overlap
+    - rainfed_agriculture
+  uncertainty:
+    - preliminary_product
+    - terrain_complexity
+    - insufficient_history
+    - missing_cells
+  urgency:
+    - deficit_expanding
+    - continued_low_rainfall

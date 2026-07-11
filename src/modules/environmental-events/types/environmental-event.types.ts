@@ -99,6 +99,42 @@ export interface SyntheticEventAttributes {
   note: string
 }
 
+export interface RainfallDeficitEventAttributes {
+  canonicalWindowDays: number
+  windows: {
+    days15?: import('@/modules/precipitation/rainfall-deficit/rainfall-deficit.types').RainfallWindowMetrics
+    days30: import('@/modules/precipitation/rainfall-deficit/rainfall-deficit.types').RainfallWindowMetrics
+    days60?: import('@/modules/precipitation/rainfall-deficit/rainfall-deficit.types').RainfallWindowMetrics
+  }
+  consecutiveDeficitPentads: number
+  persistenceDays: number
+  affectedAreaKm2: number
+  affectedCellCount: number
+  municipalityCount?: number
+  departmentCount?: number
+  municipalityNames?: string[]
+  croplandOverlapKm2?: number
+  ruralPopulationPotentiallyExposed?: number
+  dryCorridorOverlapKm2?: number
+  currentProductStatus: 'preliminary' | 'final'
+  sourceVersion: string
+  timestep: 'pentad'
+  processingVersion: string
+  baselineStartYear: number
+  baselineEndYear: number
+  missingCellPercent?: number
+  terrainComplexityFlag?: boolean
+  qualityFlags: string[]
+  gridResolutionDegrees: number
+  intensityClass: 'moderate' | 'elevated' | 'severe' | 'recovering'
+  lastDecisionId?: string
+}
+
+export type RainfallDeficitEnvironmentalEvent = BaseEnvironmentalEvent<
+  'rainfall_deficit',
+  RainfallDeficitEventAttributes
+>
+
 // event:new:attributes (do not remove — anchor for the generator)
 
 export type ThermalEnvironmentalEvent = BaseEnvironmentalEvent<
@@ -118,6 +154,7 @@ export type EnvironmentalEvent =
   | ThermalEnvironmentalEvent
   | FloodEnvironmentalEvent
   | SyntheticEnvironmentalEvent
+  | RainfallDeficitEnvironmentalEvent
 // event:new:event-union (do not remove — anchor for the generator)
 
 /** A single presentation metric for an event (label + value + optional unit). */

@@ -6,10 +6,12 @@
  * imports keep this compatible with Vite, tsx and vitest alike.
  */
 import type { EnvironmentalEventManifest } from '@/modules/environmental-events/manifest/event-manifest'
+import rainfallDeficitManifest from '@/events/rainfall-deficit/event.manifest'
 import syntheticFrameworkTestManifest from '@/events/synthetic-framework-test/event.manifest'
 import thermalActivityManifest from '@/events/thermal-activity/event.manifest'
 
 export const ALL_EVENT_MANIFESTS: EnvironmentalEventManifest[] = [
+  rainfallDeficitManifest,
   syntheticFrameworkTestManifest,
   thermalActivityManifest,
 ]

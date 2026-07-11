@@ -38,6 +38,12 @@ data/population/**/processed/
 data/population/**/reports/*.png
 data/population/**/_clip_temp/
 
+# CHIRPS v3 rasters y salidas — fuera de Git (manifest sí puede ir); demasiado grandes
+data/climate/chirps/**/raw/
+data/climate/chirps/**/processed/
+data/climate/chirps/**/_diag/
+data/climate/chirps/**/*.tif
+
 artifacts/review/
 review-output.json
 

@@ -18,6 +18,7 @@ export type EnvironmentalEventType =
   | 'thermal_activity'
   | 'flood'
   | 'synthetic_framework_test'
+  | 'rainfall_deficit'
 // event:new:union (do not remove — anchor for the generator)
 
 /** The only event types active (registered) in this foundation block. */
@@ -105,6 +106,7 @@ export function isEnvironmentalEventType(v: string): v is EnvironmentalEventType
     v === 'thermal_activity' ||
     v === 'flood' ||
     v === 'synthetic_framework_test' ||
+    v === 'rainfall_deficit' ||
     // event:new:guard (do not remove — anchor for the generator)
     false
   )
