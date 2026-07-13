@@ -102,7 +102,7 @@ export function resolveSystemHealth(
   if (freshnessStatus === 'delayed') {
     return { label: 'Datos parcialmente actualizados', tone: 'warning' }
   }
-  if (freshnessStatus === 'fresh') return { label: 'Todos los procesos actualizados', tone: 'ok' }
+  if (freshnessStatus === 'fresh') return { label: 'Datos actualizados', tone: 'ok' }
   return { label: 'Sistema disponible', tone: 'ok' }
 }
 

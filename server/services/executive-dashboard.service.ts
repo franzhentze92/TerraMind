@@ -107,9 +107,10 @@ async function loadStageCounts(): Promise<Record<string, number>> {
 
 export async function getExecutiveDashboard(
   auth: RequestAuthContext,
-  options: { include_demo?: boolean } = {},
+  options: { include_demo?: boolean; period_hours?: number } = {},
 ): Promise<ExecutiveDashboardDto> {
   const includeDemo = options.include_demo === true
+  const periodHours = options.period_hours ?? 48
   const counts = await loadStageCounts()
   const dataAudit = buildDataAudit(counts)
   const situation = getSituationReport()
@@ -199,6 +200,15 @@ export async function getExecutiveDashboard(
 
   const timeline = await buildNationalTimeline(includeDemo, auth)
 
+  const { buildOperationalPeriodComparisonForDashboard } = await import(
+    './operational-period-comparison.service.js'
+  )
+  const operationalPeriodComparison = await buildOperationalPeriodComparisonForDashboard(
+    auth,
+    periodHours,
+    includeDemo,
+  )
+
   const responseRecommendations: ExecutiveDashboardDto['response_recommendations'] = []
   const pendingDecisions: ExecutiveDashboardDto['pending_decisions'] = []
   if (auth.permissions.includes('responses.view')) {
@@ -211,11 +221,14 @@ export async function getExecutiveDashboard(
         href: `/respuesta/${a.incident_id}`,
       })
     }
+    // Formal human decisions awaiting review only — automatic recommendations
+    // (decision_type = 'system_recommendation' / status 'recommended') excluded.
     const { data: decisions } = await admin
       .from('decision_records')
       .select('incident_id, decision_status')
       .eq('organization_id', auth.activeOrganizationId)
-      .in('decision_status', ['recommended', 'pending_approval'])
+      .eq('decision_type', 'human_decision')
+      .eq('decision_status', 'pending_review')
       .limit(5)
     for (const d of decisions ?? []) {
       pendingDecisions.push({
@@ -292,6 +305,7 @@ export async function getExecutiveDashboard(
     data_audit: dataAudit,
     recommended_demo_incident_id:
       (await findBestCoverageIncidentId(includeDemo)) ?? INTERNAL_DEMO_INCIDENT_ID,
+    operational_period_comparison: operationalPeriodComparison,
   }
 
   if (dashboard.recent_resolutions.length === 0) dashboard.empty_sections.push(RESOLUTIONS_EMPTY)
@@ -338,10 +352,13 @@ async function buildNationalTimeline(
 
   const { data: events } = await admin
     .from('fire_events')
-    .select('id, last_detected_at, validation_status')
+    .select('id, last_detected_at, validation_status, geo_departments!fire_events_department_id_fkey (name)')
     .order('last_detected_at', { ascending: false })
     .limit(5)
   for (const e of events ?? []) {
+    const deptRaw = e.geo_departments as { name?: string } | { name?: string }[] | null
+    const dept = Array.isArray(deptRaw) ? deptRaw[0] : deptRaw
+    const departmentName = dept?.name ?? null
     entries.push({
       id: String(e.id),
       timestamp: String(e.last_detected_at),
@@ -350,7 +367,10 @@ async function buildNationalTimeline(
       status: String(e.validation_status ?? 'unknown'),
       source: 'Motor de clustering FIRMS',
       confidence: 'inferido',
-      summary: 'Evento térmico agrupado',
+      // Deterministic title from real data; location appended only when known.
+      summary: departmentName
+        ? `Actividad térmica agrupada en ${departmentName}`
+        : 'Actividad térmica agrupada',
       epistemic: 'inferred',
       href: `/incendios/${e.id}`,
       entity_id: String(e.id),

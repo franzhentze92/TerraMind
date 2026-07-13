@@ -118,6 +118,8 @@ export interface ExecutiveDashboardDto {
   empty_sections: EmptyStateInfo[]
   data_audit: StageAuditEntry[]
   recommended_demo_incident_id: string | null
+  /** Stock comparison at the start vs end of the selected dashboard period. */
+  operational_period_comparison?: import('@/modules/national-situation/utils/operational-period-comparison').OperationalPeriodComparison
 }
 
 export interface StoryStageEntry {

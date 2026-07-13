@@ -29,6 +29,7 @@ export const thermalActivityManifest: EnvironmentalEventManifest = defineEnviron
   description:
     'Eventos térmicos agrupados a partir de detecciones satelitales FIRMS en Guatemala.',
   icon: 'flame',
+  accentColor: '#f97316',
   geometryKinds: ['point', 'multipoint'],
   sources: [firmsSourceDescriptor],
   presentation: thermalPresentationAdapter,

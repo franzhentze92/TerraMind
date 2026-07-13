@@ -1,196 +1,79 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link } from 'react-router-dom'
-import { useFireEvent } from '@/modules/fires/hooks/useFireEvent'
-import { useFireEvents } from '@/modules/fires/hooks/useFireEvents'
-import { useFireEventsGeoJson } from '@/modules/fires/hooks/useFireGeoJson'
-import {
-  DEFAULT_FIRE_PAGE_FILTERS,
-} from '@/modules/fires/api/fire-page-filters'
-import { FireEventsMap } from '@/modules/fires/components/FireEventsMap'
-import { useFireEventIncident } from '@/modules/incidents/hooks/useIncidents'
-import { useFireEventPriority } from '@/modules/priorities/hooks/usePriorities'
-import { useFireEventLifecycle } from '@/modules/lifecycle/hooks/useLifecycle'
-import { lifecycleStateLabel } from '@/modules/lifecycle/utils/lifecycle-labels'
-import { validationStatusLabel } from '@/modules/fires/utils/fire-interpretation'
-import { riskLevelLabel } from '@/modules/fires/utils/format'
-import { incidentStatusLabel } from '@/modules/incidents/utils/incident-labels'
-import { attentionLevelLabel } from '@/modules/priorities/utils/priority-labels'
-import { cn } from '@/shared/utils/cn'
-import { Switch } from '@/shared/components/Switch'
+/**
+ * ExecutiveNationalMap — "Mapa de eventos activos" (registry-driven).
+ *
+ * The central element of Situación Nacional. It renders every enabled event
+ * type through the EnvironmentalEventRegistry map renderers (thermal points,
+ * rainfall-deficit polygons, and any future type) with NO per-type branches.
+ * Legend, colors and layer toggles all derive from the registry. Selection is
+ * shared through the National Situation context so the right-hand
+ * "Evento seleccionado" panel stays in sync.
+ */
+import { useMemo, useState } from 'react'
+import { useNationalSituation } from '@/modules/national-situation/NationalSituationContext'
+import { NationalEventMap } from '@/modules/national-situation/components/NationalEventMap'
 import { markSituationPerformance } from '@/modules/national-situation/situation-performance'
+import { EventTypeIcon } from '@/modules/environmental-events/ui/EventTypeIcon'
+import { Switch } from '@/shared/components/Switch'
 import type { ExecutiveDashboardDto } from '../types/executive-demo.types'
 
 interface ExecutiveNationalMapProps {
   includeDemo: boolean
   activeIncidents: ExecutiveDashboardDto['active_incidents']
+  /** Kept for compatibility; historical incident overlays are not part of the event map. */
   showLegacyLayer?: boolean
-}
-
-function ExecutiveMapSidePanel({
-  eventId,
-  onClose,
-}: {
-  eventId: string
-  onClose: () => void
-}) {
-  const eventQuery = useFireEvent(eventId)
-  const incidentQuery = useFireEventIncident(eventId)
-  const priorityQuery = useFireEventPriority(eventId)
-  const lifecycleQuery = useFireEventLifecycle(eventId)
-  const event = eventQuery.data
-  const incident = incidentQuery.data?.incident
-
-  return (
-    <aside className="flex max-h-[420px] flex-col overflow-hidden rounded-lg border border-border-subtle bg-surface-1">
-      <div className="flex items-center justify-between border-b border-border-subtle px-3 py-2">
-        <p className="text-xs font-medium uppercase tracking-wider text-text-tertiary">
-          Selección en mapa
-        </p>
-        <button
-          type="button"
-          onClick={onClose}
-          className="text-xs text-text-tertiary hover:text-text-primary"
-        >
-          Cerrar
-        </button>
-      </div>
-      <div className="flex-1 overflow-y-auto px-3 py-3 text-sm">
-        {eventQuery.isLoading && <p className="text-text-tertiary">Cargando evento…</p>}
-        {event && (
-          <>
-            <p className="font-medium text-text-primary">
-              {event.department_name ?? 'Evento térmico'}
-            </p>
-            <p className="mt-1 text-[11px] text-text-tertiary">ID: {event.id.slice(0, 12)}…</p>
-            <dl className="mt-3 space-y-2 text-xs">
-              <div>
-                <dt className="text-text-tertiary">Estado</dt>
-                <dd>{validationStatusLabel(event.validation_status)}</dd>
-              </div>
-              <div>
-                <dt className="text-text-tertiary">Prioridad</dt>
-                <dd>
-                  {priorityQuery.data?.assessment
-                    ? `${attentionLevelLabel(priorityQuery.data.assessment.attention_level)} · ${riskLevelLabel(event.risk_level)}`
-                    : riskLevelLabel(event.risk_level)}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-text-tertiary">Ciclo de vida</dt>
-                <dd>
-                  {lifecycleQuery.data?.lifecycle_state
-                    ? lifecycleStateLabel(lifecycleQuery.data.lifecycle_state)
-                    : 'Sin transición registrada'}
-                </dd>
-              </div>
-              <div>
-                <dt className="text-text-tertiary">Verificación</dt>
-                <dd>{validationStatusLabel(event.validation_status)}</dd>
-              </div>
-            </dl>
-            {incident && (
-              <div className="mt-4 rounded border border-border-subtle bg-surface-2/40 p-2">
-                <p className="text-[10px] font-medium uppercase text-text-tertiary">Incidente</p>
-                <p className="mt-1 text-xs">
-                  {incident.id.slice(0, 8)}… · {incidentStatusLabel(incident.status)}
-                </p>
-                <div className="mt-2 flex flex-wrap gap-2">
-                  <Link to={`/incidentes/${incident.id}`} className="text-xs text-accent">
-                    Ver incidente
-                  </Link>
-                  <Link
-                    to={`/incidentes/${incident.id}/historia`}
-                    className="text-xs text-accent"
-                  >
-                    Historia
-                  </Link>
-                  <Link
-                    to={`/informes/incidentes/${incident.id}`}
-                    className="text-xs text-text-tertiary"
-                  >
-                    Informe
-                  </Link>
-                </div>
-              </div>
-            )}
-            {!incident && !incidentQuery.isLoading && (
-              <p className="mt-3 text-xs text-text-secondary">
-                Sin incidente correlacionado para este evento.
-              </p>
-            )}
-            <Link
-              to={`/incendios/${event.id}`}
-              className="mt-4 inline-block text-xs text-accent"
-            >
-              Abrir en análisis de incendios →
-            </Link>
-          </>
-        )}
-      </div>
-    </aside>
-  )
 }
 
 export function ExecutiveNationalMap({
   includeDemo,
   activeIncidents,
-  showLegacyLayer: showLegacyLayerProp = false,
+  showLegacyLayer = false,
 }: ExecutiveNationalMapProps) {
-  const filters = useMemo(() => DEFAULT_FIRE_PAGE_FILTERS, [])
-  const [selectedEventId, setSelectedEventId] = useState<string | undefined>()
-  const [showIncidentsLayer, setShowIncidentsLayer] = useState(true)
-  const [showLegacyLayer, setShowLegacyLayer] = useState(showLegacyLayerProp)
-  const [showDetectionsLayer, setShowDetectionsLayer] = useState(false)
+  const { eventTypes, eventsWindowSince, selectedEventId, setSelectedEventId } =
+    useNationalSituation()
+  const { types, isError } = eventTypes
+
+  const [hiddenTypes, setHiddenTypes] = useState<Set<string>>(new Set())
   const [centerToken, setCenterToken] = useState(0)
 
-  const eventsQuery = useFireEvents(filters)
-  const geoJsonQuery = useFireEventsGeoJson(filters)
-  const items = eventsQuery.data?.items ?? []
+  const toggleType = (type: string) => {
+    setHiddenTypes((prev) => {
+      const next = new Set(prev)
+      if (next.has(type)) next.delete(type)
+      else next.add(type)
+      return next
+    })
+  }
 
-  const operationalIncidents = activeIncidents.filter((i) => !i.is_legacy && (!i.is_internal_demo || includeDemo))
-  const legacyIncidents = activeIncidents.filter((i) => i.is_legacy)
-  const visibleIncidents = [
-    ...operationalIncidents,
-    ...(showLegacyLayer ? legacyIncidents : []),
-  ]
+  const operationalIncidents = useMemo(
+    () => activeIncidents.filter((i) => !i.is_legacy && (!i.is_internal_demo || includeDemo)),
+    [activeIncidents, includeDemo],
+  )
 
-  useEffect(() => {
-    if (geoJsonQuery.data && !geoJsonQuery.isLoading) {
-      markSituationPerformance('map_ready')
-    }
-  }, [geoJsonQuery.data, geoJsonQuery.isLoading])
+  const hasTypes = types.length > 0
 
   return (
     <section
-      className="rounded-xl border border-border-subtle bg-surface-2/40 px-5 py-4"
+      className="flex h-full flex-col rounded-xl border border-border-subtle bg-surface-2/40 px-4 py-3"
       data-testid="executive-national-map"
+      data-show-legacy-layer={showLegacyLayer}
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-[10px] font-medium uppercase tracking-wider text-text-tertiary">
-          Mapa ejecutivo
+        <p className="text-[13px] font-semibold text-text-primary">
+          Mapa de eventos activos
         </p>
-        <div className="flex flex-wrap items-center gap-3 text-xs text-text-secondary">
-          <span className="text-emerald-400">● Detección</span>
-          <span className="text-confidence-medium">● Evento</span>
-          <span className="text-accent">● Prioridad</span>
-          <span className="text-violet-400">◆ Incidente</span>
-          <span className="text-amber-400">◌ Registros históricos</span>
-          {includeDemo && <span className="text-violet-300">★ Demostración</span>}
-          <label className="flex items-center gap-1.5">
-            <Switch checked={showDetectionsLayer} onChange={setShowDetectionsLayer} />
-            Detecciones
-          </label>
-          <label className="flex items-center gap-1.5">
-            <Switch checked={showIncidentsLayer} onChange={setShowIncidentsLayer} />
-            Incidentes operativos ({visibleIncidents.length})
-          </label>
-          <label className="flex items-center gap-1.5">
-            <Switch checked={showLegacyLayer} onChange={setShowLegacyLayer} />
-            Registros históricos
-          </label>
+        <div className="flex flex-wrap items-center gap-3 text-[11px] text-text-secondary">
+          {types.map((t) => (
+            <label key={t.type} className="flex items-center gap-1.5" title={`Mostrar/ocultar ${t.label}`}>
+              <Switch checked={!hiddenTypes.has(t.type)} onChange={() => toggleType(t.type)} />
+              <span className={`flex items-center gap-1 ${hiddenTypes.has(t.type) ? 'opacity-40' : ''}`}>
+                <EventTypeIcon icon={t.icon} color={t.accentColor} size={13} />
+                {t.label}
+              </span>
+            </label>
+          ))}
           <button
             type="button"
-            onClick={() => setCenterToken((t) => t + 1)}
+            onClick={() => setCenterToken((c) => c + 1)}
             className="rounded border border-border-subtle px-2 py-0.5 text-[10px] hover:border-accent/40"
           >
             Centrar Guatemala
@@ -198,30 +81,56 @@ export function ExecutiveNationalMap({
         </div>
       </div>
 
-      {!includeDemo && operationalIncidents.length === 0 && (
-        <p className="mt-2 text-xs text-text-secondary">
-          Sin incidentes operativos. Los eventos térmicos y las prioridades permanecen visibles.
-          Active los registros históricos o de demostración cuando corresponda.
+      {isError && (
+        <p className="mt-2 text-xs text-status-critical">
+          No se pudieron cargar todos los tipos de evento del mapa.
         </p>
       )}
 
-      <div className={cn('mt-3 grid gap-3', selectedEventId && 'lg:grid-cols-[1fr_300px]')}>
-        <FireEventsMap
-          key={centerToken}
-          className="h-[360px] min-h-[300px] rounded-lg border border-border-subtle md:h-[400px]"
-          eventsGeoJson={geoJsonQuery.data}
-          eventListItems={items}
-          showDetections={showDetectionsLayer}
-          selectedEventId={selectedEventId}
-          isLoading={geoJsonQuery.isLoading}
-          isError={geoJsonQuery.isError}
-          onSelectEvent={setSelectedEventId}
-          onViewDetail={setSelectedEventId}
-        />
-        {selectedEventId && (
-          <ExecutiveMapSidePanel eventId={selectedEventId} onClose={() => setSelectedEventId(undefined)} />
-        )}
-      </div>
+      {!hasTypes ? (
+        <div className="mt-3 flex h-[360px] items-center justify-center rounded-lg border border-border-subtle bg-surface-1/40 text-xs text-text-secondary">
+          No hay tipos de evento habilitados para mostrar en el mapa.
+        </div>
+      ) : (
+        <div className="relative mt-3 flex-1">
+          <NationalEventMap
+            className="h-[400px] min-h-[340px] w-full rounded-lg border border-border-subtle md:h-[470px]"
+            types={types}
+            hiddenTypes={hiddenTypes}
+            since={eventsWindowSince}
+            selectedEventId={selectedEventId}
+            onSelect={setSelectedEventId}
+            centerToken={centerToken}
+            onLayerReady={() => markSituationPerformance('map_ready')}
+          />
+
+          <div className="pointer-events-none absolute bottom-3 left-3 z-[500] rounded-lg border border-border-subtle bg-surface-1/90 px-3 py-2 backdrop-blur">
+            <p className="text-[9px] font-medium uppercase tracking-wider text-text-tertiary">
+              Tipos de evento
+            </p>
+            <ul className="mt-1 space-y-0.5">
+              {types.map((t) => (
+                <li
+                  key={t.type}
+                  className={`flex items-center gap-1.5 text-[10px] text-text-secondary ${
+                    hiddenTypes.has(t.type) ? 'opacity-40' : ''
+                  }`}
+                >
+                  <EventTypeIcon icon={t.icon} color={t.accentColor} size={12} />
+                  {t.label}
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      )}
+
+      {operationalIncidents.length > 0 && (
+        <p className="mt-2 text-[11px] text-text-tertiary">
+          {operationalIncidents.length}{' '}
+          {operationalIncidents.length === 1 ? 'incidente operativo' : 'incidentes operativos'} vinculados.
+        </p>
+      )}
     </section>
   )
 }

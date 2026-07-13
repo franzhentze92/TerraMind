@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { FireEventListItemDto } from '@/modules/fires/types/fire.dto'
 import { mapFireEventToEnvironmentalEvent } from '@/modules/environmental-events/thermal/thermal-event.mapper'
 import { toFireEventsQuery } from '@/modules/environmental-events/thermal/thermal-query.mapper'
+import { thermalMapRenderer } from '@/modules/environmental-events/thermal/thermal-map-renderer'
 import {
   aggregateThermalEvents,
   buildThermalReportSection,
@@ -86,6 +87,35 @@ describe('parity — query mapping', () => {
     const q = toFireEventsQuery({})
     expect(q.limit).toBe(25)
     expect(q.offset).toBe(0)
+  })
+
+  it('maps the dashboard map window query (since, no status) so it matches the KPI set', () => {
+    // The map / auto-selection / territorial probes all use this exact shape.
+    // It must NOT force a fire `status` (that narrowed the set to 0 vs the 48h
+    // window count) and it must forward `since` onto `last_detected_at` — the
+    // very column getFireSummary counts, guaranteeing summary/list parity.
+    const since = '2026-07-08T00:00:00.000Z'
+    const q = toFireEventsQuery({ type: 'thermal_activity', since, limit: 100 })
+    expect(q.status).toBeUndefined()
+    expect(q.since).toBe(since)
+    expect(q.limit).toBe(100)
+    expect(q.offset).toBe(0)
+  })
+})
+
+describe('parity — thermal map feature (toMapFeature)', () => {
+  it('produces a Point Feature with [lng, lat] and a stable id in properties', () => {
+    const event = mapFireEventToEnvironmentalEvent(STABLE_SAMPLE[0])
+    const feature = thermalMapRenderer.toMapFeature(event)
+    expect(feature.type).toBe('Feature')
+    expect(feature.geometry).toEqual({
+      type: 'Point',
+      coordinates: [STABLE_SAMPLE[0].centroid_lng, STABLE_SAMPLE[0].centroid_lat],
+    })
+    // Every feature must carry an id (both as Feature.id and properties.event_id)
+    // so selection/highlighting and click→detail work.
+    expect(feature.id).toBe(STABLE_SAMPLE[0].id)
+    expect(feature.properties?.event_id).toBe(STABLE_SAMPLE[0].id)
   })
 })
 

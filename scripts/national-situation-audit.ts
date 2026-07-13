@@ -50,7 +50,7 @@ for (const f of requiredFiles) {
   check(`file:${f}`, existsSync(resolve(ROOT, f)))
 }
 
-// KPI limit
+// KPI limit — TerraMind visible row: 6 canonical KPIs + the per-type breakdown cell.
 check('primary-kpi-limit', PRIMARY_KPI_LIMIT === 6)
 const syntheticCtx = {
   fire: {
@@ -78,20 +78,41 @@ const syntheticCtx = {
 }
 
 const metrics = buildExecutiveMetricsFromContext(syntheticCtx, { include_demo: false })
-const kpis = buildPrimaryKpis(metrics, 0)
+const kpis = buildPrimaryKpis({
+  metrics,
+  eventsActive: 18,
+  activeMissions: 0,
+  activeResponses: 0,
+  pendingDecisions: 0,
+})
 check('primary-kpi-count', kpis.length === 6, `got ${kpis.length}`)
 check(
   'primary-kpi-uses-registry',
   PRIMARY_KPI_METRIC_IDS.every((id) => kpis.some((k) => k.id === id)),
 )
 
-const incidentsKpi = kpis.find((k) => k.id === 'incidents_operational')
-check('legacy-not-operational-headline', incidentsKpi?.value === 0)
-check('legacy-breakdown-visible', Boolean(incidentsKpi?.secondary?.includes('histórico')))
+// Visible model order: Observaciones → Eventos → Amenazas → Misiones → Respuestas → Decisiones.
 check(
-  'legacy-breakdown-no-english',
-  !/legacy|ownership/i.test(incidentsKpi?.secondary ?? ''),
+  'primary-kpi-visible-order',
+  JSON.stringify(kpis.map((k) => k.id)) ===
+    JSON.stringify([
+      'fire_observations',
+      'events_active',
+      'priority_threats',
+      'active_missions',
+      'active_responses',
+      'pending_decisions',
+    ]),
 )
+
+// Findings and incidents are no longer executive KPIs.
+check('findings-not-in-executive-row', !kpis.some((k) => k.id === 'findings_active'))
+check('incidents-not-in-executive-row', !kpis.some((k) => k.id === 'incidents_operational'))
+
+// Threat KPI must be honestly unavailable, never a proxy of findings/priorities.
+const threatKpi = kpis.find((k) => k.id === 'priority_threats')
+check('threat-kpi-unavailable', threatKpi?.unavailable?.status === 'not_implemented')
+check('threat-kpi-not-findings-count', threatKpi?.value !== 50 && threatKpi?.value !== 12)
 
 const summaryNoAssessment = buildNationalExecutiveSummary(metrics, {
   generated_at: new Date().toISOString(),

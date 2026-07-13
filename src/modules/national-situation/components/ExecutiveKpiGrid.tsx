@@ -1,29 +1,97 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
-import type { DataClassification } from '@/modules/executive-metrics/metric-taxonomy'
-import { exclusionReasonLabel } from '@/shared/product-language'
 import { useNationalSituation } from '../NationalSituationContext'
 import { PRIMARY_KPI_LIMIT } from '../national-situation.constants'
 import { buildSituationMethodologyPresentation } from '../utils/methodology-presentation'
-import { situationClassificationLabel } from '../utils/situation-labels'
+import {
+  buildExecutiveKpiCardModels,
+  KPI_TREND_NO_COMPARISON,
+  kpiTrendClassName,
+} from '../utils/executive-kpi-panel-model'
 import { markSituationPerformance } from '../situation-performance'
 
-const CLASS_DOT: Record<DataClassification, string> = {
-  operational: 'bg-emerald-400',
-  legacy: 'bg-amber-400',
-  demo: 'bg-violet-400',
-  pending: 'bg-sky-400',
-  excluded: 'bg-zinc-500',
-  unresolved_ownership: 'bg-amber-400',
+function KpiCard({
+  card,
+  onOpenMethodology,
+}: {
+  card: ReturnType<typeof buildExecutiveKpiCardModels>[number]
+  onOpenMethodology: (id: string) => void
+}) {
+  const Icon = card.icon
+  const hasMethodology = buildSituationMethodologyPresentation(card.id) != null
+
+  const valueClass = card.isUnavailable
+    ? 'text-[26px] font-bold leading-none tracking-tight text-[#6b6b78]'
+    : 'text-[26px] font-bold leading-none tracking-tight text-text-primary'
+
+  return (
+    <div
+      className="group relative flex min-h-[108px] flex-col rounded-lg border border-border-subtle bg-[#161b26] px-3 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]"
+      data-testid={`executive-kpi-${card.id}`}
+      title={card.tooltip}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="min-h-[2rem] flex-1 text-[11px] font-medium leading-tight text-[#c7c7d1]">
+          {card.label}
+        </p>
+        <span
+          className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full ${card.iconClassName}`}
+          aria-hidden
+        >
+          <Icon size={14} />
+        </span>
+      </div>
+
+      {card.href && !card.isUnavailable ? (
+        <Link to={card.href} className={`${valueClass} hover:text-accent`}>
+          {card.formattedValue}
+        </Link>
+      ) : (
+        <p className={`${valueClass} tabular-nums`} aria-label={card.isUnavailable ? 'No disponible' : undefined}>
+          {card.formattedValue}
+        </p>
+      )}
+
+      <p className="mt-1 text-[10px] text-[#9898a4]">{card.subtitle}</p>
+
+      {card.showTrend && (
+        <p
+          className={`mt-1.5 text-[10px] font-medium tabular-nums ${kpiTrendClassName(card.trendDirection)}`}
+        >
+          {card.trendLabel}
+        </p>
+      )}
+
+      {hasMethodology && (
+        <button
+          type="button"
+          onClick={() => onOpenMethodology(card.id)}
+          className="mt-1 text-left text-[9px] text-accent opacity-0 transition-opacity group-hover:opacity-100"
+        >
+          Ver metodología
+        </button>
+      )}
+    </div>
+  )
 }
 
 export function ExecutiveKpiGrid() {
-  const { primaryKpis, metricsQuery } = useNationalSituation()
+  const { primaryKpis, metricsQuery, periodHours, dashboardQuery } = useNationalSituation()
   const [methodologyId, setMethodologyId] = useState<string | null>(null)
 
+  const cards = useMemo(
+    () =>
+      buildExecutiveKpiCardModels({
+        primaryKpis,
+        periodHours,
+        dashboard: dashboardQuery.data,
+      }),
+    [primaryKpis, periodHours, dashboardQuery.data],
+  )
+
   useEffect(() => {
-    if (primaryKpis.length > 0) markSituationPerformance('kpis_rendered')
-  }, [primaryKpis.length])
+    if (cards.length > 0) markSituationPerformance('kpis_rendered')
+  }, [cards.length])
 
   if (metricsQuery.isLoading) {
     return (
@@ -32,7 +100,7 @@ export function ExecutiveKpiGrid() {
         data-testid="executive-kpi-grid-loading"
       >
         {Array.from({ length: PRIMARY_KPI_LIMIT }).map((_, i) => (
-          <div key={i} className="h-20 animate-pulse rounded-lg bg-surface-3/50" />
+          <div key={i} className="h-[108px] animate-pulse rounded-lg bg-[#161b26]/80" />
         ))}
       </div>
     )
@@ -58,55 +126,11 @@ export function ExecutiveKpiGrid() {
         className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6"
         data-testid="executive-kpi-grid"
       >
-        {primaryKpis.map((kpi) => {
-          const excluded = kpi.breakdown.filter((b) => !b.included)
-          const hasMethodology = buildSituationMethodologyPresentation(kpi.id) != null
-          return (
-            <div
-              key={kpi.id}
-              className="group relative rounded-lg border border-border-subtle bg-surface-1/40 px-3 py-2.5"
-            >
-              <p className="text-[10px] uppercase tracking-wider text-text-tertiary">{kpi.label}</p>
-              {kpi.href ? (
-                <Link to={kpi.href} className="text-2xl font-semibold text-accent hover:underline">
-                  {kpi.value}
-                </Link>
-              ) : (
-                <p className="text-2xl font-semibold text-text-primary">{kpi.value}</p>
-              )}
-              <p className="text-[10px] text-text-tertiary">{kpi.timeWindowLabel}</p>
-              {kpi.secondary && (
-                <p className="mt-1 text-[10px] text-amber-300">{kpi.secondary}</p>
-              )}
-              {excluded.length > 0 && (
-                <ul className="mt-1.5 space-y-0.5 border-t border-border-subtle pt-1.5">
-                  {excluded.map((item, idx) => (
-                    <li key={`${item.label}-${idx}`} className="flex items-center gap-1 text-[10px]">
-                      <span className={`h-1 w-1 rounded-full ${CLASS_DOT[item.classification]}`} />
-                      <span className="text-text-secondary">
-                        {situationClassificationLabel(item.classification)}:
-                      </span>
-                      <span className="text-text-primary">{item.value}</span>
-                      {item.reason && (
-                        <span className="text-text-tertiary">· {exclusionReasonLabel(item.reason)}</span>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {hasMethodology && (
-                <button
-                  type="button"
-                  onClick={() => setMethodologyId(kpi.id)}
-                  className="mt-1 text-[10px] text-accent opacity-0 group-hover:opacity-100"
-                >
-                  Ver metodología
-                </button>
-              )}
-            </div>
-          )
-        })}
+        {cards.map((card) => (
+          <KpiCard key={card.id} card={card} onOpenMethodology={setMethodologyId} />
+        ))}
       </div>
+
       {methodology && (
         <div
           className="mt-2 rounded-lg border border-border-subtle bg-surface-2/60 px-4 py-3 text-xs"
@@ -137,6 +161,14 @@ export function ExecutiveKpiGrid() {
           </details>
         </div>
       )}
+
+      {cards.length > 0 &&
+      cards.every((card) => !card.showTrend || card.trendLabel === KPI_TREND_NO_COMPARISON) ? (
+        <span className="sr-only">
+          Sin periodo comparable: las tendencias se muestran solo cuando existe una
+          ventana histórica equivalente.
+        </span>
+      ) : null}
     </>
   )
 }

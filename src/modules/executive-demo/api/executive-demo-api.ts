@@ -14,8 +14,14 @@ async function fetchJson<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>
 }
 
-export async function fetchExecutiveDashboard(includeDemo = false): Promise<ExecutiveDashboardDto> {
-  const q = includeDemo ? '?include_demo=true' : ''
+export async function fetchExecutiveDashboard(
+  includeDemo = false,
+  periodHours = 48,
+): Promise<ExecutiveDashboardDto> {
+  const params = new URLSearchParams()
+  if (includeDemo) params.set('include_demo', 'true')
+  if (periodHours > 0) params.set('period_hours', String(periodHours))
+  const q = params.toString() ? `?${params.toString()}` : ''
   return fetchJson(`/situacion/executive-dashboard${q}`)
 }
 

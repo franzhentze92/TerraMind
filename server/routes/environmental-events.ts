@@ -93,12 +93,15 @@ export async function handleEnvironmentalEventsRoutes(
 
   try {
     if (pathname === '/api/environmental-events/types') {
+      const windowRaw = Number(searchParams.get('window_hours'))
+      const windowHours =
+        Number.isFinite(windowRaw) && windowRaw >= 1 && windowRaw <= 8760 ? windowRaw : 48
       const result = await runOperationalGuard(
         req,
         res,
         { permission: 'incidents.view', rateLimit: 'default_read' },
         async () => ({
-          items: await getEnvironmentalEventTypeSummaries(),
+          items: await getEnvironmentalEventTypeSummaries(windowHours),
           registered_types: environmentalEventRegistry.enabledTypes(),
           generated_at: new Date().toISOString(),
         }),

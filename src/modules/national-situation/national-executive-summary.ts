@@ -2,6 +2,7 @@ import type { ExecutiveDashboardDto } from '@/modules/executive-demo/types/execu
 import type { ExecutiveMetric } from '@/modules/executive-metrics/executive-metric.types'
 import { pluralizeCount } from '@/shared/format/plural'
 import { filterEntriesByPeriod } from './national-situation.constants'
+import { normalizeNationalSituationDashboardDto } from './national-situation-dashboard.normalize'
 import { periodWindowPhrase, spellCount } from './utils/situation-labels'
 
 export interface NationalExecutiveSummary {
@@ -18,12 +19,16 @@ function metricValue(metrics: ExecutiveMetric[], id: string): number {
 
 function legacyBreakdown(metrics: ExecutiveMetric[], id: string): number {
   const m = metrics.find((x) => x.id === id)
-  return m?.breakdown.filter((b) => !b.included && b.classification === 'legacy').reduce((s, b) => s + b.value, 0) ?? 0
+  return (
+    m?.breakdown?.filter((b) => !b.included && b.classification === 'legacy').reduce((s, b) => s + b.value, 0) ?? 0
+  )
 }
 
 function demoBreakdown(metrics: ExecutiveMetric[], id: string): number {
   const m = metrics.find((x) => x.id === id)
-  return m?.breakdown.filter((b) => !b.included && b.classification === 'demo').reduce((s, b) => s + b.value, 0) ?? 0
+  return (
+    m?.breakdown?.filter((b) => !b.included && b.classification === 'demo').reduce((s, b) => s + b.value, 0) ?? 0
+  )
 }
 
 /** Spanish sentence joining an arbitrary list with commas + "y". */
@@ -39,16 +44,20 @@ function joinSpanish(parts: string[]): string {
  */
 export function buildNationalExecutiveSummary(
   metrics: ExecutiveMetric[],
-  dashboard: ExecutiveDashboardDto | undefined,
+  dashboardInput: ExecutiveDashboardDto | undefined,
   periodHours = 48,
 ): NationalExecutiveSummary {
-  const events = metricValue(metrics, 'fire_events')
-  const findings = metricValue(metrics, 'findings_active')
-  const verifNeeds = metricValue(metrics, 'verification_needs_active')
-  const verifLegacy = metricValue(metrics, 'verification_plans_legacy')
-  const assessments = metricValue(metrics, 'response_assessments')
-  const incidentsLegacy = legacyBreakdown(metrics, 'incidents_operational')
-  const missionsDemo = demoBreakdown(metrics, 'missions_operational')
+  // Guarantee every optional collection is an array so a single missing field
+  // in the payload can never crash the page (see normalizer contract).
+  const dashboard = normalizeNationalSituationDashboardDto(dashboardInput)
+  const safeMetrics = Array.isArray(metrics) ? metrics : []
+  const events = metricValue(safeMetrics, 'fire_events')
+  const findings = metricValue(safeMetrics, 'findings_active')
+  const verifNeeds = metricValue(safeMetrics, 'verification_needs_active')
+  const verifLegacy = metricValue(safeMetrics, 'verification_plans_legacy')
+  const assessments = metricValue(safeMetrics, 'response_assessments')
+  const incidentsLegacy = legacyBreakdown(safeMetrics, 'incidents_operational')
+  const missionsDemo = demoBreakdown(safeMetrics, 'missions_operational')
   const pendingDecisions = dashboard?.pending_decisions.length ?? 0
 
   const what_is_happening =

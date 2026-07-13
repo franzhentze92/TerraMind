@@ -164,7 +164,7 @@ describe('system health is honest', () => {
     expect(resolveSystemHealth('degraded', 'fresh').label).toBe('Sistema con incidencias')
   })
   it('reserves full-health label for all sources fresh', () => {
-    expect(resolveSystemHealth('operational', 'fresh').label).toBe('Todos los procesos actualizados')
+    expect(resolveSystemHealth('operational', 'fresh').label).toBe('Datos actualizados')
   })
 })
 
@@ -220,11 +220,20 @@ describe('executive summary language + pluralization', () => {
   })
 })
 
-describe('primary KPI secondary line', () => {
-  it('describes historical records without English', () => {
-    const inc = buildPrimaryKpis(metrics(), 0).find((k) => k.id === 'incidents_operational')
-    expect(inc?.secondary).toContain('registros históricos')
-    expect(inc?.secondary).not.toMatch(ENGLISH_TERMS)
+describe('threat KPI honesty (Spanish, no proxy count)', () => {
+  it('shows an unavailable threat KPI in Spanish, not a findings count', () => {
+    const threats = buildPrimaryKpis({
+      metrics: metrics(),
+      eventsActive: 14,
+      activeMissions: 0,
+      activeResponses: 0,
+      pendingDecisions: 0,
+    }).find((k) => k.id === 'priority_threats')
+    expect(threats?.label).toBe('Amenazas prioritarias')
+    expect(threats?.unavailable?.status).toBe('not_implemented')
+    // Must not reuse the 50 findings as 50 threats.
+    expect(threats?.value).not.toBe(50)
+    expect(threats?.unavailable?.explanation).not.toMatch(ENGLISH_TERMS)
   })
 })
 
@@ -261,14 +270,15 @@ describe('module source is free of removed English strings', () => {
     })
   }
 
-  it('map legend and controls are translated', () => {
+  it('map legend and controls are translated (registry-driven event map)', () => {
     const src = readAbs('src/modules/executive-demo/components/ExecutiveNationalMap.tsx')
     expect(src).not.toContain('◌ Legacy')
     expect(src).not.toMatch(/★ Demo\b/)
     expect(src).not.toContain('Active legacy o demo')
-    expect(src).toContain('Registros históricos')
-    expect(src).toContain('Incidentes operativos')
-    expect(src).toContain('Active los registros históricos o de demostración cuando corresponda')
+    expect(src).toContain('Mapa de eventos activos')
+    expect(src).toContain('Centrar Guatemala')
+    expect(src).toContain('Tipos de evento')
+    expect(src).toContain('incidentes operativos')
   })
 
   it('timeline heading is Cronología with translated epistemic', () => {
@@ -320,10 +330,11 @@ describe('methodology panel — Spanish main copy only', () => {
 })
 
 describe('operational row responsive grid', () => {
-  it('uses single column at lg when preview is hidden', () => {
+  it('uses responsive multi-column bands (desktop/laptop/tablet)', () => {
     const overview = read('components/ExecutiveOverview.tsx')
-    expect(overview).toContain('lg:grid-cols-1')
-    expect(overview).toContain('xl:grid-cols-2')
+    // Central band stacks on tablet, two columns on laptop, three on desktop.
+    expect(overview).toContain('lg:grid-cols-2')
+    expect(overview).toContain('xl:grid-cols-3')
   })
 })
 

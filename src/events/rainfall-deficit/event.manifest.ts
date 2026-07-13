@@ -27,6 +27,7 @@ export const rainfallDeficitManifest: EnvironmentalEventManifest = defineEnviron
   description:
     'Territorios donde la precipitación acumulada reciente está significativamente por debajo de lo históricamente esperado para la misma zona y época del año (CHIRPS v3 pentadal).',
   icon: 'cloud-rain',
+  accentColor: '#f59e0b',
   geometryKinds: ['polygon', 'multipolygon', 'administrative_area'],
   sources: rainfallDeficitSourceDescriptors,
   presentation: rainfallDeficitPresentationAdapter,

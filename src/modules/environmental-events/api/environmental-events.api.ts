@@ -47,6 +47,10 @@ export const environmentalEventsApi = {
   getById: (id: string) =>
     apiClient.get<EnvironmentalEvent>(`/environmental-events/${id}`),
 
-  types: () =>
-    apiClient.get<EnvironmentalEventTypesResponse>('/environmental-events/types'),
+  types: (windowHours?: number) =>
+    apiClient.get<EnvironmentalEventTypesResponse>(
+      `/environmental-events/types${
+        windowHours && windowHours > 0 ? `?window_hours=${windowHours}` : ''
+      }`,
+    ),
 }

@@ -40,7 +40,7 @@ export function SituationTabs() {
   const { activeTab, setActiveTab } = useNationalSituation()
 
   return (
-    <section className="mt-6" data-testid="situation-tabs">
+    <section data-testid="situation-tabs">
       <div className="flex flex-wrap gap-1 border-b border-border-subtle">
         {SITUATION_TABS.map((tab) => (
           <button

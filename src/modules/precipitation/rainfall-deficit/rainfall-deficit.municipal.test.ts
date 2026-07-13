@@ -18,13 +18,14 @@ import {
 describe('municipal ADM2 layer', () => {
   const municipalities = loadMunicipalities()
 
-  it('loads all Guatemala municipalities (>=340) with valid pcodes', () => {
-    expect(municipalities.length).toBeGreaterThanOrEqual(340)
+  it('loads the 340 canonical municipalities with valid pcodes', () => {
+    expect(municipalities.length).toBe(340)
     for (const m of municipalities) {
       expect(m.pcode).toMatch(/^GT\d{4}$/)
       expect(m.name.length).toBeGreaterThan(0)
       expect(m.adm1Pcode).toMatch(/^GT\d{2}$/)
       expect(m.polygons.length).toBeGreaterThan(0)
+      expect(m.entityType).toBe('municipality')
     }
   })
 
@@ -68,6 +69,7 @@ describe('municipal ADM2 layer', () => {
       areaKm2: 0,
       centerLat: 15,
       centerLon: -90,
+      entityType: 'municipality',
       polygons: [],
       bbox: [Infinity, Infinity, -Infinity, -Infinity],
     }

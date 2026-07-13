@@ -7,11 +7,11 @@ import {
   fetchNationalReport,
 } from '../api/executive-demo-api'
 
-export function useExecutiveDashboard(includeDemo = false) {
+export function useExecutiveDashboard(includeDemo = false, periodHours = 48) {
   const authReady = useAuthQueryReady()
   return useQuery({
-    queryKey: ['executive-dashboard', includeDemo],
-    queryFn: () => fetchExecutiveDashboard(includeDemo),
+    queryKey: ['executive-dashboard', includeDemo, periodHours],
+    queryFn: () => fetchExecutiveDashboard(includeDemo, periodHours),
     staleTime: 30_000,
     enabled: authReady,
   })

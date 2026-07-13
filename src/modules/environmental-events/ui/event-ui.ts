@@ -24,6 +24,7 @@ export interface EventTypeCatalogEntry {
   label: string
   pluralLabel: string
   icon: string
+  accentColor: string
 }
 
 export function getEventTypeLabel(type: EnvironmentalEventType): string {
@@ -34,6 +35,11 @@ export function getEventTypeIcon(type: EnvironmentalEventType): string {
   return environmentalEventRegistry.getIcon(type)
 }
 
+/** Canonical accent color for the type (from manifest, neutral fallback). */
+export function getEventTypeColor(type: EnvironmentalEventType): string {
+  return environmentalEventRegistry.getAccentColor(type)
+}
+
 /** Catalog of enabled types for menus, tabs and legends. */
 export function buildEnabledEventTypeCatalog(): EventTypeCatalogEntry[] {
   return environmentalEventRegistry.listEnabled().map((m) => ({
@@ -41,6 +47,7 @@ export function buildEnabledEventTypeCatalog(): EventTypeCatalogEntry[] {
     label: m.label,
     pluralLabel: m.pluralLabel,
     icon: m.icon,
+    accentColor: environmentalEventRegistry.getAccentColor(m.type),
   }))
 }
 

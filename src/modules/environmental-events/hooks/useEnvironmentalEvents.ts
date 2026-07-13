@@ -30,11 +30,11 @@ export function useEnvironmentalEvent(id: string | undefined) {
   })
 }
 
-export function useEnvironmentalEventTypes() {
+export function useEnvironmentalEventTypes(windowHours?: number) {
   const authReady = useAuthQueryReady()
   return useQuery({
-    queryKey: ['environmental-events', 'types'],
-    queryFn: () => environmentalEventsApi.types(),
+    queryKey: ['environmental-events', 'types', windowHours ?? null],
+    queryFn: () => environmentalEventsApi.types(windowHours),
     staleTime: 60_000,
     enabled: authReady,
   })

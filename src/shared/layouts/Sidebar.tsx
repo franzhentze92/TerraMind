@@ -36,6 +36,13 @@ import {
 } from '@/shared/navigation/navigation-registry'
 import { canSeeNavItem, isFieldTechnicianOnly } from '@/shared/navigation/role-navigation'
 import { useSidebarLayout } from './SidebarLayoutContext'
+import { useDashboardEventTypes } from '@/modules/national-situation/hooks/useDashboardEventTypes'
+import { resolveEventTypeIcon } from '@/modules/environmental-events/ui/EventTypeIcon'
+
+/** Static monitoreo routes that already have a dedicated page (no dynamic entry). */
+const STATIC_EVENT_TYPE_ROUTES: Record<string, string> = {
+  thermal_activity: '/incendios',
+}
 
 const SECTION_ORDER: NavSectionKey[] = [
   'monitoreo',
@@ -119,6 +126,51 @@ function NavItemLink({
   )
 }
 
+function DynamicNavLink({
+  path,
+  title,
+  Icon,
+  collapsed,
+  onNavigate,
+}: {
+  path: string
+  title: string
+  Icon: typeof Home
+  collapsed: boolean
+  onNavigate?: () => void
+}) {
+  return (
+    <li>
+      <NavLink
+        to={path}
+        title={collapsed ? title : undefined}
+        onClick={onNavigate}
+        className={({ isActive }) =>
+          cn(
+            'group relative flex items-center gap-2.5 rounded-md px-2 py-1.5 text-sm transition-colors',
+            isActive ? 'text-text-primary' : 'text-text-secondary hover:text-text-primary',
+            collapsed && 'justify-center px-2',
+          )
+        }
+      >
+        {({ isActive }) => (
+          <>
+            {isActive && (
+              <motion.div
+                layoutId="sidebar-active"
+                className="absolute inset-0 rounded-md bg-surface-3"
+                transition={{ type: 'spring', stiffness: 350, damping: 30 }}
+              />
+            )}
+            <Icon className="relative h-4 w-4 shrink-0" />
+            {!collapsed && <span className="relative truncate">{title}</span>}
+          </>
+        )}
+      </NavLink>
+    </li>
+  )
+}
+
 function SidebarNav({
   collapsed,
   onNavigate,
@@ -127,6 +179,22 @@ function SidebarNav({
   onNavigate?: () => void
 }) {
   const { authContext } = useAuth()
+  const { types: enabledEventTypes } = useDashboardEventTypes()
+
+  // Registry-driven monitoreo entries for enabled types without a dedicated
+  // static page (thermal already lives at /incendios). Grows automatically as
+  // new types are enabled server-side; no hardcoded per-type list.
+  const dynamicMonitoreo = useMemo(
+    () =>
+      enabledEventTypes
+        .filter((t) => !STATIC_EVENT_TYPE_ROUTES[t.type])
+        .map((t) => ({
+          path: `/eventos/tipo/${t.type}`,
+          title: t.label,
+          Icon: resolveEventTypeIcon(t.icon),
+        })),
+    [enabledEventTypes],
+  )
 
   const visibleSections = useMemo(() => {
     const fieldOnly = isFieldTechnicianOnly(authContext)
@@ -160,6 +228,17 @@ function SidebarNav({
                   onNavigate={onNavigate}
                 />
               ))}
+              {section.key === 'monitoreo' &&
+                dynamicMonitoreo.map((d) => (
+                  <DynamicNavLink
+                    key={d.path}
+                    path={d.path}
+                    title={d.title}
+                    Icon={d.Icon}
+                    collapsed={collapsed}
+                    onNavigate={onNavigate}
+                  />
+                ))}
             </ul>
           </div>
         ))}

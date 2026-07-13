@@ -22,6 +22,16 @@ const BiodiversityAnalysisPage = lazy(() =>
     default: m.BiodiversityAnalysisPage,
   })),
 )
+const EnvironmentalEventDetailPage = lazy(() =>
+  import('@/modules/environmental-events/pages/EnvironmentalEventDetailPage').then((m) => ({
+    default: m.EnvironmentalEventDetailPage,
+  })),
+)
+const EnvironmentalEventTypeListPage = lazy(() =>
+  import('@/modules/environmental-events/pages/EnvironmentalEventTypeListPage').then((m) => ({
+    default: m.EnvironmentalEventTypeListPage,
+  })),
+)
 const NationalReportPage = lazy(() =>
   import('@/modules/executive-demo/pages/NationalReportPage').then((m) => ({
     default: m.NationalReportPage,
@@ -170,6 +180,8 @@ export const router = createBrowserRouter([
       { path: 'incendios', element: guard('incidents.view', <FireAnalysisPage />) },
       { path: 'incendios/:eventId', element: guard('incidents.view', <FireAnalysisPage />) },
       { path: 'biodiversidad', element: guard('findings.view', <BiodiversityAnalysisPage />) },
+      { path: 'eventos/tipo/:type', element: guard('findings.view', <EnvironmentalEventTypeListPage />) },
+      { path: 'eventos/:eventId', element: guard('findings.view', <EnvironmentalEventDetailPage />) },
       { path: 'copilot', element: guard('findings.view', <CopilotPage />) },
       { path: 'hallazgos', element: guard('findings.view', <FindingsPage />) },
       { path: 'hallazgos/:findingId', element: guard('findings.view', <FindingDetailPage />) },

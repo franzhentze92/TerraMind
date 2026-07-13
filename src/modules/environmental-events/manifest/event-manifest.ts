@@ -32,6 +32,12 @@ export interface EventRuntimeConfig {
 }
 
 /**
+ * Neutral fallback accent color for event types that do not declare one.
+ * The canonical per-type color lives in `EnvironmentalEventManifest.accentColor`.
+ */
+export const NEUTRAL_ACCENT_COLOR = '#94a3b8'
+
+/**
  * The single source of truth for an event type. Only bundle-safe (pure /
  * API-backed) pieces live here; server-only runtime (repository / detector /
  * source fetch) is wired by the plugin's `event.server.ts` via the server
@@ -45,6 +51,15 @@ export interface EnvironmentalEventManifest {
   shortLabel?: string
   description: string
   icon: string
+  /**
+   * Canonical accent color (hex) for this event type's global visual identity:
+   * KPI chips, donut/legend, badges, selected-event panel, timeline markers,
+   * dynamic navigation, and type-related hover/selected states. This is the SINGLE
+   * source of visual color for the type. Map renderers may keep internal severity
+   * scales, but their base color should originate from this value. Optional; when
+   * absent, consumers use `NEUTRAL_ACCENT_COLOR`.
+   */
+  accentColor?: string
   geometryKinds: EnvironmentalGeometryKind[]
 
   sources: ObservationSourceDescriptor[]
@@ -119,6 +134,10 @@ export function defineEnvironmentalEvent(
   }
   if (input.reportAdapter && input.reportAdapter.eventType !== input.type) {
     missing.push('reportAdapter.eventType-mismatch')
+  }
+
+  if (input.accentColor !== undefined && !/^#[0-9a-fA-F]{6}$/.test(input.accentColor)) {
+    missing.push('accentColor-invalid-hex')
   }
 
   if (missing.length > 0) {

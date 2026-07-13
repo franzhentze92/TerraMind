@@ -16,13 +16,18 @@ export async function handleExecutiveDashboardRoutes(
   }
 
   const includeDemo = searchParams.get('include_demo') === 'true'
+  const periodHours = Number.parseInt(searchParams.get('period_hours') ?? '48', 10)
 
   if (pathname === '/api/situacion/executive-dashboard') {
     const result = await runOperationalGuard(
       req,
       res,
       { permission: 'findings.view', rateLimit: 'default_read', auditType: 'executive_dashboard' },
-      async (auth) => getExecutiveDashboard(auth, { include_demo: includeDemo }),
+      async (auth) =>
+        getExecutiveDashboard(auth, {
+          include_demo: includeDemo,
+          period_hours: Number.isFinite(periodHours) && periodHours > 0 ? periodHours : 48,
+        }),
     )
     if (result === null) return true
     jsonResponse(req, res, result)

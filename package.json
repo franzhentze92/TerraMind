@@ -83,6 +83,7 @@
     "product-truth:audit": "tsx scripts/product-truth-audit.ts",
     "product-navigation:audit": "tsx scripts/product-navigation-audit.ts",
     "national-situation:audit": "tsx scripts/national-situation-audit.ts",
+    "national-dashboard:audit": "tsx scripts/national-dashboard-audit.ts",
     "thermal-module:audit": "tsx scripts/thermal-module-audit.ts",
     "environmental-event-framework:audit": "tsx scripts/environmental-event-framework-audit.ts",
     "rainfall-deficit:activation-audit": "tsx scripts/rainfall-deficit-activation-audit.ts",

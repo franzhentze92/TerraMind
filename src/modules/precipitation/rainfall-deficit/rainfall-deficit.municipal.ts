@@ -5,6 +5,11 @@
  * aggregates precipitation with area weighting (cos-latitude cell area). Municipal
  * percentiles are derived from municipal-level accumulated series — NEVER by
  * averaging per-cell percentiles.
+ *
+ * The ADM2 layer contains 342 geometries: 340 canonical municipalities plus 2
+ * lake entities (Lago De Amatitlán GT0100, Lago De Atitlán GT0700). Lakes are
+ * classified explicitly and excluded from municipal counts/aggregation, but their
+ * geometry is preserved for spatial operations via `loadAdm2Entities()`.
  */
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
@@ -14,6 +19,15 @@ export const ADM2_GEOJSON_PATH = resolve(
   'data/geo/sources/hdx-cod-ab-guatemala/2025-10-30-v01/extracted/gtm_admin2.geojson',
 )
 
+/** Canonical count of Guatemalan municipalities (excludes lake entities). */
+export const GUATEMALA_MUNICIPALITY_COUNT = 340
+
+/** ADM2 entity classification: only municipalities are counted as municipios. */
+export type AdministrativeEntityType = 'municipality' | 'lake' | 'special_area'
+
+/** pcodes of the 2 lake entities present in the ADM2 layer. */
+export const ADM2_LAKE_PCODES = ['GT0100', 'GT0700'] as const
+
 export interface Municipality {
   pcode: string
   name: string
@@ -22,9 +36,22 @@ export interface Municipality {
   areaKm2: number
   centerLat: number
   centerLon: number
+  /** Classified ADM2 entity type. Municipal aggregation uses `municipality` only. */
+  entityType: AdministrativeEntityType
   /** MultiPolygon rings: polygons[ring][point] = [lon, lat]; ring 0 = outer. */
   polygons: number[][][][]
   bbox: [number, number, number, number]
+}
+
+/**
+ * Classify an ADM2 entity. The HDX COD-AB Guatemala dataset encodes the 2 lake
+ * bodies with a pcode ending in `00` and a name prefixed "Lago De". Everything
+ * else is a municipality.
+ */
+export function classifyAdm2Entity(pcode: string, name: string): AdministrativeEntityType {
+  if ((ADM2_LAKE_PCODES as readonly string[]).includes(pcode)) return 'lake'
+  if (/^lago\b/i.test(name.trim())) return 'lake'
+  return 'municipality'
 }
 
 interface GeoFeature {
@@ -56,26 +83,46 @@ function bboxOf(polygons: number[][][][]): [number, number, number, number] {
   return [minLon, minLat, maxLon, maxLat]
 }
 
+let cachedEntities: Municipality[] | null = null
 let cachedMunicipalities: Municipality[] | null = null
 
-export function loadMunicipalities(force = false): Municipality[] {
-  if (cachedMunicipalities && !force) return cachedMunicipalities
+/** All 342 ADM2 geometries, each classified (municipality | lake | special_area). */
+export function loadAdm2Entities(force = false): Municipality[] {
+  if (cachedEntities && !force) return cachedEntities
   const raw = JSON.parse(readFileSync(ADM2_GEOJSON_PATH, 'utf8')) as { features: GeoFeature[] }
-  cachedMunicipalities = raw.features.map((f) => {
+  cachedEntities = raw.features.map((f) => {
     const p = f.properties
     const polygons = toPolygons(f.geometry)
+    const pcode = String(p.adm2_pcode ?? '')
+    const name = String(p.adm2_name ?? p.adm2_ref_name ?? '')
     return {
-      pcode: String(p.adm2_pcode ?? ''),
-      name: String(p.adm2_name ?? p.adm2_ref_name ?? ''),
+      pcode,
+      name,
       adm1Name: String(p.adm1_name ?? ''),
       adm1Pcode: String(p.adm1_pcode ?? ''),
       areaKm2: Number(p.area_sqkm ?? 0),
       centerLat: Number(p.center_lat ?? 0),
       centerLon: Number(p.center_lon ?? 0),
+      entityType: classifyAdm2Entity(pcode, name),
       polygons,
       bbox: bboxOf(polygons),
     }
   })
+  return cachedEntities
+}
+
+/** Lake entities (2), preserved for spatial operations but never counted as municipios. */
+export function loadAdm2Lakes(force = false): Municipality[] {
+  return loadAdm2Entities(force).filter((e) => e.entityType === 'lake')
+}
+
+/**
+ * The 340 canonical municipalities (lakes excluded). Used for municipal
+ * aggregation and every public municipal count.
+ */
+export function loadMunicipalities(force = false): Municipality[] {
+  if (cachedMunicipalities && !force) return cachedMunicipalities
+  cachedMunicipalities = loadAdm2Entities(force).filter((e) => e.entityType === 'municipality')
   return cachedMunicipalities
 }
 

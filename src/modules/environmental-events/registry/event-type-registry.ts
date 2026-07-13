@@ -19,6 +19,7 @@ import type { EventPriorityFactorProvider } from '@/modules/environmental-events
 import type { EnvironmentalFindingRule } from '@/modules/environmental-events/contracts/finding-rule'
 import type { EventReportAdapter } from '@/modules/environmental-events/contracts/report-adapter'
 import type { EnvironmentalEventManifest } from '@/modules/environmental-events/manifest/event-manifest'
+import { NEUTRAL_ACCENT_COLOR } from '@/modules/environmental-events/manifest/event-manifest'
 import { environmentalFindingRuleRegistry } from '@/modules/environmental-events/registry/finding-rule-registry'
 
 /** Back-compat alias: a definition IS a manifest. */
@@ -112,6 +113,11 @@ export class EnvironmentalEventRegistry {
 
   getIcon(type: EnvironmentalEventType): string {
     return this.get(type).icon
+  }
+
+  /** Canonical accent color for the type, with neutral fallback. Single source of truth. */
+  getAccentColor(type: EnvironmentalEventType): string {
+    return this.get(type).accentColor ?? NEUTRAL_ACCENT_COLOR
   }
 
   getGeometryKinds(type: EnvironmentalEventType): EnvironmentalGeometryKind[] {
