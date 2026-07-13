@@ -59,6 +59,7 @@ const ICON_BY_PATH: Record<string, typeof Home> = {
   '/biodiversidad': Leaf,
   '/territorio': Map,
   '/hallazgos': Search,
+  '/noticias': Globe,
   '/prioridades': AlertCircle,
   '/incidentes': Layers,
   '/verificaciones': CheckCircle2,

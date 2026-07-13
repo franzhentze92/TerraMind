@@ -56,6 +56,12 @@ const FindingsPage = lazy(() =>
 const FindingDetailPage = lazy(() =>
   import('@/modules/findings/pages/FindingDetailPage').then((m) => ({ default: m.FindingDetailPage })),
 )
+const NewsLivePage = lazy(() =>
+  import('@/modules/news/pages/NewsLivePage').then((m) => ({ default: m.NewsLivePage })),
+)
+const NewsDocumentDetailPage = lazy(() =>
+  import('@/modules/news/pages/NewsDocumentDetailPage').then((m) => ({ default: m.NewsDocumentDetailPage })),
+)
 const PrioritiesPage = lazy(() =>
   import('@/modules/priorities/pages/PrioritiesPage').then((m) => ({ default: m.PrioritiesPage })),
 )
@@ -185,6 +191,8 @@ export const router = createBrowserRouter([
       { path: 'copilot', element: guard('findings.view', <CopilotPage />) },
       { path: 'hallazgos', element: guard('findings.view', <FindingsPage />) },
       { path: 'hallazgos/:findingId', element: guard('findings.view', <FindingDetailPage />) },
+      { path: 'noticias', element: guard('news.view', <NewsLivePage />) },
+      { path: 'noticias/:documentId', element: guard('news.view', <NewsDocumentDetailPage />) },
       { path: 'prioridades', element: guard('priorities.view', <PrioritiesPage />) },
       { path: 'prioridades/:priorityId', element: guard('priorities.view', <PriorityDetailPage />) },
       { path: 'incidentes', element: guard('incidents.view', <IncidentsPage />) },

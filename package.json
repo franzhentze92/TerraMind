@@ -95,6 +95,8 @@
     "event:validate": "tsx scripts/event-validate.ts",
     "event:test": "tsx scripts/event-test.ts",
     "intelligence-flow:audit": "tsx scripts/intelligence-flow-audit.ts",
+    "news:audit": "tsx scripts/news-audit.ts",
+    "news:ingest": "tsx scripts/news-ingest.ts",
     "operational-empty-states:audit": "tsx scripts/operational-empty-states-audit.ts",
     "professional-reports:audit": "tsx scripts/professional-reports-audit.ts",
     "auth:bootstrap-admin": "tsx scripts/bootstrap-platform-admin.ts",

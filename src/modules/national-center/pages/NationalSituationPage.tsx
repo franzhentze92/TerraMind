@@ -2,6 +2,7 @@ import { useAuth } from '@/core/auth/AuthProvider'
 import { isAuthOperational } from '@/core/auth/auth-status'
 import { NationalSituationProvider } from '@/modules/national-situation/NationalSituationContext'
 import { ExecutiveOverview } from '@/modules/national-situation/components/ExecutiveOverview'
+import { RecentNewsIndicator } from '@/modules/news/components/RecentNewsIndicator'
 import {
   IntelligenceLineDrawer,
 } from '@/modules/national-situation/components/IntelligenceLineDrawer'
@@ -44,6 +45,9 @@ export function NationalSituationPage() {
     >
       <div className="mx-auto max-w-[1600px] px-4 py-6 md:px-6">
         <NationalSituationProvider>
+          <div className="mb-4">
+            <RecentNewsIndicator />
+          </div>
           <NationalSituationContent />
         </NationalSituationProvider>
       </div>

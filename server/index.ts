@@ -33,6 +33,7 @@ import { handleIncidentStoryRoutes } from './routes/incident-story.js'
 import { handleReportsRoutes } from './routes/reports.js'
 import { handleIntelligenceFlowRoutes } from './routes/intelligence-flow.js'
 import { handleEnvironmentalEventsRoutes } from './routes/environmental-events.js'
+import { handleNewsRoutes } from './routes/news.js'
 
 config({ path: resolve(process.cwd(), '.env') })
 
@@ -53,6 +54,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
   if (await handleAuthRoutes(req, res, pathname)) return
   if (await handleFireRoutes(req, res, pathname, url.searchParams)) return
   if (await handleEnvironmentalEventsRoutes(req, res, pathname, url.searchParams)) return
+  if (await handleNewsRoutes(req, res, pathname, url.searchParams)) return
   if (await handleClimateRoutes(req, res, pathname, url.searchParams)) return
   if (await handleBiodiversityRoutes(req, res, pathname, url.searchParams)) return
   if (await handleFindingsRoutes(req, res, pathname, url.searchParams)) return
