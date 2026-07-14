@@ -148,6 +148,10 @@ export function NewsDocumentDetailPage() {
           <div className="grid grid-cols-2 gap-3">
             <Field label="Fuente" value={doc.provenance.source_name} />
             <Field
+              label="Tipo"
+              value={doc.provenance.source_kind_label ?? 'Fuente periodística'}
+            />
+            <Field
               label="Método de descubrimiento"
               value={DISCOVERY_METHOD_LABELS[doc.provenance.discovery_method] ?? doc.provenance.discovery_method}
             />

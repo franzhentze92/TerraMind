@@ -40,8 +40,15 @@ export async function fetchNewsDocumentDetail(id: string): Promise<NewsDocumentD
   return res.json() as Promise<NewsDocumentDetailDto>
 }
 
+/** @deprecated Preferir runNewsSourceIngestion(code) */
 export async function runPrensaLibreIngestion(): Promise<NewsIngestionResultDto> {
-  const res = await authFetch('/api/news/sources/prensa-libre/ingest', { method: 'POST' })
+  return runNewsSourceIngestion('prensa_libre_gt')
+}
+
+export async function runNewsSourceIngestion(sourceCode: string): Promise<NewsIngestionResultDto> {
+  const res = await authFetch(`/api/news/sources/${encodeURIComponent(sourceCode)}/ingest`, {
+    method: 'POST',
+  })
   if (!res.ok) {
     const body = (await res.json().catch(() => ({}))) as { error?: string }
     throw new Error(body.error ?? 'Error al ejecutar la ingesta')
@@ -49,15 +56,27 @@ export async function runPrensaLibreIngestion(): Promise<NewsIngestionResultDto>
   return res.json() as Promise<NewsIngestionResultDto>
 }
 
-export async function fetchNewsIngestionRuns(): Promise<NewsIngestionRunDto[]> {
-  const res = await authFetch('/api/news/ingestion-runs')
+export async function estimateNewsSourceIngestion(sourceCode: string): Promise<Record<string, unknown>> {
+  const res = await authFetch(`/api/news/sources/${encodeURIComponent(sourceCode)}/inspect`, {
+    method: 'POST',
+  })
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string }
+    throw new Error(body.error ?? 'Error al estimar la ingesta')
+  }
+  return res.json() as Promise<Record<string, unknown>>
+}
+
+export async function fetchNewsIngestionRuns(sourceId?: string): Promise<NewsIngestionRunDto[]> {
+  const params = new URLSearchParams()
+  if (sourceId) params.set('source_id', sourceId)
+  const qs = params.toString()
+  const res = await authFetch(`/api/news/ingestion-runs${qs ? `?${qs}` : ''}`)
   if (!res.ok) throw new Error('No se pudo cargar el historial de ingestas')
   const data = (await res.json()) as { items: NewsIngestionRunDto[] }
   return data.items
 }
 
 export async function inspectPrensaLibreSource(): Promise<Record<string, unknown>> {
-  const res = await authFetch('/api/news/sources/prensa-libre/inspect', { method: 'POST' })
-  if (!res.ok) throw new Error('No se pudo inspeccionar la fuente')
-  return res.json() as Promise<Record<string, unknown>>
+  return estimateNewsSourceIngestion('prensa_libre_gt')
 }

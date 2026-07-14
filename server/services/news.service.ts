@@ -1,7 +1,9 @@
 /**
- * News API service (Bloque N1).
+ * News API service (Bloque N1 / N1.5).
  */
 import type { RequestAuthContext } from '@/core/auth/permissions'
+import { listRegisteredConnectors } from '@/modules/news/connectors/registry'
+import { deriveSourceHealth } from '@/modules/news/engines/source-health'
 import {
   ACCESS_POLICY_LABELS,
   CONTENT_RETENTION_LABELS,
@@ -117,6 +119,15 @@ export async function listNewsSourcesDto(): Promise<NewsSourceDto[]> {
   const rows = await listNewsSources()
   return rows.map((row) => {
     const s = mapSourceRow(row)
+    const health = deriveSourceHealth({
+      isEnabled: s.isEnabled,
+      discoveryMethod: s.discoveryMethod,
+      baseUrl: s.baseUrl,
+      consecutiveFailureCount: s.consecutiveFailureCount,
+      lastSuccessfulIngestionAt: s.lastSuccessfulIngestionAt,
+      lastFailedIngestionAt: s.lastFailedIngestionAt,
+      hasConnector: listRegisteredConnectors().includes(s.code),
+    })
     return {
       id: s.id,
       code: s.code,
@@ -131,6 +142,9 @@ export async function listNewsSourcesDto(): Promise<NewsSourceDto[]> {
       last_successful_ingestion_at: s.lastSuccessfulIngestionAt,
       last_failed_ingestion_at: s.lastFailedIngestionAt,
       consecutive_failure_count: s.consecutiveFailureCount,
+      health_code: health.code,
+      health_label: health.label,
+      attribution_label: 'Fuente periodística',
     }
   })
 }
@@ -210,7 +224,8 @@ export async function getNewsDocumentDetailDto(id: string): Promise<NewsDocument
       event_grouping_status: 'Esta noticia todavía no ha sido agrupada en un evento.',
     },
     provenance: {
-      source_name: source?.name ?? 'Prensa Libre',
+      source_name: source?.name ?? 'Fuente desconocida',
+      source_kind_label: 'Fuente periodística',
       discovery_method: source?.discovery_method ?? 'news_sitemap',
       captured_at: doc.capturedAt,
       canonical_url: doc.canonicalUrl,
@@ -250,14 +265,31 @@ export async function inspectPrensaLibreSource(_auth: RequestAuthContext) {
 }
 
 export async function ingestPrensaLibre(_auth: RequestAuthContext): Promise<NewsIngestionResultDto> {
-  const source = await getNewsSourceByCode('prensa_libre_gt')
-  const result = await runNewsIngestion('prensa_libre_gt')
-  return {
-    run: mapRunDto(result.run, source?.name ?? 'Prensa Libre'),
-    inspection: result.inspection as unknown as Record<string, unknown> | undefined,
-  }
+  return ingestNewsSourceByCode(_auth, 'prensa_libre_gt')
 }
 
 export async function reprocessPrensaLibre(_auth: RequestAuthContext) {
   return reprocessSourceAnalysis('prensa_libre_gt')
+}
+
+/** Ingesta genérica por código de fuente (multi-fuente). */
+export async function ingestNewsSourceByCode(
+  _auth: RequestAuthContext,
+  code: string,
+): Promise<NewsIngestionResultDto> {
+  const source = await getNewsSourceByCode(code)
+  if (!source) throw new Error(`Fuente no registrada: ${code}`)
+  const result = await runNewsIngestion(code)
+  return {
+    run: mapRunDto(result.run, source.name),
+    inspection: result.inspection as unknown as Record<string, unknown> | undefined,
+  }
+}
+
+export async function inspectNewsSourceByCode(_auth: RequestAuthContext, code: string) {
+  return inspectNewsSource(code)
+}
+
+export async function reprocessNewsSourceByCode(_auth: RequestAuthContext, code: string) {
+  return reprocessSourceAnalysis(code)
 }

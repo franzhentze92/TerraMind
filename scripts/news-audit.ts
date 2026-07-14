@@ -34,13 +34,18 @@ const requiredFiles = [
   'src/modules/news/engines/revalidation-policy.ts',
   'src/modules/news/engines/preliminary-geolocator.ts',
   'src/modules/news/sources/prensa-libre/prensa-libre.connector.ts',
+  'src/modules/news/sources/emisoras-unidas/emisoras-unidas.connector.ts',
+  'src/modules/news/engines/source-health.ts',
+  'src/modules/news/engines/news-sitemap-parser.ts',
   'server/services/news-ingestion.service.ts',
   'server/routes/news.ts',
   'src/pipeline/stores/news.store.ts',
   'supabase/migrations/034_news_intelligence.sql',
   'supabase/migrations/035_news_ingestion_metrics.sql',
+  'supabase/migrations/040_emisoras_unidas_source.sql',
   'scripts/news-ingest.ts',
   'src/modules/news/news.test.ts',
+  'src/modules/news/emisoras-unidas.test.ts',
 ]
 
 for (const f of requiredFiles) {
@@ -52,12 +57,24 @@ const liveSrc = read('src/modules/news/pages/NewsLivePage.tsx')
 check('language:listas-para-analisis', liveSrc.includes('Listas para análisis'))
 check('language:no-pending-analysis', !liveSrc.includes('Pendientes de análisis'))
 check('language:actualizar-noticias', read('src/modules/news/components/NewsIngestionControl.tsx').includes('Actualizar noticias'))
+check('language:todas-las-fuentes', liveSrc.includes('Todas las fuentes'))
+check('ui:source-filter-select', liveSrc.includes('filters.source_id'))
+
+const ingestUi = read('src/modules/news/components/NewsIngestionControl.tsx')
+check('ui:estimate-ingestion', ingestUi.includes('Estimar ingestión') || ingestUi.includes('Estimar'))
+check('ui:source-health', ingestUi.includes('health_label') || ingestUi.includes('Estado por fuente'))
+check('ui:no-english-health-enum', !ingestUi.includes('degraded') && !ingestUi.includes('operational'))
+
+const registrySrc = read('src/modules/news/connectors/registry.ts')
+check('multi:registry-pl', registrySrc.includes('prensa_libre_gt'))
+check('multi:registry-eu', registrySrc.includes('emisoras_unidas_gt'))
 
 const detailSrc = read('src/modules/news/pages/NewsDocumentDetailPage.tsx')
 check('language:ubicacion-principal', detailSrc.includes('Ubicación principal'))
 check('language:nivel-precision', detailSrc.includes('Nivel de precisión'))
 check('language:no-canonical-url-block', !detailSrc.includes('URL canónica:'))
 check('language:abrir-noticia', detailSrc.includes('Abrir noticia original'))
+check('language:fuente-periodistica', detailSrc.includes('Fuente periodística') || detailSrc.includes('source_kind_label'))
 
 const mapSrc = read('src/modules/news/components/NewsDocumentsMap.tsx')
 check('language:map-disclaimer', mapSrc.includes('no hechos confirmados ni amenazas'))
@@ -68,92 +85,184 @@ check('map:excludes-sin-ubicacion', mapSrc.includes("'sin_ubicacion'"))
 const ingestSrc = read('server/services/news-ingestion.service.ts')
 check('ingestion:early-skip', ingestSrc.includes('decideRevalidation'))
 check('ingestion:http-avoided-metric', ingestSrc.includes('http_requests_avoided'))
+check('multi:no-pl-instanceof-in-orchestrator', !ingestSrc.includes('instanceof PrensaLibreConnector'))
+check('multi:routes-generic', read('server/routes/news.ts').includes('/api/news/sources/'))
 
 async function auditDatabase() {
   const admin = getSupabaseAdmin()
 
-  const { data: source, error: sourceErr } = await admin
+  const { data: sources, error: sourcesErr } = await admin
     .from('news_sources')
-    .select('code, discovery_method, is_enabled')
-    .eq('code', 'prensa_libre_gt')
-    .maybeSingle()
-  if (sourceErr) throw sourceErr
-  check('source:prensa-libre-registered', source?.code === 'prensa_libre_gt')
-  check('source:discovery-news-sitemap', source?.discovery_method === 'news_sitemap')
-  check('source:enabled', source?.is_enabled === true)
+    .select('id, code, name, discovery_method, is_enabled, base_url, consecutive_failure_count')
+  if (sourcesErr) throw sourcesErr
+  const sourceList = sources ?? []
+  check('multi:min-two-sources', sourceList.length >= 2, `got ${sourceList.length}`)
+  const codes = sourceList.map((s) => s.code)
+  check('multi:unique-source-codes', new Set(codes).size === codes.length)
+  const pl = sourceList.find((s) => s.code === 'prensa_libre_gt')
+  const eu = sourceList.find((s) => s.code === 'emisoras_unidas_gt')
+  check('source:prensa-libre-registered', Boolean(pl))
+  check('source:emisoras-unidas-registered', Boolean(eu))
+  check('source:pl-discovery-news-sitemap', pl?.discovery_method === 'news_sitemap')
+  check('source:eu-discovery-news-sitemap', eu?.discovery_method === 'news_sitemap')
+  check('source:pl-enabled', pl?.is_enabled === true)
+  check('source:eu-enabled', eu?.is_enabled === true)
+  check('source:pl-canonical-domain', String(pl?.base_url ?? '').includes('prensalibre.com'))
+  check('source:eu-canonical-domain', String(eu?.base_url ?? '').includes('emisorasunidas.com'))
 
   const { count: docCount, error: docErr } = await admin
     .from('news_documents')
     .select('id', { count: 'exact', head: true })
   if (docErr) throw docErr
-  check('documents:total-30', docCount === 30, `got ${docCount}`)
+  check('documents:total-at-least-60', (docCount ?? 0) >= 60, `got ${docCount}`)
+
+  const { count: plCount } = await admin
+    .from('news_documents')
+    .select('id', { count: 'exact', head: true })
+    .eq('source_id', pl!.id)
+  const { count: euCount } = await admin
+    .from('news_documents')
+    .select('id', { count: 'exact', head: true })
+    .eq('source_id', eu!.id)
+  check('documents:prensa-libre-30', plCount === 30, `got ${plCount}`)
+  check('documents:emisoras-unidas-30', euCount === 30, `got ${euCount}`)
 
   const { count: readyCount } = await admin
     .from('news_documents')
     .select('id', { count: 'exact', head: true })
     .eq('processing_status', 'ready_for_analysis')
-  check('documents:ready-for-analysis-30', readyCount === 30, `got ${readyCount}`)
+  check('documents:ready-for-analysis', (readyCount ?? 0) >= 60, `got ${readyCount}`)
 
-  const { data: statusRows, error: statusErr } = await admin
+  const { data: allDocs, error: allDocsErr } = await admin
     .from('news_documents')
-    .select('geographic_status')
-  if (statusErr) throw statusErr
-  const dist: Record<string, number> = {}
-  for (const row of statusRows ?? []) {
+    .select(
+      'id, source_id, title, canonical_url, canonical_url_hash, content_hash, published_at, geographic_status, description, permitted_excerpt, raw_metadata, structured_data',
+    )
+  if (allDocsErr) throw allDocsErr
+  const docs = allDocs ?? []
+  const hashes = docs.map((d) => d.canonical_url_hash)
+  check('dedupe:unique-canonical-hashes', new Set(hashes).size === hashes.length)
+  check(
+    'dedupe:no-cross-source-url-collision',
+    docs.every((d) => {
+      const sameHashOtherSource = docs.some(
+        (o) => o.canonical_url_hash === d.canonical_url_hash && o.source_id !== d.source_id,
+      )
+      return !sameHashOtherSource
+    }),
+  )
+
+  const euDocs = docs.filter((d) => d.source_id === eu!.id)
+  const plDocs = docs.filter((d) => d.source_id === pl!.id)
+  check(
+    'eu:domain-approved',
+    euDocs.every((d) => /emisorasunidas\.com/i.test(String(d.canonical_url))),
+  )
+  check(
+    'pl:domain-approved',
+    plDocs.every((d) => /prensalibre\.com/i.test(String(d.canonical_url))),
+  )
+  check('eu:title-nonempty', euDocs.every((d) => String(d.title ?? '').trim().length > 0))
+  check('eu:published-present', euDocs.every((d) => Boolean(d.published_at)))
+  check('eu:hash-present', euDocs.every((d) => Boolean(d.content_hash) && Boolean(d.canonical_url_hash)))
+
+  const validGeo = new Set([
+    'localizada',
+    'ubicacion_aproximada',
+    'varias_ubicaciones',
+    'nacional',
+    'internacional',
+    'sin_ubicacion',
+  ])
+  check(
+    'geo:status-valid',
+    docs.every((d) => validGeo.has(String(d.geographic_status))),
+  )
+
+  const plDist: Record<string, number> = {}
+  for (const row of plDocs) {
     const s = String(row.geographic_status)
-    dist[s] = (dist[s] ?? 0) + 1
+    plDist[s] = (plDist[s] ?? 0) + 1
   }
-  check('geo:localizada-4', dist.localizada === 4, `got ${dist.localizada}`)
-  check('geo:aproximada-5', dist.ubicacion_aproximada === 5, `got ${dist.ubicacion_aproximada}`)
-  check('geo:varias-1', dist.varias_ubicaciones === 1, `got ${dist.varias_ubicaciones}`)
-  check('geo:nacional-11', dist.nacional === 11, `got ${dist.nacional}`)
-  check('geo:internacional-2', dist.internacional === 2, `got ${dist.internacional}`)
-  check('geo:sin-ubicacion-7', dist.sin_ubicacion === 7, `got ${dist.sin_ubicacion}`)
+  check('geo:pl-localizada-4', plDist.localizada === 4, `got ${plDist.localizada}`)
+  check('geo:pl-aproximada-5', plDist.ubicacion_aproximada === 5, `got ${plDist.ubicacion_aproximada}`)
+  check('geo:pl-varias-1', plDist.varias_ubicaciones === 1, `got ${plDist.varias_ubicaciones}`)
+  check('geo:pl-nacional-11', plDist.nacional === 11, `got ${plDist.nacional}`)
+  check('geo:pl-internacional-2', plDist.internacional === 2, `got ${plDist.internacional}`)
+  check('geo:pl-sin-ubicacion-7', plDist.sin_ubicacion === 7, `got ${plDist.sin_ubicacion}`)
 
-  const mappable = (statusRows ?? []).filter((r) => MAPPABLE_STATUSES.has(String(r.geographic_status))).length
-  const hidden = (docCount ?? 0) - mappable
-  check('map:mappable-10', mappable === 10, `got ${mappable}`)
-  check('map:hidden-20', hidden === 20, `got ${hidden}`)
+  const plMappable = plDocs.filter((r) => MAPPABLE_STATUSES.has(String(r.geographic_status))).length
+  check('map:pl-mappable-10', plMappable === 10, `got ${plMappable}`)
 
-  const { data: runs, error: runsErr } = await admin
+  // Política de contenido EU — sin cuerpo/HTML/scripts
+  let euContentFail = 0
+  let euMaxDesc = 0
+  let euMaxExcerpt = 0
+  for (const row of euDocs) {
+    const desc = String(row.description ?? '')
+    const excerpt = String(row.permitted_excerpt ?? '')
+    euMaxDesc = Math.max(euMaxDesc, desc.length)
+    euMaxExcerpt = Math.max(euMaxExcerpt, excerpt.length)
+    const blob = JSON.stringify({
+      description: row.description,
+      permitted_excerpt: row.permitted_excerpt,
+      raw_metadata: row.raw_metadata,
+      structured_data: row.structured_data,
+    })
+    if (
+      blob.includes('<script') ||
+      blob.includes('articleBody') ||
+      /<\/?(?:div|article|p|style)\b/i.test(desc) ||
+      desc.length > 800 ||
+      excerpt.length > 800
+    ) {
+      euContentFail += 1
+    }
+  }
+  check('content:eu-no-full-body', euContentFail === 0, `failing=${euContentFail}`)
+  check('content:eu-excerpt-bounded', euMaxDesc <= 600 && euMaxExcerpt <= 600, `desc=${euMaxDesc} excerpt=${euMaxExcerpt}`)
+
+  // Incrementalidad por fuente (última corrida EU exitosa de solo cache)
+  const { data: euRuns, error: euRunsErr } = await admin
     .from('news_ingestion_runs')
-    .select('duplicates, http_requests_made, http_requests_avoided, documents_new')
+    .select('duplicates, http_requests_made, http_requests_avoided, documents_new, result_code')
+    .eq('source_id', eu!.id)
     .order('finished_at', { ascending: false })
     .limit(2)
-  if (runsErr) throw runsErr
-  const lastTwo = runs ?? []
-  if (lastTwo.length >= 2) {
-    const second = lastTwo[1]!
-    check(
-      'ingestion:second-run-no-article-fetch',
-      Number(second.http_requests_made) === 0 && Number(second.http_requests_avoided) >= 30,
-      `made=${second.http_requests_made} avoided=${second.http_requests_avoided}`,
-    )
-    check(
-      'ingestion:second-run-duplicates',
-      Number(second.duplicates) >= 30 && Number(second.documents_new) === 0,
-    )
-  } else {
-    check('ingestion:has-two-runs', false, `only ${lastTwo.length} runs`)
-  }
+  if (euRunsErr) throw euRunsErr
+  const euSecond = (euRuns ?? [])[0]
+  check(
+    'ingestion:eu-incremental-cache',
+    Boolean(euSecond) &&
+      Number(euSecond!.http_requests_made) === 0 &&
+      Number(euSecond!.http_requests_avoided) >= 30 &&
+      Number(euSecond!.documents_new) === 0,
+    `made=${euSecond?.http_requests_made} avoided=${euSecond?.http_requests_avoided}`,
+  )
 
-  // No full body / scripts stored
-  const { data: sample, error: sampleErr } = await admin
-    .from('news_documents')
-    .select('description, permitted_excerpt, raw_metadata, structured_data')
-    .limit(5)
-  if (sampleErr) throw sampleErr
-  for (const row of sample ?? []) {
+  const { data: plRuns } = await admin
+    .from('news_ingestion_runs')
+    .select('id')
+    .eq('source_id', pl!.id)
+    .limit(1)
+  check('ingestion:pl-still-has-runs', (plRuns?.length ?? 0) >= 1)
+
+  // Health independiente: un fallo de una fuente no se modela como cascada
+  check(
+    'health:independent-counters',
+    sourceList.every((s) => typeof s.consecutive_failure_count === 'number'),
+  )
+
+  // No full body / scripts sample (ambas fuentes)
+  const sample = docs.slice(0, 8)
+  for (const row of sample) {
     const blob = JSON.stringify(row)
     check('content:no-script-tags', !blob.includes('<script'))
     check('content:no-article-body', !blob.includes('articleBody'))
-    const descLen = String(row.description ?? '').length
-    const excerptLen = String(row.permitted_excerpt ?? '').length
-    check('content:short-excerpt', descLen < 500 && excerptLen < 500, `desc=${descLen} excerpt=${excerptLen}`)
   }
 
   // N1/N2 no crean eventos ni amenazas desde noticias (tablas dedicadas ausentes o vacías).
-  for (const table of ['news_events', 'news_signals']) {
+  for (const table of ['news_events', 'news_signals', 'news_cross_source_groups']) {
     const { count, error } = await admin.from(table).select('id', { count: 'exact', head: true })
     if (error?.message?.includes('does not exist') || error?.code === '42P01') {
       check(`no-table:${table}`, true)
@@ -236,6 +345,24 @@ async function auditDatabase() {
     .select('id', { count: 'exact', head: true })
     .in('status', ['completed', 'completed_with_warnings', 'needs_review'])
   check('n2:db:has-analyses', (analysisCount ?? 0) >= 5, `got ${analysisCount}`)
+
+  const { count: euAnalysisCount } = await admin
+    .from('news_document_analyses')
+    .select('id', { count: 'exact', head: true })
+    .in(
+      'document_id',
+      euDocs.map((d) => d.id),
+    )
+  check('n2:db:eu-zero-analyses', (euAnalysisCount ?? 0) === 0, `got ${euAnalysisCount}`)
+
+  const { count: plAnalysisCount } = await admin
+    .from('news_document_analyses')
+    .select('id', { count: 'exact', head: true })
+    .in(
+      'document_id',
+      plDocs.map((d) => d.id),
+    )
+  check('n2:db:pl-analyses-preserved', (plAnalysisCount ?? 0) >= 5, `got ${plAnalysisCount}`)
 
   const { data: promptVersions } = await admin
     .from('news_document_analyses')

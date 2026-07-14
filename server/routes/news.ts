@@ -1,13 +1,15 @@
 /**
- * News API (Bloque N1).
+ * News API (Bloque N1 / N1.5-A).
  *
  *   GET  /api/news/sources
  *   GET  /api/news/documents
  *   GET  /api/news/documents/:id
  *   GET  /api/news/summary
  *   GET  /api/news/ingestion-runs
- *   POST /api/news/sources/prensa-libre/inspect
- *   POST /api/news/sources/prensa-libre/ingest
+ *   POST /api/news/sources/:code/inspect
+ *   POST /api/news/sources/:code/ingest
+ *   POST /api/news/sources/:code/reprocess
+ *   (compat) POST /api/news/sources/prensa-libre/{inspect|ingest|reprocess}
  */
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { runOperationalGuard } from '../middleware/operational-guard.js'
@@ -17,12 +19,12 @@ import { readJsonBody } from '../http/body.js'
 import {
   getNewsDocumentDetailDto,
   getNewsSummaryDto,
-  ingestPrensaLibre,
-  inspectPrensaLibreSource,
+  ingestNewsSourceByCode,
+  inspectNewsSourceByCode,
   listNewsDocumentsDto,
   listNewsIngestionRunsDto,
   listNewsSourcesDto,
-  reprocessPrensaLibre,
+  reprocessNewsSourceByCode,
 } from '../services/news.service.js'
 import {
   analyzeNewsDocumentDto,
@@ -36,6 +38,21 @@ import {
 } from '../services/news-analysis.service.js'
 import type { NewsModelTier } from '@/modules/news/providers/news-llm-config.js'
 
+const LEGACY_SOURCE_ALIASES: Record<string, string> = {
+  'prensa-libre': 'prensa_libre_gt',
+  prensa_libre_gt: 'prensa_libre_gt',
+  'emisoras-unidas': 'emisoras_unidas_gt',
+  emisoras_unidas_gt: 'emisoras_unidas_gt',
+}
+
+function resolveSourceCodeParam(raw: string): string | null {
+  const trimmed = raw.trim()
+  if (!trimmed) return null
+  if (LEGACY_SOURCE_ALIASES[trimmed]) return LEGACY_SOURCE_ALIASES[trimmed]
+  if (/^[a-z][a-z0-9_]{2,64}$/.test(trimmed)) return trimmed
+  return null
+}
+
 export async function handleNewsRoutes(
   req: IncomingMessage,
   res: ServerResponse,
@@ -45,48 +62,58 @@ export async function handleNewsRoutes(
   if (!pathname.startsWith('/api/news')) return false
 
   try {
-    if (pathname === '/api/news/sources/prensa-libre/inspect') {
+    const sourceActionMatch = pathname.match(
+      /^\/api\/news\/sources\/([^/]+)\/(inspect|ingest|reprocess)$/,
+    )
+    if (sourceActionMatch) {
+      const code = resolveSourceCodeParam(sourceActionMatch[1]!)
+      const action = sourceActionMatch[2]!
+      if (!code) {
+        jsonError(req, res, 'Código de fuente inválido', 400)
+        return true
+      }
       if (req.method !== 'POST') {
         jsonError(req, res, 'Method not allowed', 405)
         return true
       }
-      const result = await runOperationalGuard(
-        req,
-        res,
-        { permission: 'news.manage_sources', rateLimit: 'validation' },
-        async (auth) => inspectPrensaLibreSource(auth),
-      )
-      if (result === null) return true
-      jsonResponse(req, res, result)
-      return true
-    }
 
-    if (pathname === '/api/news/sources/prensa-libre/reprocess') {
-      if (req.method !== 'POST') {
-        jsonError(req, res, 'Method not allowed', 405)
+      if (action === 'inspect') {
+        const result = await runOperationalGuard(
+          req,
+          res,
+          { permission: 'news.manage_sources', rateLimit: 'validation' },
+          async (auth) => inspectNewsSourceByCode(auth, code),
+        )
+        if (result === null) return true
+        jsonResponse(req, res, result)
         return true
       }
-      const result = await runOperationalGuard(
-        req,
-        res,
-        { permission: 'news.manage_sources', rateLimit: 'reevaluation', auditType: 'news_reprocess_prensa_libre' },
-        async (auth) => reprocessPrensaLibre(auth),
-      )
-      if (result === null) return true
-      jsonResponse(req, res, result)
-      return true
-    }
 
-    if (pathname === '/api/news/sources/prensa-libre/ingest') {
-      if (req.method !== 'POST') {
-        jsonError(req, res, 'Method not allowed', 405)
+      if (action === 'reprocess') {
+        const result = await runOperationalGuard(
+          req,
+          res,
+          {
+            permission: 'news.manage_sources',
+            rateLimit: 'reevaluation',
+            auditType: `news_reprocess_${code}`,
+          },
+          async (auth) => reprocessNewsSourceByCode(auth, code),
+        )
+        if (result === null) return true
+        jsonResponse(req, res, result)
         return true
       }
+
       const result = await runOperationalGuard(
         req,
         res,
-        { permission: 'news.run_ingestion', rateLimit: 'reevaluation', auditType: 'news_ingest_prensa_libre' },
-        async (auth) => ingestPrensaLibre(auth),
+        {
+          permission: 'news.run_ingestion',
+          rateLimit: 'reevaluation',
+          auditType: `news_ingest_${code}`,
+        },
+        async (auth) => ingestNewsSourceByCode(auth, code),
       )
       if (result === null) return true
       jsonResponse(req, res, result)

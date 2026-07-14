@@ -36,4 +36,30 @@ export interface NewsSourceConnector {
     items: DiscoveredNewsItem[],
     previous?: NewsConnectorCheckpoint,
   ): NewsConnectorCheckpoint
+  /** URL canónica provisional (sin fetch) para deduplicación. */
+  provisionalCanonicalUrl?(item: DiscoveredNewsItem): string
+  /** Pausa entre fetches de artículo. */
+  rateLimitPause?(source: NewsSource): Promise<void>
+}
+
+export function resolveProvisionalCanonicalUrl(
+  connector: NewsSourceConnector,
+  item: DiscoveredNewsItem,
+): string {
+  if (typeof connector.provisionalCanonicalUrl === 'function') {
+    return connector.provisionalCanonicalUrl(item)
+  }
+  return item.discoveredUrl
+}
+
+export async function fetchNormalizedWithOptionalRateLimit(
+  connector: NewsSourceConnector,
+  source: NewsSource,
+  item: DiscoveredNewsItem,
+): Promise<NormalizedNewsDocument> {
+  const raw = await connector.fetchDocumentMetadata(source, item)
+  if (typeof connector.rateLimitPause === 'function') {
+    await connector.rateLimitPause(source)
+  }
+  return connector.normalizeDocument(source, item, raw)
 }

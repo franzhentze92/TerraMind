@@ -18,6 +18,9 @@ export interface NewsSourceDto {
   last_successful_ingestion_at: string | null
   last_failed_ingestion_at: string | null
   consecutive_failure_count: number
+  health_code?: string
+  health_label?: string
+  attribution_label?: string
 }
 
 export interface NewsDocumentListItemDto {
@@ -79,6 +82,7 @@ export interface NewsDocumentDetailDto extends NewsDocumentListItemDto {
   }
   provenance: {
     source_name: string
+    source_kind_label?: string
     discovery_method: string
     captured_at: string
     canonical_url: string

@@ -1,10 +1,14 @@
 /**
- * News ingestion orchestration (Bloque N1 — endurecido).
+ * News ingestion orchestration (Bloque N1 — multi-fuente).
  *
  * Flujo optimizado por documento:
  *   sitemap → normalizar URL → hash canónico → buscar existente →
  *   decidir revalidación (lastmod / ventana por tipo) → fetch solo si aplica.
  */
+import {
+  fetchNormalizedWithOptionalRateLimit,
+  resolveProvisionalCanonicalUrl,
+} from '@/modules/news/connectors/news-source-connector'
 import { getNewsConnector } from '@/modules/news/connectors/registry'
 import { classifyPreliminaryCategory } from '@/modules/news/engines/preliminary-classifier'
 import {
@@ -14,10 +18,6 @@ import {
 import { decideRevalidation } from '@/modules/news/engines/revalidation-policy'
 import { hashCanonicalUrl, hashDocumentContent } from '@/modules/news/engines/url-normalizer'
 import { SafeFetchError } from '@/modules/news/engines/safe-http-client'
-import {
-  PrensaLibreConnector,
-  fetchWithRateLimit,
-} from '@/modules/news/sources/prensa-libre/prensa-libre.connector'
 import type {
   DiscoveredNewsItem,
   NormalizedNewsDocument,
@@ -93,11 +93,7 @@ async function fetchNormalized(
   source: ReturnType<typeof mapSourceRow>,
   item: DiscoveredNewsItem,
 ): Promise<NormalizedNewsDocument> {
-  if (connector instanceof PrensaLibreConnector) {
-    return fetchWithRateLimit(connector, source, item)
-  }
-  const raw = await connector.fetchDocumentMetadata(source, item)
-  return connector.normalizeDocument(source, item, raw)
+  return fetchNormalizedWithOptionalRateLimit(connector, source, item)
 }
 
 export async function inspectNewsSource(code: string): Promise<SourceInspectionReport> {
@@ -156,13 +152,10 @@ export async function runNewsIngestion(code: string): Promise<{
   try {
     const discovered = await connector.discoverDocuments(source)
     m.discovered = discovered.length
-    const isPrensaLibre = connector instanceof PrensaLibreConnector
 
     for (const item of discovered) {
       try {
-        const provisionalUrl = isPrensaLibre
-          ? (connector as PrensaLibreConnector).provisionalCanonicalUrl(item)
-          : item.discoveredUrl
+        const provisionalUrl = resolveProvisionalCanonicalUrl(connector, item)
         const provisionalHash = hashCanonicalUrl(provisionalUrl)
         const existing = await getNewsDocumentByHash(provisionalHash)
         const nowIso = new Date().toISOString()

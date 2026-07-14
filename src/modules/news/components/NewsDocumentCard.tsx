@@ -4,10 +4,15 @@ import { GEOGRAPHIC_STATUS_BADGE } from '../presentation/news-labels'
 import type { NewsDocumentListItemDto } from '../types/news-dto.types'
 
 function formatDate(iso: string | null): string {
-  if (!iso) return 'Sin fecha'
+  if (!iso) return 'Fecha de publicación no disponible'
   const d = new Date(iso)
-  if (Number.isNaN(d.getTime())) return 'Sin fecha'
+  if (Number.isNaN(d.getTime())) return 'Fecha de publicación no disponible'
   return d.toLocaleString('es-GT', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+}
+
+function sourceBadgeClass(_code: string): string {
+  // Neutro: no indica confiabilidad, prioridad ni corroboración.
+  return 'border-border-subtle bg-surface-1 text-text-secondary'
 }
 
 export function NewsDocumentCard({ document }: { document: NewsDocumentListItemDto }) {
@@ -17,6 +22,14 @@ export function NewsDocumentCard({ document }: { document: NewsDocumentListItemD
     <article className="rounded-lg border border-border-subtle bg-surface-2/40 px-3.5 py-2.5 transition-colors hover:border-accent/30">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
+          <div className="mb-1 flex flex-wrap items-center gap-1.5">
+            <span
+              className={`inline-flex rounded-md border px-1.5 py-0.5 text-[10px] font-medium ${sourceBadgeClass(document.source_code)}`}
+            >
+              {document.source_name}
+            </span>
+            <span className="text-[10px] text-text-tertiary">{document.processing_status_label}</span>
+          </div>
           <Link
             to={`/noticias/${document.id}`}
             className="line-clamp-2 text-sm font-medium text-text-primary hover:text-accent"
@@ -24,13 +37,17 @@ export function NewsDocumentCard({ document }: { document: NewsDocumentListItemD
             {document.title}
           </Link>
           <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-text-tertiary">
-            <span className="text-text-secondary">{document.source_name}</span>
-            <span>·</span>
             <span>{formatDate(document.published_at)}</span>
             {document.preliminary_category_label && (
               <>
                 <span>·</span>
                 <span>{document.preliminary_category_label}</span>
+              </>
+            )}
+            {document.source_category && (
+              <>
+                <span>·</span>
+                <span>{document.source_category}</span>
               </>
             )}
           </div>

@@ -1,3 +1,10 @@
+/**
+ * Conector Emisoras Unidas (Bloque N1.5-A).
+ *
+ * Estrategia: news-sitemap oficial (robots.txt).
+ * RSS /feed/ existe y está permitido, pero sus <description> incluyen HTML
+ * sustancial del artículo; el news-sitemap entrega título + fecha sin cuerpo.
+ */
 import type {
   DiscoveredNewsItem,
   NewsDiscoveryMethod,
@@ -19,7 +26,49 @@ import {
   normalizeCanonicalUrl,
 } from '../../engines/url-normalizer'
 
-export const PRENSA_LIBRE_CONNECTOR_VERSION = 'prensa-libre.v1'
+export const EMISORAS_UNIDAS_CONNECTOR_VERSION = 'emisoras-unidas.v1'
+export const EMISORAS_UNIDAS_SOURCE_CODE = 'emisoras_unidas_gt'
+
+const DEFAULT_NEWS_SITEMAP = 'https://emisorasunidas.com/sitemap/news-sitemap.xml'
+const DEFAULT_ALLOWED_DOMAINS = [
+  'emisorasunidas.com',
+  'www.emisorasunidas.com',
+  'img.emisorasunidas.com',
+]
+
+/** Prefijos prioritarios para inteligencia agrícola / situación nacional. */
+export const EMISORAS_UNIDAS_DEFAULT_INCLUDE_PREFIXES = [
+  '/nacional/',
+  '/internacionales/',
+  '/empresas/',
+  '/tecnologia/',
+]
+
+/** Exclusión explícita y configurable (deportes, entretenimiento, viral). */
+export const EMISORAS_UNIDAS_DEFAULT_EXCLUDE_PREFIXES = [
+  '/universo-futbol/',
+  '/deportes/',
+  '/farandula/',
+  '/viral/',
+  '/videos/',
+]
+
+/** Categorías editoriales reales observadas en el news-sitemap (2026-07). */
+export const EMISORAS_UNIDAS_EDITORIAL_CATEGORY_MAP: Record<string, string> = {
+  nacional: 'Nacional',
+  internacionales: 'Internacional',
+  empresas: 'Economía',
+  tecnologia: 'Tecnología',
+  deportes: 'Deportes',
+  'universo-futbol': 'Deportes',
+  farandula: 'Entretenimiento',
+  viral: 'Viral',
+  videos: 'Videos',
+}
+
+/** Descripción OG genérica residual del CMS (no usable como extracto). */
+const BOILERPLATE_DESCRIPTION_RE =
+  /descubre las claves para alcanzar el éxito personal|tu transformación comienza aquí/i
 
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -32,18 +81,50 @@ function withinWindow(iso: string | undefined, windowHours: number): boolean {
   return Date.now() - ts <= windowHours * 60 * 60 * 1000
 }
 
-export class PrensaLibreConnector implements NewsSourceConnector {
-  readonly code = 'prensa_libre_gt'
-  readonly version = PRENSA_LIBRE_CONNECTOR_VERSION
+function pathSegment(url: string): string | null {
+  try {
+    const parts = new URL(url).pathname.split('/').filter(Boolean)
+    return parts[0] ?? null
+  } catch {
+    return null
+  }
+}
+
+function matchesAnyPrefix(path: string, prefixes: string[]): boolean {
+  return prefixes.some((p) => path.startsWith(p))
+}
+
+function usableExcerpt(...candidates: Array<string | null | undefined>): string | null {
+  for (const raw of candidates) {
+    const text = sanitizeDisplayText(raw)
+    if (!text) continue
+    if (BOILERPLATE_DESCRIPTION_RE.test(text)) continue
+    if (text.length < 28) continue
+    return text.slice(0, 600)
+  }
+  return null
+}
+
+export class EmisorasUnidasConnector implements NewsSourceConnector {
+  readonly code = EMISORAS_UNIDAS_SOURCE_CODE
+  readonly version = EMISORAS_UNIDAS_CONNECTOR_VERSION
 
   private fetchOpts(source: NewsSource) {
     const cfg = source.connectorConfig
     return {
-      allowedDomains: cfg.allowedDomains ?? ['www.prensalibre.com', 'prensalibre.com'],
+      allowedDomains: cfg.allowedDomains ?? DEFAULT_ALLOWED_DOMAINS,
       timeoutMs: cfg.requestTimeoutMs ?? 15_000,
       maxRedirects: cfg.maxRedirects ?? 5,
       userAgent: cfg.userAgent,
     }
+  }
+
+  private newsSitemapUrl(source: NewsSource): string {
+    return (
+      source.sitemapUrls.find((u) => u.includes('news-sitemap')) ??
+      source.sitemapUrls[0] ??
+      DEFAULT_NEWS_SITEMAP
+    )
   }
 
   async inspectSource(source: NewsSource): Promise<SourceInspectionReport> {
@@ -55,40 +136,48 @@ export class PrensaLibreConnector implements NewsSourceConnector {
       disallows.some((rule) => rule.includes('feed'))
 
     const sitemapUrlsFound = [
-      'https://www.prensalibre.com/sitemap.xml',
-      'https://www.prensalibre.com/news-sitemap.xml',
+      'https://emisorasunidas.com/sitemap.xml',
+      DEFAULT_NEWS_SITEMAP,
+      ...(source.sitemapUrls ?? []),
     ]
 
     let newsSitemapWorks = false
     try {
-      const sample = await safeFetchText('https://www.prensalibre.com/news-sitemap.xml', opts)
-      newsSitemapWorks = sample.text.includes('<news:news>')
+      const sample = await safeFetchText(this.newsSitemapUrl(source), opts)
+      newsSitemapWorks =
+        sample.text.includes('<n:news>') || sample.text.includes('<news:news>')
     } catch {
       newsSitemapWorks = false
     }
 
-    const restrictions: string[] = []
-    if (feedDisallowed) restrictions.push('robots.txt desaconseja /feed/ para User-agent: *')
-    restrictions.push('No republicar texto completo; conservar metadatos y extracto OG permitido')
-    restrictions.push('Detener ingesta ante 403, 429 o bloqueo')
+    const restrictions: string[] = [
+      'No republicar texto completo; solo metadatos y extracto permitido',
+      'Detener ingesta ante 403, 429 o bloqueo',
+      'Disallow robots: /preview/ y SDK Marfeel',
+    ]
+    if (!feedDisallowed) {
+      restrictions.push(
+        'RSS /feed/ permitido pero con HTML sustancial en description; no se usa como corpus persistido',
+      )
+    }
 
     return {
       sourceCode: source.code,
-      canonicalDomain: 'www.prensalibre.com',
+      canonicalDomain: 'emisorasunidas.com',
       robotsTxt: robots.text.slice(0, 4000),
-      robotsAllowsDiscovery: !isPathDisallowedByRobots('/news-sitemap.xml', disallows),
-      feedUrlsFound: ['https://www.prensalibre.com/feed/'],
+      robotsAllowsDiscovery: !isPathDisallowedByRobots('/sitemap/news-sitemap.xml', disallows),
+      feedUrlsFound: ['https://emisorasunidas.com/feed/'],
       feedUrlsAllowed: !feedDisallowed,
-      sitemapUrlsFound,
+      sitemapUrlsFound: [...new Set(sitemapUrlsFound)],
       jsonLdSupported: true,
       openGraphSupported: true,
       selectedDiscoveryMethod: newsSitemapWorks ? 'news_sitemap' : 'sitemap',
-      discoveryJustification: feedDisallowed
-        ? 'RSS existe pero robots.txt restringe /feed/; se usa news-sitemap.xml declarado en robots.'
-        : 'Se usa news-sitemap.xml por cobertura reciente y metadatos editoriales.',
+      discoveryJustification: newsSitemapWorks
+        ? 'RSS oficial existe en /feed/, pero el news-sitemap declarado en robots.txt ofrece título y fecha sin cuerpo HTML; se selecciona news_sitemap para alinearse a la política de contenido permitido.'
+        : 'News-sitemap no respondió; se evaluaría sitemap general con mayor prudencia.',
       accessRestrictions: restrictions,
       rateLimitNotes: ['Pausa conservadora entre solicitudes de artículo (configurable)'],
-      termsUrl: String(source.metadata.termsUrl ?? 'https://www.prensalibre.com/terminos-y-condiciones/'),
+      termsUrl: String(source.metadata.termsUrl ?? 'https://emisorasunidas.com/'),
       inspectedAt: new Date().toISOString(),
     }
   }
@@ -100,11 +189,13 @@ export class PrensaLibreConnector implements NewsSourceConnector {
     const cfg = source.connectorConfig
     const windowHours = cfg.windowHours ?? 72
     const maxArticles = cfg.maxArticles ?? 30
-    const prefixes = cfg.categoryPathPrefixes ?? ['/guatemala/']
+    const include =
+      cfg.categoryPathPrefixes ?? EMISORAS_UNIDAS_DEFAULT_INCLUDE_PREFIXES
+    const exclude =
+      cfg.excludePathPrefixes ?? EMISORAS_UNIDAS_DEFAULT_EXCLUDE_PREFIXES
     const opts = this.fetchOpts(source)
 
-    const sitemapUrl = 'https://www.prensalibre.com/news-sitemap.xml'
-    const { text } = await safeFetchText(sitemapUrl, opts)
+    const { text } = await safeFetchText(this.newsSitemapUrl(source), opts)
     const all = parseNewsSitemap(text)
 
     const filtered = all
@@ -112,9 +203,20 @@ export class PrensaLibreConnector implements NewsSourceConnector {
       .filter((item) => {
         try {
           const path = new URL(item.discoveredUrl).pathname
-          return prefixes.some((p) => path.startsWith(p))
+          if (matchesAnyPrefix(path, exclude)) return false
+          return matchesAnyPrefix(path, include)
         } catch {
           return false
+        }
+      })
+      .map((item) => {
+        const segment = pathSegment(item.discoveredUrl)
+        const sourceCategory = segment
+          ? EMISORAS_UNIDAS_EDITORIAL_CATEGORY_MAP[segment] ?? segment
+          : undefined
+        return {
+          ...item,
+          sourceCategory,
         }
       })
       .slice(0, maxArticles)
@@ -130,6 +232,12 @@ export class PrensaLibreConnector implements NewsSourceConnector {
     const { text, url } = await safeFetchText(item.discoveredUrl, opts)
     const parsed = parseHtmlMetadata(text, url)
     const canonicalUrl = parsed.canonicalUrl ?? item.discoveredUrl
+    const keywordExcerpt = item.sourceTags?.[0]
+    const excerpt = usableExcerpt(
+      parsed.description,
+      keywordExcerpt,
+      item.title,
+    )
 
     return {
       canonicalUrl: normalizeCanonicalUrl(canonicalUrl),
@@ -138,20 +246,28 @@ export class PrensaLibreConnector implements NewsSourceConnector {
       authorNames: parsed.authorNames,
       publishedAt: parsed.publishedAt ?? item.publishedAt ?? null,
       modifiedAt: parsed.modifiedAt ?? item.modifiedAt ?? null,
-      sourceCategory: parsed.sourceCategory ?? item.sourceCategory ?? null,
-      sourceTags: parsed.sourceTags,
-      description: sanitizeDisplayText(parsed.description ?? null),
-      permittedExcerpt: sanitizeDisplayText(parsed.description ?? null),
+      sourceCategory:
+        parsed.sourceCategory ?? item.sourceCategory ?? null,
+      sourceTags: [...new Set([...(parsed.sourceTags ?? []), ...(item.sourceTags ?? [])])],
+      description: excerpt,
+      permittedExcerpt: excerpt,
       imageReferenceUrl: parsed.imageUrl ?? null,
       externalId: parsed.externalId ?? null,
       rawMetadata: {
         openGraph: {
           title: parsed.title,
-          description: parsed.description,
+          description: excerpt,
           image: parsed.imageUrl,
         },
         fetchedAt: new Date().toISOString(),
         finalUrl: url,
+        ogDescriptionRejected: Boolean(
+          parsed.description && BOILERPLATE_DESCRIPTION_RE.test(parsed.description),
+        ),
+        publishedAtReason:
+          parsed.publishedAt || item.publishedAt
+            ? undefined
+            : 'Fecha de publicación no disponible en metadata permitida',
       },
       structuredData: {
         jsonLd: parsed.jsonLd,
@@ -180,6 +296,8 @@ export class PrensaLibreConnector implements NewsSourceConnector {
         ...metadata.rawMetadata,
         sourceCode: source.code,
         discoveryMethod: 'news_sitemap' satisfies NewsDiscoveryMethod,
+        attributionLabel: 'Fuente periodística',
+        sourceName: source.name,
       },
     }
   }
@@ -212,7 +330,6 @@ export class PrensaLibreConnector implements NewsSourceConnector {
     await sleep(source.connectorConfig.rateLimitMs ?? 1500)
   }
 
-  /** Hash canónico provisional a partir de la URL del sitemap (sin fetch). */
   provisionalCanonicalUrl(item: DiscoveredNewsItem): string {
     return normalizeCanonicalUrl(item.discoveredUrl)
   }
@@ -228,8 +345,8 @@ export class PrensaLibreConnector implements NewsSourceConnector {
   }
 }
 
-export async function fetchWithRateLimit(
-  connector: PrensaLibreConnector,
+export async function fetchWithRateLimitEu(
+  connector: EmisorasUnidasConnector,
   source: NewsSource,
   item: DiscoveredNewsItem,
 ): Promise<NormalizedNewsDocument> {

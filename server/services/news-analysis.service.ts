@@ -185,7 +185,7 @@ export async function mapAnalysisToDto(
 ): Promise<NewsDocumentAnalysisDto | null> {
   if (!row) return null
   const documentTitle = ctx.documentTitle
-  const sourceName = ctx.sourceName ?? 'Prensa Libre'
+  const sourceName = ctx.sourceName ?? 'Fuente periodística'
   const claims = await listClaimsForAnalysis(row.id)
   const validation = (row.validation_result ?? {}) as {
     valid?: boolean

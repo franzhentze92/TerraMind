@@ -91,7 +91,10 @@ export interface NewsSourceConnectorConfig {
   requestTimeoutMs?: number
   maxRedirects?: number
   allowedDomains?: string[]
+  /** Prefijos de ruta incluidos (si se omite, el conector decide). */
   categoryPathPrefixes?: string[]
+  /** Prefijos excluidos de forma explícita y configurable. */
+  excludePathPrefixes?: string[]
   userAgent?: string
   revalidateAfterHours?: number
   liveCoverageRevalidateMinutes?: number
@@ -200,6 +203,7 @@ export interface DiscoveredNewsItem {
   publishedAt?: string
   modifiedAt?: string
   sourceCategory?: string
+  sourceTags?: string[]
   externalId?: string
 }
 
