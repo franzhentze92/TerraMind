@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
-import { List, Map as MapIcon, X } from 'lucide-react'
+import { List, Map as MapIcon, ClipboardCheck, X } from 'lucide-react'
 import { useHasPermission } from '@/core/auth/AuthProvider'
+import { NewsAnalysisPilotControl } from '../components/NewsAnalysisPilotControl'
+import { NewsReviewTab } from '../components/NewsReviewTab'
 import { NewsDocumentCard } from '../components/NewsDocumentCard'
 import { NewsDocumentsMap } from '../components/NewsDocumentsMap'
 import { NewsIngestionControl } from '../components/NewsIngestionControl'
@@ -56,7 +58,8 @@ const EMPTY_FILTERS: Filters = {
 
 export function NewsLivePage() {
   const canIngest = useHasPermission('news.run_ingestion')
-  const [view, setView] = useState<'list' | 'map'>('list')
+  const canAnalyze = useHasPermission('news.analysis.run')
+  const [view, setView] = useState<'list' | 'map' | 'review'>('list')
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS)
   const [selected, setSelected] = useState<NewsDocumentListItemDto | null>(null)
 
@@ -155,7 +158,11 @@ export function NewsLivePage() {
       {/* Controles y filtros */}
       <div className="flex flex-wrap items-center gap-2">
         <div className="inline-flex rounded-lg border border-border-subtle p-0.5">
-          {(['list', 'map'] as const).map((mode) => (
+          {([
+            { mode: 'list' as const, icon: List, label: 'Noticias' },
+            { mode: 'map' as const, icon: MapIcon, label: 'Mapa' },
+            { mode: 'review' as const, icon: ClipboardCheck, label: 'Revisión' },
+          ]).map(({ mode, icon: Icon, label }) => (
             <button
               key={mode}
               type="button"
@@ -164,8 +171,8 @@ export function NewsLivePage() {
                 view === mode ? 'bg-accent/15 text-text-primary' : 'text-text-secondary'
               }`}
             >
-              {mode === 'list' ? <List size={13} /> : <MapIcon size={13} />}
-              {mode === 'list' ? 'Lista' : 'Mapa'}
+              <Icon size={13} />
+              {label}
             </button>
           ))}
         </div>
@@ -239,8 +246,12 @@ export function NewsLivePage() {
         )}
       </div>
 
+      {canAnalyze && view === 'list' && <NewsAnalysisPilotControl limit={5} />}
+
       {/* Contenido */}
-      {documentsQuery.isLoading ? (
+      {view === 'review' ? (
+        <NewsReviewTab />
+      ) : documentsQuery.isLoading ? (
         <p className="text-sm text-text-secondary">Cargando noticias…</p>
       ) : documents.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border-subtle px-6 py-10 text-center">

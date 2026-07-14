@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { ExternalLink } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { GEOGRAPHIC_STATUS_BADGE } from '../presentation/news-labels'
+import { NewsDocumentAnalysisSection } from '../components/NewsDocumentAnalysisSection'
 import { useNewsDocumentDetail } from '../hooks/useNews'
 import type { NewsGeographicStatus } from '../types/news.types'
 
@@ -191,6 +192,8 @@ export function NewsDocumentDetailPage() {
           )}
         </Section>
       </div>
+
+      {documentId && <NewsDocumentAnalysisSection documentId={documentId} />}
     </div>
   )
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env tsx
 /**
- * news:audit — Bloque N1 gate: Prensa Libre ingestion, geolocation, live news UI.
+ * news:audit — Bloques N1+N2: ingesta Prensa Libre, geolocalización, análisis IA.
  */
 import { config } from 'dotenv'
 import { existsSync, readFileSync } from 'node:fs'
@@ -152,7 +152,7 @@ async function auditDatabase() {
     check('content:short-excerpt', descLen < 500 && excerptLen < 500, `desc=${descLen} excerpt=${excerptLen}`)
   }
 
-  // N1 no crea eventos ni amenazas desde noticias (tablas dedicadas ausentes o vacías).
+  // N1/N2 no crean eventos ni amenazas desde noticias (tablas dedicadas ausentes o vacías).
   for (const table of ['news_events', 'news_signals']) {
     const { count, error } = await admin.from(table).select('id', { count: 'exact', head: true })
     if (error?.message?.includes('does not exist') || error?.code === '42P01') {
@@ -163,6 +163,132 @@ async function auditDatabase() {
       check(`events:${table}-empty`, (count ?? 0) === 0, `count=${count}`)
     }
   }
+
+  // ── N2: análisis documental ──────────────────────────────────────────
+  const n2Files = [
+    'src/modules/news/schemas/ai-analysis.schema.ts',
+    'src/modules/news/engines/analysis-evidence-validator.ts',
+    'src/modules/news/engines/relation-semantics.ts',
+    'src/modules/news/engines/escalation-policy.ts',
+    'src/modules/news/providers/analysis-prompts.ts',
+    'src/modules/news/components/NewsDocumentAnalysisSection.tsx',
+    'server/services/news-analysis.service.ts',
+    'src/pipeline/stores/news-analysis.store.ts',
+    'supabase/migrations/036_news_document_analysis.sql',
+    'supabase/migrations/037_news_analysis_quality.sql',
+    'supabase/migrations/038_news_analysis_quantitative.sql',
+    'supabase/migrations/039_news_analysis_coverage.sql',
+  ]
+  for (const f of n2Files) {
+    check(`n2:file:${f}`, existsSync(resolve(ROOT, f)))
+  }
+
+  const schemaSrc = read('src/modules/news/schemas/ai-analysis.schema.ts')
+  check('n2:schema:prompt-v2', /ANALYSIS_PROMPT_VERSION = 'document-analysis\.v2/.test(schemaSrc))
+  check('n2:schema:metrics', schemaSrc.includes('documentMetricSchema'))
+  check('n2:schema:coverage', schemaSrc.includes('documentCoverageSchema'))
+  check('n2:schema:primary-source', schemaSrc.includes('recommendedPrimarySourceSchema'))
+  check('n2:schema:threat-hint', schemaSrc.includes('threatEvaluationHintSchema'))
+  check('n2:schema:event-candidate-no-persist', schemaSrc.includes('eventCandidateSchema'))
+
+  const validatorSrc = read('src/modules/news/engines/analysis-evidence-validator.ts')
+  check('n2:validator:evidence', validatorSrc.includes('excerptExistsInCorpus'))
+  check('n2:validator:atomic', validatorSrc.includes('isLikelyNonAtomic'))
+  check('n2:validator:confidence-cap', validatorSrc.includes('MAX_EXTRACTION_CONFIDENCE'))
+  check('n2:validator:damnificadas', validatorSrc.includes('disaster_affected_families'))
+  check('n2:validator:coverage-infer', validatorSrc.includes('inferDocumentCoverage'))
+
+  const labelsSrc = read('src/modules/news/presentation/news-analysis-labels.ts')
+  check('n2:labels:affected-families', labelsSrc.includes("affected_families: 'Familias afectadas'"))
+  check('n2:labels:damnificadas', labelsSrc.includes("disaster_affected_families: 'Familias damnificadas'"))
+  check(
+    'n2:labels:distinct-types',
+    /(?:^|\n)\s*affected_families: 'Familias afectadas'/.test(labelsSrc) &&
+      /disaster_affected_families: 'Familias damnificadas'/.test(labelsSrc) &&
+      !/(?:^|\n)\s*affected_families: 'Familias damnificadas'/.test(labelsSrc),
+  )
+
+  const uiSrc = read('src/modules/news/components/NewsDocumentAnalysisSection.tsx')
+  check('n2:ui:spanish-hecho', uiSrc.includes('Hecho principal'))
+  check('n2:ui:spanish-afirmaciones', uiSrc.includes('Afirmaciones verificables'))
+  check('n2:ui:spanish-candidato', uiSrc.includes('Candidato a evento'))
+  check('n2:ui:spanish-cobertura', uiSrc.includes('Cobertura documental'))
+  check('n2:ui:spanish-fuente-primaria', uiSrc.includes('Fuente primaria recomendada'))
+  check('n2:ui:no-event-created', uiSrc.includes('No se crea el evento todavía'))
+  check('n2:ui:no-threat-promoted', uiSrc.includes('No se promueve ni se cuenta como amenaza'))
+  check('n2:ui:no-gpt-leak', !/\bgpt-4\b/i.test(uiSrc) && !uiSrc.includes('openai'))
+  check('n2:ui:no-cost-leak', !uiSrc.includes('estimated_cost') && !uiSrc.includes('token_usage'))
+  check('n2:ui:no-raw-json', !uiSrc.includes('raw_model_response') && !uiSrc.includes('JSON.stringify'))
+  check('n2:ui:historial', uiSrc.includes('Historial de análisis'))
+  check('n2:ui:no-schema-version-leak', !uiSrc.includes('ai-output.v2') && !uiSrc.includes('analysis_version}'))
+
+  const svcSrc = read('server/services/news-analysis.service.ts')
+  check('n2:service:no-threat-insert', !/from\(['\"]canonical_threats['\"]\)/.test(svcSrc))
+  check('n2:service:no-event-table', !/from\(['\"]news_events['\"]\)/.test(svcSrc))
+  check('n2:service:escalation', svcSrc.includes('shouldEscalateToDeep'))
+
+  const escSrc = read('src/modules/news/engines/escalation-policy.ts')
+  check('n2:escalation:future-note', escSrc.includes('Mejora futura'))
+
+  // Persistencia N2 — afirmaciones con evidencia; 0 eventos/amenazas desde noticias
+  const { count: analysisCount } = await admin
+    .from('news_document_analyses')
+    .select('id', { count: 'exact', head: true })
+    .in('status', ['completed', 'completed_with_warnings', 'needs_review'])
+  check('n2:db:has-analyses', (analysisCount ?? 0) >= 5, `got ${analysisCount}`)
+
+  const { data: promptVersions } = await admin
+    .from('news_document_analyses')
+    .select('prompt_version')
+    .in('prompt_version', [
+      'document-analysis.v2.2.1',
+      'document-analysis.v2.3.1',
+      'document-analysis.v2.4',
+    ])
+  const versions = new Set((promptVersions ?? []).map((r) => r.prompt_version))
+  check('n2:db:ref-v2.2.1', versions.has('document-analysis.v2.2.1'))
+  check('n2:db:ref-v2.3.1', versions.has('document-analysis.v2.3.1'))
+  check('n2:db:ref-v2.4', versions.has('document-analysis.v2.4'))
+
+  const { data: claims, error: claimsErr } = await admin
+    .from('news_claims')
+    .select('id, epistemic_status, confidence, evidence_references')
+    .limit(50)
+  if (claimsErr) throw claimsErr
+  check('n2:db:has-claims', (claims?.length ?? 0) > 0)
+  const claimsWithoutEvidence = (claims ?? []).filter((c) => {
+    const ev = c.evidence_references
+    return !Array.isArray(ev) || ev.length === 0
+  })
+  check('n2:db:claims-have-evidence', claimsWithoutEvidence.length === 0, `missing=${claimsWithoutEvidence.length}`)
+  check(
+    'n2:db:claims-have-epistemic',
+    (claims ?? []).every((c) => Boolean(c.epistemic_status)),
+  )
+  check(
+    'n2:db:claims-have-confidence',
+    (claims ?? []).every((c) => typeof c.confidence === 'number'),
+  )
+
+  const { data: metricRows } = await admin
+    .from('news_document_analyses')
+    .select('id, metrics')
+    .not('metrics', 'eq', '[]')
+  let wrongDamnificadas = 0
+  for (const row of metricRows ?? []) {
+    const metrics = Array.isArray(row.metrics) ? row.metrics : []
+    for (const m of metrics as Array<{ label?: string; metricType?: string }>) {
+      if (/damnificad/i.test(String(m.label ?? '')) && m.metricType === 'affected_families') {
+        wrongDamnificadas += 1
+      }
+    }
+  }
+  check('n2:db:damnificadas-type', wrongDamnificadas === 0, `wrong=${wrongDamnificadas}`)
+
+  const { count: threatCount } = await admin
+    .from('canonical_threats')
+    .select('id', { count: 'exact', head: true })
+  check('n2:db:zero-threats', (threatCount ?? 0) === 0, `got ${threatCount}`)
 }
 
 // Spanish labels complete

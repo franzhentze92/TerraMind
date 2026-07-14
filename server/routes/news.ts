@@ -13,6 +13,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http'
 import { runOperationalGuard } from '../middleware/operational-guard.js'
 import { rejectInvalidUuid } from '../http/route-utils.js'
 import { jsonError, jsonResponse } from '../http/json.js'
+import { readJsonBody } from '../http/body.js'
 import {
   getNewsDocumentDetailDto,
   getNewsSummaryDto,
@@ -23,6 +24,17 @@ import {
   listNewsSourcesDto,
   reprocessPrensaLibre,
 } from '../services/news.service.js'
+import {
+  analyzeNewsDocumentDto,
+  batchAnalyzeDto,
+  getAnalysisDetailDto,
+  getDocumentAnalysisDto,
+  listAnalysesDto,
+  listReviewQueueDto,
+  rejectAnalysisDto,
+  reviewAnalysisDto,
+} from '../services/news-analysis.service.js'
+import type { NewsModelTier } from '@/modules/news/providers/news-llm-config.js'
 
 export async function handleNewsRoutes(
   req: IncomingMessage,
@@ -178,6 +190,169 @@ export async function handleNewsRoutes(
         jsonError(req, res, 'Documento no encontrado', 404)
         return true
       }
+      jsonResponse(req, res, result)
+      return true
+    }
+
+    const docAnalysisMatch = pathname.match(/^\/api\/news\/documents\/([^/]+)\/analysis$/)
+    if (docAnalysisMatch) {
+      const documentId = docAnalysisMatch[1]!
+      if (rejectInvalidUuid(req, res, documentId, 'ID de documento')) return true
+
+      if (req.method === 'GET') {
+        const result = await runOperationalGuard(
+          req,
+          res,
+          { permission: 'news.analysis.view', rateLimit: 'default_read' },
+          async () => ({ analysis: await getDocumentAnalysisDto(documentId) }),
+        )
+        if (result === null) return true
+        jsonResponse(req, res, result.analysis)
+        return true
+      }
+
+      if (req.method === 'POST') {
+        const body = await readJsonBody<{ modelTier?: NewsModelTier }>(req).catch(() => ({}))
+        const result = await runOperationalGuard(
+          req,
+          res,
+          { permission: 'news.analysis.run', rateLimit: 'reevaluation', auditType: 'news_analyze_document' },
+          async (auth) => analyzeNewsDocumentDto(auth, documentId, body.modelTier ?? 'fast'),
+        )
+        if (result === null) return true
+        jsonResponse(req, res, result)
+        return true
+      }
+
+      jsonError(req, res, 'Method not allowed', 405)
+      return true
+    }
+
+    const analyzeDocMatch = pathname.match(/^\/api\/news\/documents\/([^/]+)\/analyze$/)
+    if (analyzeDocMatch) {
+      if (req.method !== 'POST') {
+        jsonError(req, res, 'Method not allowed', 405)
+        return true
+      }
+      const documentId = analyzeDocMatch[1]!
+      if (rejectInvalidUuid(req, res, documentId, 'ID de documento')) return true
+      const body = await readJsonBody<{ modelTier?: NewsModelTier }>(req).catch(() => ({}))
+      const result = await runOperationalGuard(
+        req,
+        res,
+        { permission: 'news.analysis.run', rateLimit: 'reevaluation', auditType: 'news_analyze_document' },
+        async (auth) => analyzeNewsDocumentDto(auth, documentId, body.modelTier ?? 'fast'),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, result)
+      return true
+    }
+
+    if (pathname === '/api/news/analyses') {
+      if (req.method !== 'GET') {
+        jsonError(req, res, 'Method not allowed', 405)
+        return true
+      }
+      const requiresReview = searchParams.get('requires_review') === 'true'
+      const result = await runOperationalGuard(
+        req,
+        res,
+        { permission: 'news.analysis.view', rateLimit: 'default_read' },
+        async () =>
+          requiresReview
+            ? listReviewQueueDto()
+            : listAnalysesDto({
+                requiresReview: requiresReview || undefined,
+                limit: searchParams.get('limit') ? Number(searchParams.get('limit')) : 50,
+              }),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, { items: result })
+      return true
+    }
+
+    if (pathname === '/api/news/analyses/batch') {
+      if (req.method !== 'POST') {
+        jsonError(req, res, 'Method not allowed', 405)
+        return true
+      }
+      const body = await readJsonBody<{
+        documentIds?: string[]
+        limit?: number
+        dryRun?: boolean
+        modelTier?: NewsModelTier
+        estimatedCostConfirmation?: boolean
+      }>(req).catch(() => ({}))
+      const result = await runOperationalGuard(
+        req,
+        res,
+        { permission: 'news.analysis.run', rateLimit: 'reevaluation', auditType: 'news_analyze_batch' },
+        async (auth) => batchAnalyzeDto(auth, body),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, result)
+      return true
+    }
+
+    const analysisDetailMatch = pathname.match(/^\/api\/news\/analyses\/([^/]+)$/)
+    if (analysisDetailMatch && !pathname.endsWith('/review') && !pathname.endsWith('/reject')) {
+      if (req.method !== 'GET') {
+        jsonError(req, res, 'Method not allowed', 405)
+        return true
+      }
+      const id = analysisDetailMatch[1]!
+      if (rejectInvalidUuid(req, res, id, 'ID de análisis')) return true
+      const result = await runOperationalGuard(
+        req,
+        res,
+        { permission: 'news.analysis.view', rateLimit: 'default_read' },
+        async () => ({ analysis: await getAnalysisDetailDto(id) }),
+      )
+      if (result === null) return true
+      if (!result.analysis) {
+        jsonError(req, res, 'Análisis no encontrado', 404)
+        return true
+      }
+      jsonResponse(req, res, result.analysis)
+      return true
+    }
+
+    const analysisReviewMatch = pathname.match(/^\/api\/news\/analyses\/([^/]+)\/review$/)
+    if (analysisReviewMatch) {
+      if (req.method !== 'POST') {
+        jsonError(req, res, 'Method not allowed', 405)
+        return true
+      }
+      const id = analysisReviewMatch[1]!
+      if (rejectInvalidUuid(req, res, id, 'ID de análisis')) return true
+      const body = await readJsonBody<{ notes?: string }>(req).catch(() => ({}))
+      const result = await runOperationalGuard(
+        req,
+        res,
+        { permission: 'news.analysis.review', rateLimit: 'validation', auditType: 'news_analysis_review' },
+        async (auth) => reviewAnalysisDto(auth, id, 'approve', body.notes),
+      )
+      if (result === null) return true
+      jsonResponse(req, res, result)
+      return true
+    }
+
+    const analysisRejectMatch = pathname.match(/^\/api\/news\/analyses\/([^/]+)\/reject$/)
+    if (analysisRejectMatch) {
+      if (req.method !== 'POST') {
+        jsonError(req, res, 'Method not allowed', 405)
+        return true
+      }
+      const id = analysisRejectMatch[1]!
+      if (rejectInvalidUuid(req, res, id, 'ID de análisis')) return true
+      const body = await readJsonBody<{ reason?: string }>(req).catch(() => ({}))
+      const result = await runOperationalGuard(
+        req,
+        res,
+        { permission: 'news.analysis.review', rateLimit: 'validation', auditType: 'news_analysis_reject' },
+        async (auth) => rejectAnalysisDto(auth, id, body.reason),
+      )
+      if (result === null) return true
       jsonResponse(req, res, result)
       return true
     }
